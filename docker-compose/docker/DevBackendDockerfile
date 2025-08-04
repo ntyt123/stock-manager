@@ -45,7 +45,11 @@ RUN mkdir -p /etc/vim/ && \
 # apt-get --purge remove 软件包名称 , 删除已安装包（不保留配置文件)。
 RUN apt-get update && apt-get install -y git pkg-config net-tools procps gcc make python3-dev default-libmysqlclient-dev libxml2-dev libssl-dev libffi-dev cron  && \
     pip3 install wheel && \
-    pip3 install mysqlclient==2.2.0 sqlalchemy && \
+    pip3 install --no-cache-dir \
+        --index-url=https://pypi.tuna.tsinghua.edu.cn/simple \
+        --extra-index-url=https://pypi.org/simple \
+        mysqlclient==1.4.6 \  
+    pip3 install sqlalchemy && \
     pip3 install supervisor && \
     pip3 install numpy pandas  && \
     pip3 install akshare --upgrade && \
