@@ -15,8 +15,8 @@ echo "deb http://deb.debian.org/debian-security/ bullseye-security main" >> /etc
 echo "deb-src http://deb.debian.org/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
 echo "deb http://deb.debian.org/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
 echo "deb-src http://deb.debian.org/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
-echo "deb http://deb.debian.org/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
-echo "deb-src http://deb.debian.org/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
+#echo "deb http://deb.debian.org/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
+#echo "deb-src http://deb.debian.org/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
 echo  "[global]\n\
 trusted-host=deb.debian.org\n\
 index-url=http://deb.debian.org/pypi/simple" > /etc/pip.conf && \
