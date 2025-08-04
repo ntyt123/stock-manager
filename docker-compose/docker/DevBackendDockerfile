@@ -43,23 +43,19 @@ RUN mkdir -p /etc/vim/ && \
 # 安装 nodejs 库
 # apt-get autoremove -y 删除没有用的依赖lib。减少镜像大小。1MB 也要节省。
 # apt-get --purge remove 软件包名称 , 删除已安装包（不保留配置文件)。
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        git pkg-config net-tools procps \
-        gcc make python3-dev \
-        default-libmysqlclient-dev libssl-dev zlib1g-dev libxml2-dev cron \
-        nodejs && \
-    # 单独安装 mysqlclient 并指定版本
-    pip3 install --no-cache-dir mysqlclient==1.4.6 && \
-    # 安装其他依赖
-    pip3 install --no-cache-dir sqlalchemy supervisor numpy pandas \
-        tornado torndb bokeh stockstats scikit-learn && \
-    # 升级特定包
-    pip3 install --no-cache-dir --upgrade akshare && \
-    # 清理构建依赖和缓存
-    apt-get --purge remove -y gcc make python3-dev default-libmysqlclient-dev && \
-    apt-get autoremove -y && \
-    rm -rf /var/lib/apt/lists/* /root/.cache/*
+RUN apt-get update && apt-get install -y git pkg-config net-tools procps gcc make python3-dev default-libmysqlclient-dev libxml2-dev libssl-dev libffi-dev cron  && \
+    pip3 install wheel && \
+    pip3 install mysqlclient==2.2.0 sqlalchemy && \
+    pip3 install supervisor && \
+    pip3 install numpy pandas  && \
+    pip3 install akshare --upgrade && \
+    apt-get install -y nodejs && \
+    pip3 install tornado torndb && \
+    pip3 install bokeh stockstats scikit-learn && \
+    apt-get --purge remove -y gcc make python3-dev default-libmysqlclient-dev libxml2-dev && \
+    rm -rf /root/.cache/* && apt-get clean && apt-get autoremove -y  && \
+    cd /usr/local/lib/python3.11/site-packages && find ./ -name *.pyc | xargs rm -f  
+
 # /usr/local/lib/python3.11/site-packages/pandas/
 # 1.解决 pandas 数据插入问题。直接修改数据库驱动 sqlalchemy
 # 修改：statement.replace("INSERT INTO","INSERT IGNORE INTO")
