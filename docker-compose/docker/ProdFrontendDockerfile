@@ -1,3 +1,4 @@
+
 FROM node:bullseye-slim
 USER root
 
@@ -9,10 +10,11 @@ echo "deb http://deb.debian.org/debian-security/ bullseye-security main" >> /etc
 echo "deb-src http://deb.debian.org/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
 echo "deb http://deb.debian.org/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
 echo "deb-src http://deb.debian.org/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
-# 保持pip配置不变
+# 调整pip源为官方源，解决mysqlclient找不到的问题
 echo  "[global]\n\
-trusted-host=mirrors.aliyun.com\n\
-index-url=http://mirrors.aliyun.com/pypi/simple" > /etc/pip.conf && \
+index-url=https://pypi.org/simple\n\
+trusted-host=pypi.org\n\
+files.pythonhosted.org" > /etc/pip.conf && \
 ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
@@ -21,10 +23,16 @@ ENV LANG=zh_CN.UTF-8
 ENV LC_CTYPE=zh_CN.UTF-8
 ENV LC_ALL=C
 
-# 确保以root权限执行apt操作，修复权限问题
-USER root
-# 安装mysqlclient依赖库
-RUN apt-get update && apt-get install -y python3 python3-pip python3-dev default-libmysqlclient-dev build-essential && apt-get clean
+# 安装mysqlclient依赖库及Python3.7（满足akshare需求）
+RUN apt-get update && apt-get install -y \
+    python3.7 \
+    python3-pip \
+    python3.7-dev \
+    default-libmysqlclient-dev \
+    build-essential \
+    && apt-get clean \
+    && ln -s /usr/bin/python3.7 /usr/bin/python3 \
+    && ln -s /usr/bin/python3.7 /usr/bin/python
 
 # 增加 TensorFlow 的支持，使用最新的2.0 编写代码。目前还是使用 1.x 吧，还没有学明白。
 # RUN pip3 install tensorflow==2.0.0-rc1 keras
@@ -36,9 +44,20 @@ RUN mkdir -p /etc/vim/ && \
     echo "set termencoding=utf-8" >> /etc/vim/vimrc && \
     echo "set encoding=utf-8" >> /etc/vim/vimrc
 
-# 安装 mysqlclient akshare (pandas ,numpy) tornado bokeh
-# 安装 nodejs 库
-# apt-get autoremove -y 删除没有用的依赖lib。减少镜像大小。1MB 也要节省。
-# apt-get --purge remove 软件包名称 , 删除已安装包（不保留配置文件)。
-RUN pip3 install mysqlclient && \
+# 安装所需Python库（包含mysqlclient及项目依赖）
+RUN pip3 install --upgrade pip && \
+    pip3 install \
+    mysqlclient \
+    sqlalchemy \
+    requests \
+    numpy \
+    tushare \
+    tornado \
+    torndb \
+    bokeh \
+    stockstats \
+    ta-lib \
+    jupyter \
+    sklearn \
+    akshare>=0.9.65 && \
     apt-get update && apt-get install -y make g++ && apt-get clean
