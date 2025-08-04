@@ -1,16 +1,18 @@
-USER root
-FROM node:bullseye-slim
+#使用 node:bullseye-slim 做基础镜像减少大小。
 
-# 使用官方Debian镜像源
-RUN echo "deb http://deb.debian.org/debian/ bullseye main non-free contrib" > /etc/apt/sources.list && \
-echo "deb-src http://deb.debian.org/debian/ bullseye main non-free contrib" >> /etc/apt/sources.list && \
-echo "deb http://deb.debian.org/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
-echo "deb-src http://deb.debian.org/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
-echo "deb http://deb.debian.org/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
-echo "deb-src http://deb.debian.org/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
-echo "deb http://deb.debian.org/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
-echo "deb-src http://deb.debian.org/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
-# 保持pip配置不变（如需官方源可改为https://pypi.org/simple）
+FROM docker.m.daocloud.io/library/node:bullseye-slim
+
+# https://opsx.alibaba.com/mirror
+# 使用阿里云镜像地址。修改debian apt 更新地址，pip 地址，设置时区。
+# 设置debian的镜像源
+RUN echo "deb http://mirrors.aliyun.com/debian/ bullseye main non-free contrib" > /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian/ bullseye main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb http://mirrors.aliyun.com/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
+echo "deb http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb http://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
 echo  "[global]\n\
 trusted-host=mirrors.aliyun.com\n\
 index-url=http://mirrors.aliyun.com/pypi/simple" > /etc/pip.conf && \

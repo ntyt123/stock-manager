@@ -1,47 +1,45 @@
-# 使用 node:bullseye-slim 作为基础镜像，减少镜像大小
-# 选择兼容的Node.js版本（避免最新版编译问题）
-USER root
-FROM node:16.20.2-bullseye-slim
+#使用 node:bullseye-slim 做基础镜像减少大小。
 
-# 配置阿里云Debian源（移除backports，避免Release文件错误）
+# FROM docker.m.daocloud.io/library/node:bullseye-slim
+# fixbug 最新node 版本编译不过去，
+#  ERROR  Error: Cannot find module './passes/web-incoming'
+
+FROM docker.m.daocloud.io/library/node:23.5.0-bullseye-slim
+
+# https://opsx.alibaba.com/mirror
+# 使用阿里云镜像地址。修改debian apt 更新地址，pip 地址，设置时区。
+# 设置debian的镜像源
 RUN echo "deb http://mirrors.aliyun.com/debian/ bullseye main non-free contrib" > /etc/apt/sources.list && \
-    echo "deb-src http://mirrors.aliyun.com/debian/ bullseye main non-free contrib" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
-    echo "deb-src http://mirrors.aliyun.com/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
-    echo "deb http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
-    echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
-    # 配置npm国内镜像（加速Node.js依赖安装）
-    npm config set registry https://registry.npmmirror.com && \
-    # 设置时区为上海
-    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+echo "deb-src http://mirrors.aliyun.com/debian/ bullseye main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb http://mirrors.aliyun.com/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian-security/ bullseye-security main" >> /etc/apt/sources.list && \
+echo "deb http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-updates main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb http://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
+echo "deb-src http://mirrors.aliyun.com/debian/ bullseye-backports main non-free contrib" >> /etc/apt/sources.list && \
+echo  "[global]\n\
+trusted-host=mirrors.aliyun.com\n\
+index-url=http://mirrors.aliyun.com/pypi/simple" > /etc/pip.conf && \
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
-# 配置语言环境为UTF-8
+#增加语言utf-8
 ENV LANG=zh_CN.UTF-8
 ENV LC_CTYPE=zh_CN.UTF-8
 ENV LC_ALL=C
 
-# 配置vim编码（方便容器内编辑）
-RUN apt-get update && apt-get install -y vim && \
-    mkdir -p /etc/vim/ && \
+# 增加 TensorFlow 的支持，使用最新的2.0 编写代码。目前还是使用 1.x 吧，还没有学明白。
+# RUN pip3 install tensorflow==2.0.0-rc1 keras
+# RUN pip3 install tensorflow keras sklearn
+
+# 设置 vim 的语言配置
+RUN mkdir -p /etc/vim/ && \
     echo "set fileencodings=utf-8,ucs-bom,gb18030,gbk,gb2312,cp936" >> /etc/vim/vimrc && \
     echo "set termencoding=utf-8" >> /etc/vim/vimrc && \
-    echo "set encoding=utf-8" >> /etc/vim/vimrc && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+    echo "set encoding=utf-8" >> /etc/vim/vimrc
 
-# 安装必要的系统依赖（含Python3环境，用于可能的脚本执行）
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    make \
-    g++ \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# 配置pip国内镜像（若需要使用Python库）
-RUN echo "[global]\n\
-trusted-host=mirrors.aliyun.com\n\
-index-url=http://mirrors.aliyun.com/pypi/simple" > /etc/pip.conf
-
-# 清理缓存，进一步减小镜像体积
-RUN rm -rf /var/cache/apt/* && \
-    rm -rf /root/.npm/*
+# 安装 mysqlclient akshare (pandas ,numpy) tornado bokeh
+# 安装 nodejs 库
+# apt-get autoremove -y 删除没有用的依赖lib。减少镜像大小。1MB 也要节省。
+# apt-get --purge remove 软件包名称 , 删除已安装包（不保留配置文件)。
+RUN apt-get update && apt-get install -y python3 make g++ && apt-get clean
