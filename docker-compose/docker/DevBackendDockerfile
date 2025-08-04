@@ -48,7 +48,7 @@ RUN apt-get update && apt-get install -y git pkg-config net-tools procps gcc mak
     pip3 install --no-cache-dir \
         --index-url=https://pypi.tuna.tsinghua.edu.cn/simple \
         --extra-index-url=https://pypi.org/simple \
-        mysqlclient==1.4.6 \  
+        mysqlclient==1.4.6 &&\  
     pip3 install sqlalchemy && \
     pip3 install supervisor && \
     pip3 install numpy pandas  && \
