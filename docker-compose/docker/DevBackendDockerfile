@@ -5,7 +5,10 @@
 
 #FROM docker.io/python:3.11-slim-bullseye
 FROM docker.m.daocloud.io/library/python:3.11-slim-bullseye
-
+# 在 Dockerfile 中添加环境变量强制使用清华源
+ENV PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+ENV PIP_TRUSTED_HOST=pypi.tuna.tsinghua.edu.cn
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
 # https://opsx.alibaba.com/mirror
 # 使用阿里云镜像地址。修改debian apt 更新地址，pip 地址，设置时区。
 # 设置debian的镜像源
