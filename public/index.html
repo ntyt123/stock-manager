@@ -596,6 +596,315 @@
                 align-items: center;
             }
         }
+
+        /* 页签导航样式 */
+        .tab-navigation {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 12px 12px 0 0;
+            padding: 0 20px;
+            margin-bottom: 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .tab-btn {
+            padding: 15px 25px;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn:hover {
+            color: #495057;
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+            position: relative;
+            width: 100%;
+            min-height: 400px;
+            padding: 20px 0;
+            overflow: visible;
+        }
+
+        .tab-content.active {
+            display: block !important;
+            position: relative;
+            opacity: 1;
+            visibility: visible;
+            /* 确保页签内容在最上层显示 */
+            z-index: 1000;
+        }
+        
+        .tab-content .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            width: 100%;
+            height: auto;
+            min-height: 300px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 自选股管理样式 */
+        .watchlist-section {
+            padding: 10px 0;
+        }
+
+        .watchlist-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .watchlist-input .input-field {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .watchlist-input .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+        }
+
+        .watchlist-container {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .watchlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .watchlist-item:last-child {
+            border-bottom: none;
+        }
+
+        .watchlist-item .stock-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .watchlist-item .stock-code {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .watchlist-item .stock-name {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        .remove-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        .remove-btn:hover {
+            background: #c0392b;
+        }
+
+        /* 自选股行情样式 */
+        .watchlist-quotes {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .quote-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f3f4;
+        }
+
+        .quote-item:last-child {
+            border-bottom: none;
+        }
+
+        .quote-info {
+            flex: 1;
+        }
+
+        .quote-symbol {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .quote-price {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .quote-change {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .quote-change.positive {
+            color: #27ae60;
+        }
+
+        .quote-change.negative {
+            color: #e74c3c;
+        }
+
+        /* 新闻容器样式 */
+        .news-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .news-item {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background 0.2s ease;
+        }
+
+        .news-item:hover {
+            background: #f8f9fa;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        /* 分析页面样式 */
+        .analysis-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .analysis-charts {
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .analysis-stats {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .industry-distribution,
+        .risk-assessment {
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .analysis-section {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .tab-navigation {
+                flex-direction: column;
+                padding: 0;
+            }
+            
+            .tab-btn {
+                text-align: center;
+                border-bottom: 1px solid #e9ecef;
+                border-radius: 0;
+            }
+            
+            .tab-btn.active {
+                border-bottom-color: #667eea;
+            }
+        }
         
         /* 模态框样式 */
         .modal {
@@ -913,7 +1222,25 @@
             <p>为您提供实时股票行情、投资组合管理和分析工具</p>
         </div>
 
-        <div class="dashboard">
+        <!-- 页签导航 -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" data-tab="overview">
+                <span class="tab-icon">📊</span>
+                <span class="tab-text">总览</span>
+            </button>
+            <button class="tab-btn" data-tab="market">
+                <span class="tab-icon">🌍</span>
+                <span class="tab-text">股市信息</span>
+            </button>
+            <button class="tab-btn" data-tab="analysis">
+                <span class="tab-icon">📈</span>
+                <span class="tab-text">分析</span>
+            </button>
+        </div>
+
+        <!-- 总览页签内容 -->
+        <div class="tab-content active" id="overview-tab">
+            <div class="dashboard">
             <!-- 实时行情卡片 -->
             <div class="card">
                 <div class="card-header">
@@ -1032,6 +1359,93 @@
             </div>
         </div>
 
+        <!-- 股市信息页签 -->
+        <div id="market-tab" class="tab-content">
+            <div class="dashboard">
+                <!-- 自选股管理 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">⭐</div>
+                        <div class="card-title">自选股管理</div>
+                    </div>
+                    <div class="watchlist-section">
+                        <div class="watchlist-input">
+                            <input type="text" id="stockCodeInput" placeholder="输入股票代码或名称" class="input-field">
+                            <button class="action-btn" onclick="addToWatchlist()">添加自选股</button>
+                        </div>
+                        <div class="watchlist-container" id="watchlistContainer">
+                            <div class="loading-text">暂无自选股，请添加股票代码</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 自选股行情 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📊</div>
+                        <div class="card-title">自选股行情</div>
+                    </div>
+                    <div class="watchlist-quotes" id="watchlistQuotes">
+                        <div class="loading-text">暂无自选股行情数据</div>
+                    </div>
+                </div>
+
+                <!-- 热点新闻 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📰</div>
+                        <div class="card-title">热点新闻</div>
+                    </div>
+                    <div class="news-container" id="newsContainer">
+                        <div class="loading-text">正在加载热点新闻...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分析页签 -->
+        <div id="analysis-tab" class="tab-content">
+            <div class="dashboard">
+                <!-- 持仓分析 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📈</div>
+                        <div class="card-title">持仓分析</div>
+                    </div>
+                    <div class="analysis-section">
+                        <div class="analysis-charts" id="analysisCharts">
+                            <div class="loading-text">暂无持仓数据，请先上传Excel文件</div>
+                        </div>
+                        <div class="analysis-stats" id="analysisStats">
+                            <div class="loading-text">暂无分析数据</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 行业分布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🏢</div>
+                        <div class="card-title">行业分布</div>
+                    </div>
+                    <div class="industry-distribution" id="industryDistribution">
+                        <div class="loading-text">暂无行业分布数据</div>
+                    </div>
+                </div>
+
+                <!-- 风险评估 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">⚠️</div>
+                        <div class="card-title">风险评估</div>
+                    </div>
+                    <div class="risk-assessment" id="riskAssessment">
+                        <div class="loading-text">暂无风险评估数据</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>© 2024 个人股票信息系统 | 版本 0.1</p>
             <p>系统状态: 正常运行 | 最后更新: <span id="update-time"></span></p>
@@ -1051,6 +1465,9 @@
             
             // 初始化Excel上传功能
             initExcelUpload();
+            
+            // 初始化页签功能
+            initTabs();
             
             // 页面加载完成后，延迟加载用户持仓数据
             setTimeout(() => {
@@ -1494,6 +1911,445 @@
             } catch (error) {
                 console.error('加载用户持仓数据错误:', error);
             }
+        }
+
+        // 初始化页签功能
+        function initTabs() {
+            console.log('开始初始化页签功能...');
+            
+            // 确保默认显示总览页签
+            const defaultTab = 'overview';
+            
+            // 隐藏所有页签内容（仅通过CSS类控制）
+            const tabContents = document.querySelectorAll('.tab-content');
+            console.log('找到页签内容数量:', tabContents.length);
+            tabContents.forEach(tab => {
+                tab.classList.remove('active');
+                console.log('移除active类:', tab.id);
+            });
+            
+            // 移除所有页签按钮的激活状态
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            console.log('找到页签按钮数量:', tabBtns.length);
+            tabBtns.forEach(btn => {
+                btn.classList.remove('active');
+                console.log('移除按钮active类:', btn.getAttribute('data-tab'));
+            });
+            
+            // 显示默认页签（仅通过CSS类控制）
+            const defaultTabContent = document.getElementById(defaultTab + '-tab');
+            const defaultTabBtn = document.querySelector(`[data-tab="${defaultTab}"]`);
+            
+            console.log('默认页签内容:', defaultTabContent);
+            console.log('默认页签按钮:', defaultTabBtn);
+            
+            if (defaultTabContent) {
+                defaultTabContent.classList.add('active');
+                console.log('添加默认页签内容active类:', defaultTabContent.id);
+            }
+            
+            if (defaultTabBtn) {
+                defaultTabBtn.classList.add('active');
+                console.log('添加默认页签按钮active类:', defaultTabBtn.getAttribute('data-tab'));
+            }
+            
+            // 为页签按钮添加点击事件（先移除已存在的事件监听器，避免重复绑定）
+            tabBtns.forEach(btn => {
+                // 创建一个函数来处理点击事件
+                const clickHandler = function() {
+                    console.log('页签按钮被点击:', this.getAttribute('data-tab'));
+                    const tabName = this.getAttribute('data-tab');
+                    switchTab(tabName);
+                };
+                
+                // 移除可能已存在的事件监听器
+                if (btn._clickHandler) {
+                    btn.removeEventListener('click', btn._clickHandler);
+                }
+                
+                // 添加新的事件监听器并保存引用
+                btn.addEventListener('click', clickHandler);
+                btn._clickHandler = clickHandler;
+            });
+            
+            console.log('✅ 页签功能初始化完成');
+        }
+
+        // 页签切换功能
+        function switchTab(tabName) {
+            console.log('切换页签:', tabName);
+            
+            // 隐藏所有页签内容（仅通过CSS类控制）
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => {
+                tab.classList.remove('active');
+                tab.style.display = ''; // 清除内联样式，让CSS类控制显示
+                console.log('隐藏页签:', tab.id, '当前display:', window.getComputedStyle(tab).display);
+            });
+            
+            // 移除所有页签按钮的激活状态
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // 显示选中的页签内容（仅通过CSS类控制）
+            const activeTab = document.getElementById(tabName + '-tab');
+            if (activeTab) {
+                activeTab.style.display = ''; // 清除内联样式
+                activeTab.classList.add('active');
+                console.log('显示页签:', activeTab.id, '添加active类后display:', window.getComputedStyle(activeTab).display);
+                
+                // 强制重绘以确保显示
+                activeTab.offsetHeight;
+                
+                // 确保页签内容可见
+                setTimeout(() => {
+                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    console.log('页签显示完成:', activeTab.id, '最终display:', window.getComputedStyle(activeTab).display);
+                }, 50);
+            } else {
+                console.error('找不到页签内容:', tabName + '-tab');
+            }
+            
+            // 激活对应的页签按钮
+            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            } else {
+                console.error('找不到页签按钮:', tabName);
+            }
+            
+            // 根据页签加载特定数据
+            loadTabData(tabName);
+        }
+        
+        // 加载页签数据
+        function loadTabData(tabName) {
+            switch (tabName) {
+                case 'overview':
+                    // 总览页签已经默认加载
+                    break;
+                case 'market':
+                    loadMarketData();
+                    break;
+                case 'analysis':
+                    loadAnalysisData();
+                    break;
+            }
+        }
+        
+        // 加载股市信息数据
+        function loadMarketData() {
+            // 加载自选股列表
+            loadWatchlist();
+            
+            // 加载自选股行情
+            loadWatchlistQuotes();
+            
+            // 加载热点新闻
+            loadHotNews();
+        }
+        
+        // 加载分析数据
+        function loadAnalysisData() {
+            // 检查是否有持仓数据
+            const positions = document.querySelectorAll('.position-card');
+            if (positions.length === 0) {
+                document.getElementById('analysisCharts').innerHTML = 
+                    '<div class="loading-text">暂无持仓数据，请先上传Excel文件</div>';
+                document.getElementById('analysisStats').innerHTML = 
+                    '<div class="loading-text">暂无分析数据</div>';
+                document.getElementById('industryDistribution').innerHTML = 
+                    '<div class="loading-text">暂无行业分布数据</div>';
+                document.getElementById('riskAssessment').innerHTML = 
+                    '<div class="loading-text">暂无风险评估数据</div>';
+                return;
+            }
+            
+            // 显示分析占位符
+            document.getElementById('analysisCharts').innerHTML = 
+                '<div class="loading-text">图表分析功能开发中...</div>';
+            document.getElementById('analysisStats').innerHTML = 
+                '<div class="loading-text">统计数据功能开发中...</div>';
+            document.getElementById('industryDistribution').innerHTML = 
+                '<div class="loading-text">行业分布分析开发中...</div>';
+            document.getElementById('riskAssessment').innerHTML = 
+                '<div class="loading-text">风险评估功能开发中...</div>';
+        }
+        
+        // 加载自选股列表
+        async function loadWatchlist() {
+            const container = document.getElementById('watchlistContainer');
+            
+            if (!container) return;
+            
+            try {
+                // 显示加载状态
+                container.innerHTML = '<div class="loading-text">正在加载自选股...</div>';
+                
+                const response = await fetch('/api/watchlist', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('获取自选股列表失败');
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '获取自选股列表失败');
+                }
+                
+                const watchlist = result.data || [];
+                
+                if (watchlist.length === 0) {
+                    container.innerHTML = '<div class="loading-text">暂无自选股，请添加股票代码</div>';
+                    return;
+                }
+                
+                let html = '';
+                watchlist.forEach(stock => {
+                    html += `
+                        <div class="watchlist-item">
+                            <div class="stock-info">
+                                <span class="stock-code">${stock.stock_code}</span>
+                                <span class="stock-name">${stock.stock_name || '未知股票'}</span>
+                            </div>
+                            <button class="remove-btn" onclick="removeFromWatchlist('${stock.stock_code}')">删除</button>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (error) {
+                console.error('加载自选股列表错误:', error);
+                container.innerHTML = '<div class="error-text">加载自选股失败，请刷新重试</div>';
+            }
+        }
+        
+        // 添加自选股
+        async function addToWatchlist() {
+            const input = document.getElementById('stockCodeInput');
+            const code = input.value.trim();
+            
+            if (!code) {
+                alert('请输入股票代码');
+                return;
+            }
+            
+            // 简单的股票代码验证
+            if (!/^[0-9]{6}$/.test(code)) {
+                alert('请输入正确的6位股票代码');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/watchlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({
+                        stockCode: code,
+                        stockName: '' // 后续可以通过API获取股票名称
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.error || '添加自选股失败');
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '添加自选股失败');
+                }
+                
+                // 清空输入框
+                input.value = '';
+                
+                // 刷新自选股列表
+                await loadWatchlist();
+                
+                // 刷新自选股行情
+                loadWatchlistQuotes();
+                
+                alert('添加成功！');
+                
+            } catch (error) {
+                console.error('添加自选股错误:', error);
+                alert(error.message || '添加自选股失败');
+            }
+        }
+        
+        // 从自选股删除
+        async function removeFromWatchlist(code) {
+            if (!confirm('确定要删除这只自选股吗？')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/watchlist/${code}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(errorResult.error || '删除自选股失败');
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '删除自选股失败');
+                }
+                
+                // 刷新自选股列表
+                await loadWatchlist();
+                
+                // 刷新自选股行情
+                loadWatchlistQuotes();
+                
+                alert('删除成功！');
+                
+            } catch (error) {
+                console.error('删除自选股错误:', error);
+                alert(error.message || '删除自选股失败');
+            }
+        }
+        
+        // 加载自选股行情
+        async function loadWatchlistQuotes() {
+            const container = document.getElementById('watchlistQuotes');
+            
+            if (!container) return;
+            
+            try {
+                // 显示加载状态
+                container.innerHTML = '<div class="loading-text">正在获取行情数据...</div>';
+                
+                // 获取自选股列表
+                const response = await fetch('/api/watchlist', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('获取自选股列表失败');
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success) {
+                    throw new Error(result.error || '获取自选股列表失败');
+                }
+                
+                const watchlist = result.data || [];
+                
+                if (watchlist.length === 0) {
+                    container.innerHTML = '<div class="loading-text">暂无自选股行情数据</div>';
+                    return;
+                }
+                
+                // 模拟行情数据（实际应用中应该调用API）
+                setTimeout(() => {
+                    let html = '';
+                    watchlist.forEach(stock => {
+                        // 模拟价格和涨跌幅
+                        const basePrice = Math.random() * 100 + 10;
+                        const changePercent = (Math.random() - 0.5) * 10;
+                        const change = basePrice * changePercent / 100;
+                        const currentPrice = basePrice + change;
+                        
+                        const isPositive = changePercent >= 0;
+                        
+                        html += `
+                            <div class="quote-item">
+                                <div class="quote-info">
+                                    <span class="quote-symbol">${stock.stock_code}</span>
+                                </div>
+                                <div class="quote-price">¥${currentPrice.toFixed(2)}</div>
+                                <div class="quote-change ${isPositive ? 'positive' : 'negative'}">
+                                    ${isPositive ? '+' : ''}${changePercent.toFixed(2)}%
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    container.innerHTML = html;
+                }, 1000);
+                
+            } catch (error) {
+                console.error('加载自选股行情错误:', error);
+                container.innerHTML = '<div class="error-text">获取行情数据失败</div>';
+            }
+        }
+        
+        // 加载热点新闻
+        function loadHotNews() {
+            const container = document.getElementById('newsContainer');
+            
+            if (!container) return;
+            
+            // 显示加载状态
+            container.innerHTML = '<div class="loading-text">正在加载热点新闻...</div>';
+            
+            // 模拟新闻数据（实际应用中应该调用API）
+            setTimeout(() => {
+                const news = [
+                    {
+                        title: 'A股市场迎来开门红，三大指数集体上涨',
+                        source: '新浪财经',
+                        time: '2小时前'
+                    },
+                    {
+                        title: '科技股领涨，创业板指涨幅超过2%',
+                        source: '腾讯财经',
+                        time: '3小时前'
+                    },
+                    {
+                        title: '央行发布最新货币政策报告，强调稳健中性',
+                        source: '财经网',
+                        time: '5小时前'
+                    },
+                    {
+                        title: '外资持续流入A股市场，北向资金净买入超50亿',
+                        source: '东方财富',
+                        time: '6小时前'
+                    },
+                    {
+                        title: '新能源汽车板块表现强势，多家公司涨停',
+                        source: '证券时报',
+                        time: '8小时前'
+                    }
+                ];
+                
+                let html = '';
+                news.forEach(item => {
+                    html += `
+                        <div class="news-item">
+                            <div class="news-title">${item.title}</div>
+                            <div class="news-meta">
+                                <span class="news-source">${item.source}</span>
+                                <span class="news-time">${item.time}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                container.innerHTML = html;
+            }, 1500);
         }
 
         // 显示光大证券持仓数据

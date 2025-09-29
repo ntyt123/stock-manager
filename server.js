@@ -6,7 +6,7 @@ const path = require('path');
 const fileUpload = require('express-fileupload');
 const XLSX = require('xlsx');
 const iconv = require('iconv-lite');
-const { initDatabase, userModel, positionModel, positionUpdateModel } = require('./database');
+const { initDatabase, userModel, positionModel, positionUpdateModel, watchlistModel } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -732,6 +732,120 @@ app.get('/api/positions', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             error: '获取持仓数据失败'
+        });
+    }
+});
+
+// 获取用户自选股列表
+app.get('/api/watchlist', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // 获取用户的自选股列表
+        const watchlist = await watchlistModel.findByUserId(userId);
+        
+        res.json({
+            success: true,
+            data: watchlist
+        });
+        
+    } catch (error) {
+        console.error('获取自选股列表错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '获取自选股列表失败'
+        });
+    }
+});
+
+// 添加自选股
+app.post('/api/watchlist', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { stockCode, stockName } = req.body;
+        
+        if (!stockCode) {
+            return res.status(400).json({
+                success: false,
+                error: '股票代码是必填的'
+            });
+        }
+        
+        // 验证股票代码格式
+        if (!/^[0-9]{6}$/.test(stockCode)) {
+            return res.status(400).json({
+                success: false,
+                error: '请输入正确的6位股票代码'
+            });
+        }
+        
+        // 检查自选股是否已存在
+        const exists = await watchlistModel.exists(userId, stockCode);
+        if (exists) {
+            return res.status(400).json({
+                success: false,
+                error: '该股票已在自选股列表中'
+            });
+        }
+        
+        // 添加自选股
+        const result = await watchlistModel.add(userId, stockCode, stockName || '未知股票');
+        
+        res.json({
+            success: true,
+            message: '添加自选股成功',
+            data: {
+                id: result.id,
+                stockCode,
+                stockName: stockName || '未知股票'
+            }
+        });
+        
+    } catch (error) {
+        console.error('添加自选股错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '添加自选股失败'
+        });
+    }
+});
+
+// 删除自选股
+app.delete('/api/watchlist/:stockCode', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { stockCode } = req.params;
+        
+        if (!stockCode) {
+            return res.status(400).json({
+                success: false,
+                error: '股票代码是必填的'
+            });
+        }
+        
+        // 删除自选股
+        const result = await watchlistModel.remove(userId, stockCode);
+        
+        if (result.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: '自选股不存在'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: '删除自选股成功',
+            data: {
+                deletedCount: result.changes
+            }
+        });
+        
+    } catch (error) {
+        console.error('删除自选股错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '删除自选股失败'
         });
     }
 });

@@ -72,7 +72,22 @@ function initDatabase() {
                         return;
                     }
                     
-                    // 检查是否需要插入默认用户
+                    // 创建用户自选股表
+                    db.run(`CREATE TABLE IF NOT EXISTS user_watchlist (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        user_id INTEGER NOT NULL,
+                        stock_code TEXT NOT NULL,
+                        stock_name TEXT NOT NULL,
+                        added_at TEXT NOT NULL,
+                        FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+                        UNIQUE(user_id, stock_code)
+                    )`, (err) => {
+                        if (err) {
+                            reject(err);
+                            return;
+                        }
+                        
+                        // 检查是否需要插入默认用户
                     db.get("SELECT COUNT(*) as count FROM users", (err, row) => {
                         if (err) {
                             reject(err);
@@ -138,7 +153,7 @@ function initDatabase() {
             });
         });
     });
-};
+})};
 
 // 用户相关数据库操作
 const userModel = {
@@ -410,6 +425,73 @@ const positionUpdateModel = {
     }
 };
 
+// 自选股相关数据库操作
+const watchlistModel = {
+    // 获取用户的自选股列表
+    findByUserId: (userId) => {
+        return new Promise((resolve, reject) => {
+            db.all(`SELECT * FROM user_watchlist WHERE user_id = ? ORDER BY added_at DESC`, [userId], (err, rows) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(rows);
+                }
+            });
+        });
+    },
+    
+    // 添加自选股
+    add: (userId, stockCode, stockName) => {
+        return new Promise((resolve, reject) => {
+            const currentTime = new Date().toISOString();
+            
+            db.run(`INSERT INTO user_watchlist (user_id, stock_code, stock_name, added_at) 
+                VALUES (?, ?, ?, ?)`, 
+                [userId, stockCode, stockName, currentTime], 
+                function(err) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve({ id: this.lastID });
+                    }
+                }
+            );
+        });
+    },
+    
+    // 删除自选股
+    remove: (userId, stockCode) => {
+        return new Promise((resolve, reject) => {
+            db.run(`DELETE FROM user_watchlist WHERE user_id = ? AND stock_code = ?`, 
+                [userId, stockCode], 
+                function(err) {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve({ changes: this.changes });
+                    }
+                }
+            );
+        });
+    },
+    
+    // 检查自选股是否存在
+    exists: (userId, stockCode) => {
+        return new Promise((resolve, reject) => {
+            db.get(`SELECT COUNT(*) as count FROM user_watchlist WHERE user_id = ? AND stock_code = ?`, 
+                [userId, stockCode], 
+                (err, row) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(row.count > 0);
+                    }
+                }
+            );
+        });
+    }
+};
+
 // 关闭数据库连接
 function closeDatabase() {
     db.close((err) => {
@@ -427,5 +509,6 @@ module.exports = {
     userModel,
     positionModel,
     positionUpdateModel,
+    watchlistModel,
     closeDatabase
 };
