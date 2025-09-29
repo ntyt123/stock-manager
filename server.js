@@ -5,7 +5,8 @@ const cors = require('cors');
 const path = require('path');
 const fileUpload = require('express-fileupload');
 const XLSX = require('xlsx');
-const { initDatabase, userModel } = require('./database');
+const iconv = require('iconv-lite');
+const { initDatabase, userModel, positionModel, positionUpdateModel } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -227,6 +228,11 @@ app.post('/api/upload/positions', authenticateToken, async (req, res) => {
             });
         }
 
+        // 修复文件名中的中文字符乱码
+        const fixedFileName = fixChineseCharacters(file.name);
+        console.log('原始文件名:', file.name);
+        console.log('修复后文件名:', fixedFileName);
+
         // 解析Excel文件
         const positions = await parseExcelFile(file.data);
         
@@ -243,20 +249,71 @@ app.post('/api/upload/positions', authenticateToken, async (req, res) => {
         const totalProfitLoss = positions.reduce((sum, pos) => sum + pos.profitLoss, 0);
         const totalProfitLossRate = totalCost > 0 ? (totalProfitLoss / totalCost * 100).toFixed(2) : 0;
 
-        res.json({
-            success: true,
-            message: 'Excel文件解析成功',
-            data: {
-                positions: positions,
-                summary: {
-                    totalMarketValue: totalMarketValue,
-                    totalProfitLoss: totalProfitLoss,
-                    totalProfitLossRate: totalProfitLossRate,
-                    positionCount: positions.length,
-                    lastUpdate: new Date().toISOString()
+        try {
+            // 保存持仓数据到数据库
+            const saveResult = await positionModel.saveOrUpdatePositions(req.user.id, positions);
+            console.log(`✅ 持仓数据保存成功: ${saveResult.totalRecords}条记录`);
+            
+            // 记录更新日志
+            await positionUpdateModel.recordUpdate(
+                req.user.id,
+                fixedFileName,
+                'success',
+                null,
+                saveResult.totalRecords,
+                saveResult.totalRecords
+            );
+            
+            // 获取最新的更新时间
+            const latestUpdate = await positionUpdateModel.getLatestUpdate(req.user.id);
+            
+            res.json({
+                success: true,
+                message: 'Excel文件解析成功，数据已保存到数据库',
+                data: {
+                    positions: positions,
+                    summary: {
+                        totalMarketValue: totalMarketValue,
+                        totalProfitLoss: totalProfitLoss,
+                        totalProfitLossRate: totalProfitLossRate,
+                        positionCount: positions.length,
+                        lastUpdate: latestUpdate ? latestUpdate.updateTime : new Date().toISOString(),
+                        fileName: fixedFileName
+                    }
                 }
-            }
-        });
+            });
+            
+        } catch (dbError) {
+            console.error('❌ 数据库保存失败:', dbError);
+            
+            // 记录失败日志
+            await positionUpdateModel.recordUpdate(
+                req.user.id,
+                fixedFileName,
+                'failed',
+                dbError.message,
+                positions.length,
+                0
+            );
+            
+            // 即使数据库保存失败，也返回解析的数据，让用户知道文件解析是成功的
+            res.json({
+                success: true,
+                message: 'Excel文件解析成功，但数据保存到数据库失败',
+                warning: '数据仅显示在页面上，下次登录需要重新上传',
+                data: {
+                    positions: positions,
+                    summary: {
+                        totalMarketValue: totalMarketValue,
+                        totalProfitLoss: totalProfitLoss,
+                        totalProfitLossRate: totalProfitLossRate,
+                        positionCount: positions.length,
+                        lastUpdate: new Date().toISOString(),
+                        fileName: fixedFileName
+                    }
+                }
+            });
+        }
         
     } catch (error) {
         console.error('Excel文件解析错误:', error);
@@ -273,38 +330,63 @@ function fixChineseCharacters(text) {
     
     console.log('原始文本:', text);
     
-    // 手动映射已知的乱码字符到正确的中文
-     const charMap = {
-         // 从日志中看到的乱码映射
-         '�ϰ�ɷ�': '杭电股份',
-         '����ɷ�': '杭齿股份', 
-         '�춹�ɷ�': '红豆股份',
-         '�е�����': '中电鑫龙',  // 修正：中电兴发 -> 中电鑫龙
-         'ɽ�Ӹ߿�': '山高股份'
-     };
-    
-    // 检查是否有完整的乱码字符串匹配
-    for (const [badText, goodText] of Object.entries(charMap)) {
-        if (text === badText) {
-            console.log('修复乱码:', badText, '->', goodText);
-            return goodText;
-        }
+    // 如果文本已经是正确的中文，直接返回
+    if (/[\u4e00-\u9fa5]/.test(text) && !text.includes('�') && !text.includes('\ufffd')) {
+        console.log('文本已经是正确的中文，无需处理');
+        return text;
     }
     
-    // 如果文本包含乱码字符，尝试编码转换
-    if (text.includes('�') || text.includes('\ufffd')) {
+    // 尝试多种编码转换
+    const encodings = ['gbk', 'gb2312', 'gb18030', 'big5', 'utf8'];
+    
+    for (const encoding of encodings) {
         try {
-            // 尝试从GBK编码转换
-            const iconv = require('iconv-lite');
-            const buffer = Buffer.from(text, 'binary');
-            const decoded = iconv.decode(buffer, 'gbk');
-            console.log('GBK解码结果:', decoded);
-            return decoded;
+            // 方法1：直接使用iconv进行编码转换
+            const decodedText1 = iconv.decode(Buffer.from(text, 'binary'), encoding);
+            console.log(`方法1 - 编码 ${encoding}: ${decodedText1}`);
+            
+            // 方法2：尝试将文本视为latin1编码，然后转换
+            const decodedText2 = iconv.decode(Buffer.from(text, 'latin1'), encoding);
+            console.log(`方法2 - 编码 ${encoding}: ${decodedText2}`);
+            
+            // 方法3：尝试将文本视为utf8编码，然后转换（针对双重编码情况）
+            let decodedText3 = text;
+            try {
+                // 先尝试将乱码文本解码为Buffer，再重新编码
+                const tempBuffer = iconv.encode(text, 'utf8');
+                decodedText3 = iconv.decode(tempBuffer, encoding);
+            } catch (e) {
+                decodedText3 = text;
+            }
+            console.log(`方法3 - 编码 ${encoding}: ${decodedText3}`);
+            
+            // 检查哪个转换结果最可能是正确的中文
+            const candidates = [decodedText1, decodedText2, decodedText3];
+            for (const candidate of candidates) {
+                // 检查转换结果是否包含中文字符且没有乱码
+                if (/[\u4e00-\u9fa5]/.test(candidate) && 
+                    !candidate.includes('�') && 
+                    !candidate.includes('\ufffd') &&
+                    candidate.length > 0 &&
+                    candidate !== text) {
+                    console.log(`✅ 使用编码 ${encoding} 成功转换: ${candidate}`);
+                    return candidate;
+                }
+            }
         } catch (error) {
-            console.log('编码转换失败，使用原始文本');
+            console.log(`编码 ${encoding} 转换失败:`, error.message);
         }
     }
     
+    // 如果所有编码转换都失败，尝试简单的字符清理
+    console.log('所有编码转换失败，尝试字符清理');
+    const cleanedText = text.replace(/[�\ufffd]/g, '').trim();
+    if (cleanedText && cleanedText !== text) {
+        console.log('清理后文本:', cleanedText);
+        return cleanedText;
+    }
+    
+    console.log('无法修复乱码，返回原始文本');
     return text;
 }
 
@@ -313,13 +395,17 @@ async function parseExcelFile(fileBuffer) {
     try {
         console.log('开始解析Excel文件...');
         
-        // 使用xlsx库解析Excel文件，添加字符编码选项
-        const workbook = XLSX.read(fileBuffer, { 
+        // 使用xlsx库解析Excel文件，针对.xls格式优化
+        const workbook = XLSX.read(fileBuffer, {
             type: 'buffer',
-            codepage: 65001, // 使用UTF-8编码
+            codepage: 936, // GBK编码，适用于中文.xls文件
             cellText: true,
-            cellDates: true
+            cellDates: true,
+            raw: false, // 获取格式化后的文本
+            WTF: true // 启用WTF模式，更好地处理中文编码
         });
+        
+        console.log('Excel文件读取成功，工作表数量:', workbook.SheetNames.length);
         
         // 获取第一个工作表
         const firstSheetName = workbook.SheetNames[0];
@@ -327,7 +413,7 @@ async function parseExcelFile(fileBuffer) {
         
         console.log('工作表名称:', firstSheetName);
         
-        // 将工作表转换为JSON格式，添加原始数据选项
+        // 将工作表转换为JSON格式
         const jsonData = XLSX.utils.sheet_to_json(worksheet, { 
             header: 1,
             raw: false, // 获取格式化后的文本值
@@ -335,14 +421,14 @@ async function parseExcelFile(fileBuffer) {
         });
         
         console.log('Excel数据行数:', jsonData.length);
-        console.log('前几行数据:', jsonData.slice(0, 3));
+        console.log('前3行数据预览:', jsonData.slice(0, 3));
         
         // 查找数据开始行（跳过表头）
         let dataStartRow = 0;
         for (let i = 0; i < jsonData.length; i++) {
             const row = jsonData[i];
             if (Array.isArray(row) && row.some(cell => 
-                typeof cell === 'string' && (cell.includes('证券代码') || cell.includes('股票代码') || cell.includes('֤ȯ')))) {
+                typeof cell === 'string' && (cell.includes('证券代码') || cell.includes('股票代码')))) {
                 dataStartRow = i + 1; // 数据从下一行开始
                 console.log('找到表头行:', i, '数据从第', dataStartRow, '行开始');
                 break;
@@ -356,7 +442,7 @@ async function parseExcelFile(fileBuffer) {
         }
         
         const positions = [];
-        let parsedCount = 0;
+        let validCount = 0;
         
         // 解析持仓数据行
         for (let i = dataStartRow; i < jsonData.length; i++) {
@@ -373,7 +459,7 @@ async function parseExcelFile(fileBuffer) {
             
             // 第2列：证券代码（需要去除公式符号）
             if (row[1] !== undefined && row[1] !== null && row[1] !== '') {
-                stockCode = row[1].toString().replace(/[="]/g, '').trim();
+                stockCode = row[1].toString().replace(/[="\s]/g, '').trim();
                 console.log('证券代码:', stockCode);
             }
             
@@ -401,64 +487,45 @@ async function parseExcelFile(fileBuffer) {
             // 第8列：盈亏率
             profitLossRate = parseFloat(row[7]) || 0;
             
-            console.log('解析结果:', { stockCode, stockName, quantity, costPrice, currentPrice });
+            console.log('解析结果:', { stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate });
             
             // 如果缺少当前价，使用成本价加盈亏计算
+            let finalCurrentPrice = currentPrice;
             if (currentPrice === 0 && costPrice > 0 && quantity > 0) {
-                currentPrice = costPrice + (profitLoss / quantity);
+                finalCurrentPrice = costPrice + (profitLoss / quantity);
             }
             
             // 如果缺少市值，使用当前价和数量计算
-            if (marketValue === 0 && currentPrice > 0 && quantity > 0) {
-                marketValue = currentPrice * quantity;
+            let finalMarketValue = marketValue;
+            if (marketValue === 0 && finalCurrentPrice > 0 && quantity > 0) {
+                finalMarketValue = finalCurrentPrice * quantity;
             }
             
-            // 验证必要字段
+            // 验证数据有效性
             if (stockCode && stockName && quantity > 0) {
                 positions.push({
                     stockCode: stockCode,
                     stockName: stockName,
                     quantity: quantity,
                     costPrice: costPrice,
-                    currentPrice: currentPrice > 0 ? currentPrice : costPrice,
-                    marketValue: marketValue > 0 ? marketValue : (currentPrice * quantity),
+                    currentPrice: finalCurrentPrice > 0 ? finalCurrentPrice : costPrice,
+                    marketValue: finalMarketValue > 0 ? finalMarketValue : (finalCurrentPrice * quantity),
                     profitLoss: profitLoss,
                     profitLossRate: profitLossRate
                 });
-                parsedCount++;
-                console.log('成功解析第', parsedCount, '条数据');
+                validCount++;
+                console.log('成功解析第', validCount, '条数据');
             } else {
                 console.log('数据验证失败，跳过该行');
             }
         }
         
-        console.log('总共解析到', positions.length, '条有效数据');
+        console.log('总共解析到', validCount, '条有效数据');
         
-        // 如果没有解析到数据，返回模拟数据作为备选
-        if (positions.length === 0) {
-            console.log('Excel文件解析失败，返回模拟数据');
-            return [
-                {
-                    stockCode: '002298',
-                    stockName: '中电兴发',
-                    quantity: 200,
-                    costPrice: 10.915,
-                    currentPrice: 12.86,
-                    marketValue: 2572,
-                    profitLoss: 389,
-                    profitLossRate: 17.82
-                },
-                {
-                    stockCode: '000981',
-                    stockName: '银泰黄金',
-                    quantity: 400,
-                    costPrice: 4.273,
-                    currentPrice: 3.50,
-                    marketValue: 1400,
-                    profitLoss: -309.18,
-                    profitLossRate: -18.09
-                }
-            ];
+        // 如果没有解析到数据，返回空数组而不是模拟数据
+        if (validCount === 0) {
+            console.log('Excel文件解析成功但未找到有效数据，返回空数组');
+            return [];
         }
         
         return positions;
@@ -466,39 +533,9 @@ async function parseExcelFile(fileBuffer) {
     } catch (error) {
         console.error('Excel文件解析错误:', error);
         
-        // 解析失败时返回模拟数据
-        return [
-            {
-                stockCode: '002298',
-                stockName: '中电兴发',
-                quantity: 200,
-                costPrice: 10.915,
-                currentPrice: 12.86,
-                marketValue: 2572,
-                profitLoss: 389,
-                profitLossRate: 17.82
-            },
-            {
-                stockCode: '000981',
-                stockName: '银泰黄金',
-                quantity: 400,
-                costPrice: 4.273,
-                currentPrice: 3.50,
-                marketValue: 1400,
-                profitLoss: -309.18,
-                profitLossRate: -18.09
-            },
-            {
-                stockCode: '603316',
-                stockName: '迪贝电气',
-                quantity: 100,
-                costPrice: 14.50,
-                currentPrice: 13.12,
-                marketValue: 1312,
-                profitLoss: -138.01,
-                profitLossRate: -9.52
-            }
-        ];
+        // 解析失败时返回空数组而不是模拟数据
+        console.log('Excel文件解析失败，返回空数组');
+        return [];
     }
 }
 
@@ -650,6 +687,86 @@ app.get('/api/health', (req, res) => {
         message: '个人股票信息系统运行正常',
         timestamp: new Date().toISOString()
     });
+});
+
+// 获取用户持仓数据
+app.get('/api/positions', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // 获取用户的持仓数据
+        const positions = await positionModel.findByUserId(userId);
+        
+        // 获取最新的更新时间
+        const latestUpdate = await positionUpdateModel.getLatestUpdate(userId);
+        
+        // 计算汇总信息
+        const totalMarketValue = positions.reduce((sum, pos) => sum + pos.marketValue, 0);
+        const totalCost = positions.reduce((sum, pos) => sum + (pos.costPrice * pos.quantity), 0);
+        const totalProfitLoss = positions.reduce((sum, pos) => sum + pos.profitLoss, 0);
+        const totalProfitLossRate = totalCost > 0 ? (totalProfitLoss / totalCost * 100).toFixed(2) : 0;
+        
+        res.json({
+            success: true,
+            data: {
+                positions: positions,
+                summary: {
+                    totalMarketValue: totalMarketValue,
+                    totalProfitLoss: totalProfitLoss,
+                    totalProfitLossRate: totalProfitLossRate,
+                    positionCount: positions.length,
+                    lastUpdate: latestUpdate ? latestUpdate.updateTime : null,
+                    fileName: latestUpdate ? latestUpdate.fileName : null
+                },
+                updateHistory: latestUpdate ? {
+                    status: latestUpdate.status,
+                    totalRecords: latestUpdate.totalRecords,
+                    successRecords: latestUpdate.successRecords,
+                    errorMessage: latestUpdate.errorMessage
+                } : null
+            }
+        });
+        
+    } catch (error) {
+        console.error('获取持仓数据错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '获取持仓数据失败'
+        });
+    }
+});
+
+// 清空用户持仓数据
+app.delete('/api/positions', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // 删除用户的所有持仓数据
+        const result = await positionModel.deleteByUserId(userId);
+        
+        // 记录清空操作
+        await positionUpdateModel.recordUpdate(
+            userId,
+            '手动清空',
+            'cleared',
+            null,
+            0,
+            0
+        );
+        
+        res.json({
+            success: true,
+            message: '持仓数据已清空',
+            deletedCount: result.changes
+        });
+        
+    } catch (error) {
+        console.error('清空持仓数据错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '清空持仓数据失败'
+        });
+    }
 });
 
 // 启动服务器

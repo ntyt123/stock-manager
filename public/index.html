@@ -417,6 +417,185 @@
             color: #0c5460;
             border: 1px solid #bee5eb;
         }
+
+        /* 美化持仓显示样式 */
+        .position-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(168, 237, 234, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .position-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .position-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .stock-info {
+            flex: 1;
+        }
+
+        .stock-symbol {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .stock-name {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .profit-indicator {
+            font-size: 1.8rem;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+        }
+
+        .profit-indicator.profit {
+            background: rgba(39, 174, 96, 0.1);
+            color: #27ae60;
+        }
+
+        .profit-indicator.loss {
+            background: rgba(231, 76, 60, 0.1);
+            color: #e74c3c;
+        }
+
+        .position-stats {
+            background: rgba(168, 237, 234, 0.08);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .stat-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .position-summary {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .profit-loss {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .profit-loss.profit {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+        }
+
+        .profit-loss.loss {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+        }
+
+        .profit-amount {
+            font-size: 1.2rem;
+        }
+
+        .profit-rate {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .positions-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .positions-list {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .position-card {
+                padding: 15px;
+                margin: 10px 0;
+            }
+            
+            .stat-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stat-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
         
         /* 模态框样式 */
         .modal {
@@ -647,6 +826,34 @@
             border-top: 1px solid rgba(138, 43, 226, 0.3);
         }
 
+        /* 持仓数据更新信息样式 */
+        .position-update-info {
+            background: rgba(138, 43, 226, 0.1);
+            border: 1px solid rgba(138, 43, 226, 0.2);
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+        }
+
+        .update-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .update-label {
+            font-weight: 600;
+            color: #8A2BE2;
+        }
+
+        .update-time {
+            color: #666;
+        }
+
+
+
         @media (max-width: 768px) {
             .container {
                 padding: 20px 15px;
@@ -833,8 +1040,8 @@
 
     <script>
         // 页面加载时检查登录状态
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
+        document.addEventListener('DOMContentLoaded', async function() {
+            await checkAuth();
             updateTime();
             setInterval(updateTime, 1000);
             
@@ -844,6 +1051,11 @@
             
             // 初始化Excel上传功能
             initExcelUpload();
+            
+            // 页面加载完成后，延迟加载用户持仓数据
+            setTimeout(() => {
+                loadUserPositions();
+            }, 500);
         });
         
         // 打开Excel上传模态框
@@ -954,7 +1166,7 @@
                     
                     // 延迟后显示持仓数据
                     setTimeout(() => {
-                        displayUploadedPositions(data.data.positions);
+                        displayUploadedPositions(data.data.positions, data.data.summary);
                         showUploadStatus('数据解析完成！', 'success');
                         
                         // 上传成功后关闭模态框
@@ -984,20 +1196,83 @@
         }
 
         // 清空上传的数据
-        function clearUploadedData() {
-            document.getElementById('uploadedTotalValue').textContent = '¥0.00';
-            document.getElementById('uploadedProfitLoss').textContent = '总盈亏: ¥0.00 (0.00%)';
-            document.getElementById('uploadedPositions').innerHTML = 
-                '<div class="loading-text">请上传Excel文件查看持仓数据</div>';
+        async function clearUploadedData() {
+            const token = localStorage.getItem('token');
             
-            const statusDiv = document.getElementById('uploadStatus');
-            if (statusDiv) {
-                statusDiv.style.display = 'none';
-                statusDiv.textContent = '';
+            if (!token) {
+                // 未登录状态，只清空本地显示
+                document.getElementById('uploadedTotalValue').textContent = '¥0.00';
+                document.getElementById('uploadedProfitLoss').textContent = '总盈亏: ¥0.00 (0.00%)';
+                document.getElementById('uploadedPositions').innerHTML = 
+                    '<div class="loading-text">请上传Excel文件查看持仓数据</div>';
+                
+                const statusDiv = document.getElementById('uploadStatus');
+                if (statusDiv) {
+                    statusDiv.style.display = 'none';
+                    statusDiv.textContent = '';
+                }
+                
+                const fileInput = document.getElementById('excelFileInput');
+                if (fileInput) fileInput.value = '';
+                
+                // 移除更新时间信息
+                const updateInfo = document.getElementById('positionUpdateInfo');
+                if (updateInfo) {
+                    updateInfo.remove();
+                }
+                
+                return;
             }
             
-            const fileInput = document.getElementById('excelFileInput');
-            if (fileInput) fileInput.value = '';
+            // 确认清空操作
+            if (!confirm('确定要清空所有持仓数据吗？此操作不可恢复。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/positions', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        // 清空本地显示
+                        document.getElementById('uploadedTotalValue').textContent = '¥0.00';
+                        document.getElementById('uploadedProfitLoss').textContent = '总盈亏: ¥0.00 (0.00%)';
+                        document.getElementById('uploadedPositions').innerHTML = 
+                            '<div class="loading-text">请上传Excel文件查看持仓数据</div>';
+                        
+                        const statusDiv = document.getElementById('uploadStatus');
+                        if (statusDiv) {
+                            statusDiv.style.display = 'none';
+                            statusDiv.textContent = '';
+                        }
+                        
+                        const fileInput = document.getElementById('excelFileInput');
+                        if (fileInput) fileInput.value = '';
+                        
+                        // 移除更新时间信息
+                        const updateInfo = document.getElementById('positionUpdateInfo');
+                        if (updateInfo) {
+                            updateInfo.remove();
+                        }
+                        
+                        showNotification('持仓数据已清空', 'success');
+                        console.log(`✅ 持仓数据已清空，删除了 ${result.deletedCount} 条记录`);
+                    } else {
+                        showNotification('清空数据失败：' + (result.error || '未知错误'), 'error');
+                    }
+                } else {
+                    showNotification('清空数据失败，请重试', 'error');
+                }
+            } catch (error) {
+                console.error('清空持仓数据错误:', error);
+                showNotification('清空数据失败，网络连接错误', 'error');
+            }
         }
 
         // 检查认证状态
@@ -1028,7 +1303,7 @@
         }
 
         // 显示上传的持仓数据
-        function displayUploadedPositions(positions) {
+        function displayUploadedPositions(positions, summary = null) {
             const container = document.getElementById('uploadedPositions');
             const totalValueEl = document.getElementById('uploadedTotalValue');
             const profitLossEl = document.getElementById('uploadedProfitLoss');
@@ -1039,21 +1314,67 @@
                 container.innerHTML = '<div class="loading-text">未找到持仓数据</div>';
                 totalValueEl.textContent = '¥0.00';
                 profitLossEl.textContent = '总盈亏: ¥0.00 (0.00%)';
+                
+                // 移除更新时间信息
+                const updateInfo = document.getElementById('positionUpdateInfo');
+                if (updateInfo) {
+                    updateInfo.remove();
+                }
+                
                 return;
             }
             
-            // 计算总市值和总盈亏
-            let totalMarketValue = 0;
-            let totalProfitLoss = 0;
-            let totalCost = 0;
-            
-            positions.forEach(position => {
-                totalMarketValue += parseFloat(position.marketValue) || 0;
-                totalProfitLoss += parseFloat(position.profitLoss) || 0;
-                totalCost += parseFloat(position.costPrice) || 0;
-            });
-            
-            const profitLossRate = totalCost > 0 ? (totalProfitLoss / totalCost * 100).toFixed(2) : '0.00';
+            // 如果提供了汇总信息，直接使用，否则重新计算
+            let totalMarketValue, totalProfitLoss, totalCost, profitLossRate;
+            if (summary) {
+                totalMarketValue = summary.totalMarketValue;
+                totalProfitLoss = summary.totalProfitLoss;
+                totalCost = summary.totalCost || 0;
+                profitLossRate = summary.totalProfitLossRate;
+                
+                // 显示更新时间信息
+                if (summary.lastUpdate) {
+                    const updateTime = new Date(summary.lastUpdate).toLocaleString('zh-CN');
+                    
+                    // 创建或更新状态显示元素
+                    let statusDiv = document.getElementById('positionUpdateInfo');
+                    if (!statusDiv) {
+                        statusDiv = document.createElement('div');
+                        statusDiv.id = 'positionUpdateInfo';
+                        statusDiv.className = 'position-update-info';
+                        const positionsContainer = document.getElementById('uploadedPositions');
+                        if (positionsContainer) {
+                            positionsContainer.parentNode.insertBefore(statusDiv, positionsContainer);
+                        }
+                    }
+                    
+                    statusDiv.innerHTML = `
+                        <div class="update-info">
+                            <span class="update-label">数据更新时间:</span>
+                            <span class="update-time">${updateTime}</span>
+                        </div>
+                    `;
+                }
+            } else {
+                // 计算总市值和总盈亏
+                totalMarketValue = 0;
+                totalProfitLoss = 0;
+                totalCost = 0;
+                
+                positions.forEach(position => {
+                    totalMarketValue += parseFloat(position.marketValue) || 0;
+                    totalProfitLoss += parseFloat(position.profitLoss) || 0;
+                    totalCost += parseFloat(position.costPrice) || 0;
+                });
+                
+                profitLossRate = totalCost > 0 ? (totalProfitLoss / totalCost * 100).toFixed(2) : '0.00';
+                
+                // 移除更新时间信息
+                const updateInfo = document.getElementById('positionUpdateInfo');
+                if (updateInfo) {
+                    updateInfo.remove();
+                }
+            }
             
             // 更新总市值和盈亏显示
             totalValueEl.textContent = `¥${totalMarketValue.toFixed(2)}`;
@@ -1066,20 +1387,48 @@
                 const profitLoss = parseFloat(position.profitLoss) || 0;
                 const profitLossRate = parseFloat(position.profitLossRate) || 0;
                 const isProfit = profitLoss >= 0;
+                const profitIcon = isProfit ? '📈' : '📉';
                 
                 html += `
-                    <div class="position-item">
-                        <div class="position-info">
-                            <div class="stock-symbol">${position.stockCode}</div>
-                            <div class="stock-name">${position.stockName}</div>
+                    <div class="position-card">
+                        <div class="position-header">
+                            <div class="stock-info">
+                                <div class="stock-symbol">${position.stockCode}</div>
+                                <div class="stock-name">${position.stockName}</div>
+                            </div>
+                            <div class="profit-indicator ${isProfit ? 'profit' : 'loss'}">
+                                ${profitIcon}
+                            </div>
                         </div>
-                        <div class="position-details">
-                            <div class="position-quantity">持仓: ${position.quantity}</div>
-                            <div class="position-cost">成本: ¥${parseFloat(position.costPrice).toFixed(2)}</div>
-                            <div class="position-price">现价: ¥${parseFloat(position.currentPrice).toFixed(2)}</div>
-                            <div class="position-value">市值: ¥${parseFloat(position.marketValue).toFixed(2)}</div>
-                            <div class="position-profit ${isProfit ? 'positive' : 'negative'}">
-                                ${isProfit ? '+' : ''}¥${profitLoss.toFixed(2)} (${isProfit ? '+' : ''}${profitLossRate.toFixed(2)}%)
+                        
+                        <div class="position-stats">
+                            <div class="stat-row">
+                                <div class="stat-item">
+                                    <span class="stat-label">持仓数量</span>
+                                    <span class="stat-value">${position.quantity}股</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">成本价</span>
+                                    <span class="stat-value">¥${parseFloat(position.costPrice).toFixed(2)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-row">
+                                <div class="stat-item">
+                                    <span class="stat-label">当前价</span>
+                                    <span class="stat-value">¥${parseFloat(position.currentPrice).toFixed(2)}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">市值</span>
+                                    <span class="stat-value">¥${parseFloat(position.marketValue).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="position-summary">
+                            <div class="profit-loss ${isProfit ? 'profit' : 'loss'}">
+                                <span class="profit-amount">${isProfit ? '+' : ''}¥${profitLoss.toFixed(2)}</span>
+                                <span class="profit-rate">${isProfit ? '+' : ''}${profitLossRate.toFixed(2)}%</span>
                             </div>
                         </div>
                     </div>
@@ -1088,6 +1437,63 @@
             
             html += '</div>';
             container.innerHTML = html;
+        }
+
+        // 加载用户持仓数据
+        async function loadUserPositions() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                console.log('用户未登录，跳过加载持仓数据');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/positions', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.data.positions.length > 0) {
+                        // 显示持仓数据
+                        displayUploadedPositions(result.data.positions, result.data.summary);
+                        
+                        // 显示更新时间信息
+                        if (result.data.summary.lastUpdate) {
+                            const updateTime = new Date(result.data.summary.lastUpdate).toLocaleString('zh-CN');
+                            
+                            // 创建或更新状态显示元素
+                            let statusDiv = document.getElementById('positionUpdateInfo');
+                            if (!statusDiv) {
+                                statusDiv = document.createElement('div');
+                                statusDiv.id = 'positionUpdateInfo';
+                                statusDiv.className = 'position-update-info';
+                                const positionsContainer = document.getElementById('uploadedPositions');
+                                if (positionsContainer) {
+                                    positionsContainer.parentNode.insertBefore(statusDiv, positionsContainer);
+                                }
+                            }
+                            
+                            statusDiv.innerHTML = `
+                                <div class="update-info">
+                                    <span class="update-label">数据更新时间:</span>
+                                    <span class="update-time">${updateTime}</span>
+                                </div>
+                            `;
+                        }
+                        
+                        console.log('✅ 用户持仓数据加载成功');
+                    } else {
+                        console.log('用户暂无持仓数据');
+                    }
+                } else {
+                    console.error('获取持仓数据失败:', response.status);
+                }
+            } catch (error) {
+                console.error('加载用户持仓数据错误:', error);
+            }
         }
 
         // 显示光大证券持仓数据
@@ -1110,18 +1516,51 @@
             }
 
             positionsContainer.innerHTML = positions.map(position => {
-                const profitClass = position.profitLoss >= 0 ? 'profit-positive' : 'profit-negative';
+                const profitLoss = parseFloat(position.profitLoss) || 0;
+                const profitLossRate = parseFloat(position.profitLossRate) || 0;
+                const isProfit = profitLoss >= 0;
+                const profitIcon = isProfit ? '📈' : '📉';
+                
                 return `
-                    <div class="position-item">
-                        <div class="position-info">
-                            <div class="position-name">${position.stockName}</div>
-                            <div class="position-code">${position.stockCode}</div>
+                    <div class="position-card">
+                        <div class="position-header">
+                            <div class="stock-info">
+                                <div class="stock-symbol">${position.stockCode}</div>
+                                <div class="stock-name">${position.stockName}</div>
+                            </div>
+                            <div class="profit-indicator ${isProfit ? 'profit' : 'loss'}">
+                                ${profitIcon}
+                            </div>
                         </div>
-                        <div class="position-details">
-                            <div class="position-price">¥${position.currentPrice.toFixed(2)}</div>
-                            <div class="position-quantity">${position.quantity}股</div>
-                            <div class="position-profit ${profitClass}">
-                                ¥${position.profitLoss.toFixed(2)} (${position.profitLossRate}%)
+                        
+                        <div class="position-stats">
+                            <div class="stat-row">
+                                <div class="stat-item">
+                                    <span class="stat-label">持仓数量</span>
+                                    <span class="stat-value">${position.quantity}股</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">成本价</span>
+                                    <span class="stat-value">¥${parseFloat(position.costPrice).toFixed(2)}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="stat-row">
+                                <div class="stat-item">
+                                    <span class="stat-label">当前价</span>
+                                    <span class="stat-value">¥${parseFloat(position.currentPrice).toFixed(2)}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">市值</span>
+                                    <span class="stat-value">¥${parseFloat(position.marketValue).toFixed(2)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="position-summary">
+                            <div class="profit-loss ${isProfit ? 'profit' : 'loss'}">
+                                <span class="profit-amount">${isProfit ? '+' : ''}¥${profitLoss.toFixed(2)}</span>
+                                <span class="profit-rate">${isProfit ? '+' : ''}${profitLossRate.toFixed(2)}%</span>
                             </div>
                         </div>
                     </div>
