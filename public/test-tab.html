@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>页签测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .tab-navigation {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn.active {
+            background: #fff;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none !important;
+            padding: 20px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            min-height: 300px;
+            background: #f9f9f9;
+        }
+
+        .tab-content.active {
+            display: block !important;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>页签切换测试</h1>
+
+    <div class="tab-navigation">
+        <button class="tab-btn active" data-tab="overview">总览</button>
+        <button class="tab-btn" data-tab="market">股市信息</button>
+        <button class="tab-btn" data-tab="analysis">分析</button>
+    </div>
+
+    <div class="tab-content active" id="overview-tab">
+        <div class="card">
+            <h2>总览页面</h2>
+            <p>这是总览页面的内容</p>
+        </div>
+    </div>
+
+    <div class="tab-content" id="market-tab">
+        <div class="card">
+            <h2>股市信息页面</h2>
+            <p>这是股市信息页面的内容</p>
+            <p>如果你能看到这段文字，说明页签切换功能正常工作！</p>
+        </div>
+    </div>
+
+    <div class="tab-content" id="analysis-tab">
+        <div class="card">
+            <h2>分析页面</h2>
+            <p>这是分析页面的内容</p>
+            <p>如果你能看到这段文字，说明页签切换功能正常工作！</p>
+        </div>
+    </div>
+
+    <script>
+        // 页签切换功能
+        function switchTab(tabName) {
+            console.log('切换到:', tabName);
+
+            // 移除所有active类
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 添加active类
+            const btn = document.querySelector(`[data-tab="${tabName}"]`);
+            const content = document.getElementById(tabName + '-tab');
+
+            if (btn) btn.classList.add('active');
+            if (content) {
+                content.classList.add('active');
+                console.log('显示:', content.id, '- display:', window.getComputedStyle(content).display);
+            }
+        }
+
+        // 初始化
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = function() {
+                switchTab(this.getAttribute('data-tab'));
+            };
+        });
+
+        console.log('页签功能已初始化');
+    </script>
+</body>
+</html>

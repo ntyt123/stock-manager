@@ -641,22 +641,14 @@
         }
 
         .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease;
-            position: relative;
+            display: none !important;
             width: 100%;
             min-height: 400px;
             padding: 20px 0;
-            overflow: visible;
         }
 
         .tab-content.active {
             display: block !important;
-            position: relative;
-            opacity: 1;
-            visibility: visible;
-            /* 确保页签内容在最上层显示 */
-            z-index: 1000;
         }
         
         .tab-content .dashboard {
@@ -1288,31 +1280,6 @@
                 <div class="loading-text">请导入Excel文件查看持仓数据</div>
             </div>
         </div>
-        
-        <!-- Excel上传模态框 -->
-        <div id="excelUploadModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>导入Excel持仓数据</h3>
-                    <button class="close-btn" onclick="closeExcelUploadModal()">×</button>
-                </div>
-                
-                <!-- Excel文件上传区域 -->
-                <div id="excelUploadArea" class="upload-area">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">拖拽Excel文件到此处上传</div>
-                    <div class="upload-hint">支持.xls和.xlsx格式的持仓数据文件</div>
-                    <input type="file" id="excelFileInput" accept=".xls,.xlsx" style="display: none;">
-                    <button class="action-btn" onclick="document.getElementById('excelFileInput').click()">选择文件</button>
-                </div>
-                
-                <div class="upload-status" id="uploadStatus"></div>
-                
-                <div class="modal-actions">
-                    <button class="action-btn secondary" onclick="closeExcelUploadModal()">取消</button>
-                </div>
-            </div>
-        </div>
 
             <!-- 市场动态卡片 -->
             <div class="card">
@@ -1357,6 +1324,7 @@
                     <button class="action-btn">设置提醒</button>
                 </div>
             </div>
+        </div>
         </div>
 
         <!-- 股市信息页签 -->
@@ -1442,6 +1410,31 @@
                     <div class="risk-assessment" id="riskAssessment">
                         <div class="loading-text">暂无风险评估数据</div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Excel上传模态框 -->
+        <div id="excelUploadModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>导入Excel持仓数据</h3>
+                    <button class="close-btn" onclick="closeExcelUploadModal()">×</button>
+                </div>
+
+                <!-- Excel文件上传区域 -->
+                <div id="excelUploadArea" class="upload-area">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">拖拽Excel文件到此处上传</div>
+                    <div class="upload-hint">支持.xls和.xlsx格式的持仓数据文件</div>
+                    <input type="file" id="excelFileInput" accept=".xls,.xlsx" style="display: none;">
+                    <button class="action-btn" onclick="document.getElementById('excelFileInput').click()">选择文件</button>
+                </div>
+
+                <div class="upload-status" id="uploadStatus"></div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeExcelUploadModal()">取消</button>
                 </div>
             </div>
         </div>
@@ -1915,113 +1908,38 @@
 
         // 初始化页签功能
         function initTabs() {
-            console.log('开始初始化页签功能...');
-            
-            // 确保默认显示总览页签
-            const defaultTab = 'overview';
-            
-            // 隐藏所有页签内容（仅通过CSS类控制）
-            const tabContents = document.querySelectorAll('.tab-content');
-            console.log('找到页签内容数量:', tabContents.length);
-            tabContents.forEach(tab => {
-                tab.classList.remove('active');
-                console.log('移除active类:', tab.id);
-            });
-            
-            // 移除所有页签按钮的激活状态
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            console.log('找到页签按钮数量:', tabBtns.length);
-            tabBtns.forEach(btn => {
-                btn.classList.remove('active');
-                console.log('移除按钮active类:', btn.getAttribute('data-tab'));
-            });
-            
-            // 显示默认页签（仅通过CSS类控制）
-            const defaultTabContent = document.getElementById(defaultTab + '-tab');
-            const defaultTabBtn = document.querySelector(`[data-tab="${defaultTab}"]`);
-            
-            console.log('默认页签内容:', defaultTabContent);
-            console.log('默认页签按钮:', defaultTabBtn);
-            
-            if (defaultTabContent) {
-                defaultTabContent.classList.add('active');
-                console.log('添加默认页签内容active类:', defaultTabContent.id);
-            }
-            
-            if (defaultTabBtn) {
-                defaultTabBtn.classList.add('active');
-                console.log('添加默认页签按钮active类:', defaultTabBtn.getAttribute('data-tab'));
-            }
-            
-            // 为页签按钮添加点击事件（先移除已存在的事件监听器，避免重复绑定）
-            tabBtns.forEach(btn => {
-                // 创建一个函数来处理点击事件
-                const clickHandler = function() {
-                    console.log('页签按钮被点击:', this.getAttribute('data-tab'));
-                    const tabName = this.getAttribute('data-tab');
-                    switchTab(tabName);
+            // 为所有页签按钮添加点击事件
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.onclick = function() {
+                    switchTab(this.getAttribute('data-tab'));
                 };
-                
-                // 移除可能已存在的事件监听器
-                if (btn._clickHandler) {
-                    btn.removeEventListener('click', btn._clickHandler);
-                }
-                
-                // 添加新的事件监听器并保存引用
-                btn.addEventListener('click', clickHandler);
-                btn._clickHandler = clickHandler;
             });
-            
-            console.log('✅ 页签功能初始化完成');
         }
 
         // 页签切换功能
         function switchTab(tabName) {
-            console.log('切换页签:', tabName);
-            
-            // 隐藏所有页签内容（仅通过CSS类控制）
-            const tabContents = document.querySelectorAll('.tab-content');
-            tabContents.forEach(tab => {
-                tab.classList.remove('active');
-                tab.style.display = ''; // 清除内联样式，让CSS类控制显示
-                console.log('隐藏页签:', tab.id, '当前display:', window.getComputedStyle(tab).display);
-            });
-            
-            // 移除所有页签按钮的激活状态
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            tabBtns.forEach(btn => {
+            // 移除所有按钮的active类
+            document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
-            // 显示选中的页签内容（仅通过CSS类控制）
-            const activeTab = document.getElementById(tabName + '-tab');
-            if (activeTab) {
-                activeTab.style.display = ''; // 清除内联样式
-                activeTab.classList.add('active');
-                console.log('显示页签:', activeTab.id, '添加active类后display:', window.getComputedStyle(activeTab).display);
-                
-                // 强制重绘以确保显示
-                activeTab.offsetHeight;
-                
-                // 确保页签内容可见
-                setTimeout(() => {
-                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    console.log('页签显示完成:', activeTab.id, '最终display:', window.getComputedStyle(activeTab).display);
-                }, 50);
-            } else {
-                console.error('找不到页签内容:', tabName + '-tab');
+
+            // 移除所有内容的active类
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 激活选中的按钮
+            const btn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (btn) btn.classList.add('active');
+
+            // 显示选中的内容
+            const content = document.getElementById(tabName + '-tab');
+            if (content) {
+                content.classList.add('active');
+
+                // 加载页签数据
+                loadTabData(tabName);
             }
-            
-            // 激活对应的页签按钮
-            const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
-            if (activeBtn) {
-                activeBtn.classList.add('active');
-            } else {
-                console.error('找不到页签按钮:', tabName);
-            }
-            
-            // 根据页签加载特定数据
-            loadTabData(tabName);
         }
         
         // 加载页签数据
