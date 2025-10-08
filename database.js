@@ -73,6 +73,17 @@ function initDatabase() {
                 UNIQUE(user_id, stock_code)
             )`).run();
 
+            // 创建持仓分析报告表
+            db.prepare(`CREATE TABLE IF NOT EXISTS analysis_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                analysis_content TEXT NOT NULL,
+                portfolio_summary TEXT NOT NULL,
+                report_type TEXT NOT NULL DEFAULT 'manual',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`).run();
+
             // 检查是否需要插入默认用户
             const row = db.prepare("SELECT COUNT(*) as count FROM users").get();
 
@@ -414,6 +425,106 @@ const watchlistModel = {
     }
 };
 
+// 持仓分析报告相关数据库操作
+const analysisReportModel = {
+    // 保存分析报告
+    save: (userId, analysisContent, portfolioSummary, reportType = 'manual') => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const summaryJson = JSON.stringify(portfolioSummary);
+
+                const info = db.prepare(`INSERT INTO analysis_reports
+                    (user_id, analysis_content, portfolio_summary, report_type, created_at)
+                    VALUES (?, ?, ?, ?, ?)`)
+                    .run(userId, analysisContent, summaryJson, reportType, currentTime);
+
+                resolve({ id: info.lastInsertRowid, created_at: currentTime });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取用户的分析报告列表（按日期倒序）
+    findByUserId: (userId, limit = 30, offset = 0) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT id, report_type, created_at FROM analysis_reports
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT ? OFFSET ?`).all(userId, limit, offset);
+
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 根据ID获取完整的分析报告
+    findById: (reportId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT * FROM analysis_reports WHERE id = ?`).get(reportId);
+
+                if (row && row.portfolio_summary) {
+                    // 将JSON字符串转换为对象
+                    row.portfolio_summary = JSON.parse(row.portfolio_summary);
+                }
+
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取用户最新的分析报告
+    getLatest: (userId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT * FROM analysis_reports
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT 1`).get(userId);
+
+                if (row && row.portfolio_summary) {
+                    row.portfolio_summary = JSON.parse(row.portfolio_summary);
+                }
+
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 删除分析报告
+    delete: (reportId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`DELETE FROM analysis_reports WHERE id = ?`).run(reportId);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取报告总数
+    getCount: (userId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT COUNT(*) as count FROM analysis_reports WHERE user_id = ?`).get(userId);
+                resolve(row.count);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+};
+
 // 关闭数据库连接
 function closeDatabase() {
     try {
@@ -431,5 +542,6 @@ module.exports = {
     positionModel,
     positionUpdateModel,
     watchlistModel,
+    analysisReportModel,
     closeDatabase
 };
