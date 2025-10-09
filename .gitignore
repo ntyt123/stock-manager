@@ -52,3 +52,26 @@ coverage/
 # Docker相关
 .dockerignore
 Dockerfile.local
+
+# 数据库文件
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+
+# 券商同步配置（包含敏感信息）
+account.json
+*.account.json
+positions_sync.json
+
+# Python相关
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt

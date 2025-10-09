@@ -10,6 +10,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化页签功能
     initTabs();
 
+    // 初始化模态框点击背景关闭功能
+    initModalCloseOnBackgroundClick();
+
     // 页面加载完成后，延迟加载用户持仓数据和自选股行情
     setTimeout(() => {
         loadUserPositions();
@@ -480,6 +483,82 @@ function initTabs() {
     });
 }
 
+// 初始化模态框点击背景关闭功能
+function initModalCloseOnBackgroundClick() {
+    // 报告历史模态框
+    const reportHistoryModal = document.getElementById('reportHistoryModal');
+    if (reportHistoryModal) {
+        reportHistoryModal.addEventListener('click', function(event) {
+            // 如果点击的是模态框背景（而不是内容区域），则关闭
+            if (event.target === reportHistoryModal) {
+                closeReportHistoryModal();
+            }
+        });
+    }
+
+    // 报告详情模态框
+    const reportDetailModal = document.getElementById('reportDetailModal');
+    if (reportDetailModal) {
+        reportDetailModal.addEventListener('click', function(event) {
+            // 如果点击的是模态框背景（而不是内容区域），则关闭
+            if (event.target === reportDetailModal) {
+                closeReportDetailModal();
+            }
+        });
+    }
+
+    // Excel上传模态框
+    const excelUploadModal = document.getElementById('excelUploadModal');
+    if (excelUploadModal) {
+        excelUploadModal.addEventListener('click', function(event) {
+            // 如果点击的是模态框背景（而不是内容区域），则关闭
+            if (event.target === excelUploadModal) {
+                closeExcelUploadModal();
+            }
+        });
+    }
+
+    // 集合竞价历史模态框
+    const callAuctionHistoryModal = document.getElementById('callAuctionHistoryModal');
+    if (callAuctionHistoryModal) {
+        callAuctionHistoryModal.addEventListener('click', function(event) {
+            if (event.target === callAuctionHistoryModal) {
+                closeCallAuctionHistoryModal();
+            }
+        });
+    }
+
+    // 集合竞价详情模态框
+    const callAuctionDetailModal = document.getElementById('callAuctionDetailModal');
+    if (callAuctionDetailModal) {
+        callAuctionDetailModal.addEventListener('click', function(event) {
+            if (event.target === callAuctionDetailModal) {
+                closeCallAuctionDetailModal();
+            }
+        });
+    }
+
+    // 股票推荐历史模态框
+    const recommendationHistoryModal = document.getElementById('recommendationHistoryModal');
+    if (recommendationHistoryModal) {
+        recommendationHistoryModal.addEventListener('click', function(event) {
+            if (event.target === recommendationHistoryModal) {
+                closeRecommendationHistoryModal();
+            }
+        });
+    }
+
+    // 股票推荐详情模态框
+    const recommendationDetailModal = document.getElementById('recommendationDetailModal');
+    if (recommendationDetailModal) {
+        recommendationDetailModal.addEventListener('click', function(event) {
+            if (event.target === recommendationDetailModal) {
+                closeRecommendationDetailModal();
+            }
+        });
+    }
+}
+
 // 页签切换功能
 function switchTab(tabName) {
     // 移除所有按钮的active类
@@ -542,30 +621,181 @@ function loadMarketData() {
 }
 
 // 加载分析数据
-function loadAnalysisData() {
-    // 检查是否有持仓数据
-    const positions = document.querySelectorAll('.position-card');
-    if (positions.length === 0) {
-        document.getElementById('analysisCharts').innerHTML = 
-            '<div class="loading-text">暂无持仓数据，请先上传Excel文件</div>';
-        document.getElementById('analysisStats').innerHTML = 
-            '<div class="loading-text">暂无分析数据</div>';
-        document.getElementById('industryDistribution').innerHTML = 
-            '<div class="loading-text">暂无行业分布数据</div>';
-        document.getElementById('riskAssessment').innerHTML = 
-            '<div class="loading-text">暂无风险评估数据</div>';
+async function loadAnalysisData() {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        console.log('用户未登录，跳过加载分析数据');
+        // 未登录也加载今日推荐（推荐功能不需要登录）
+        loadTodayRecommendation();
         return;
     }
-    
-    // 显示分析占位符
-    document.getElementById('analysisCharts').innerHTML = 
-        '<div class="loading-text">图表分析功能开发中...</div>';
-    document.getElementById('analysisStats').innerHTML = 
-        '<div class="loading-text">统计数据功能开发中...</div>';
-    document.getElementById('industryDistribution').innerHTML = 
-        '<div class="loading-text">行业分布分析开发中...</div>';
-    document.getElementById('riskAssessment').innerHTML = 
-        '<div class="loading-text">风险评估功能开发中...</div>';
+
+    // 并行加载最新的持仓报告、集合竞价报告、风险预警和今日推荐
+    await Promise.all([
+        loadLatestPortfolioReport(),
+        loadLatestCallAuctionReport(),
+        loadRiskWarnings(),
+        loadTodayRecommendation()
+    ]);
+}
+
+// 加载最新的持仓分析报告
+async function loadLatestPortfolioReport() {
+    const container = document.getElementById('portfolioAnalysis');
+    const token = localStorage.getItem('token');
+
+    if (!container || !token) return;
+
+    try {
+        console.log('📊 正在加载最新持仓分析报告...');
+
+        // 获取最新的持仓分析报告
+        const response = await fetch('/api/analysis/reports?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取报告列表失败');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data.reports || result.data.reports.length === 0) {
+            console.log('ℹ️ 暂无持仓分析报告');
+            container.innerHTML = `
+                <div class="analysis-hint">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">AI智能持仓分析</p>
+                        <p class="hint-desc">点击"立即分析"按钮，AI将对您的持仓进行全面深度分析</p>
+                        <p class="hint-schedule">📅 系统每天下午5点自动分析持仓</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // 获取最新报告的ID
+        const latestReportId = result.data.reports[0].id;
+        console.log(`📄 最新持仓报告ID: ${latestReportId}`);
+
+        // 获取报告详情
+        const detailResponse = await fetch(`/api/analysis/reports/${latestReportId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!detailResponse.ok) {
+            throw new Error('获取报告详情失败');
+        }
+
+        const detailResult = await detailResponse.json();
+
+        if (detailResult.success && detailResult.data) {
+            const { analysis, portfolioSummary, timestamp } = detailResult.data;
+
+            // 显示报告内容
+            displayPortfolioAnalysis(analysis, portfolioSummary, timestamp);
+
+            console.log('✅ 最新持仓报告加载成功');
+        }
+
+    } catch (error) {
+        console.error('❌ 加载最新持仓报告错误:', error);
+        container.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">💡</div>
+                <div class="hint-content">
+                    <p class="hint-title">AI智能持仓分析</p>
+                    <p class="hint-desc">点击"立即分析"按钮，AI将对您的持仓进行全面深度分析</p>
+                    <p class="hint-schedule">📅 系统每天下午5点自动分析持仓</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// 加载最新的集合竞价分析报告
+async function loadLatestCallAuctionReport() {
+    const container = document.getElementById('callAuctionAnalysis');
+    const token = localStorage.getItem('token');
+
+    if (!container || !token) return;
+
+    try {
+        console.log('📊 正在加载最新集合竞价分析...');
+
+        // 获取最新的集合竞价分析
+        const response = await fetch('/api/analysis/call-auction/list?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取分析列表失败');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data.records || result.data.records.length === 0) {
+            console.log('ℹ️ 暂无集合竞价分析');
+            container.innerHTML = `
+                <div class="analysis-hint">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">AI集合竞价分析</p>
+                        <p class="hint-desc">点击"立即分析"按钮，AI将分析今日的集合竞价情况</p>
+                        <p class="hint-schedule">📅 系统每天9:30自动分析集合竞价</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // 获取最新分析的ID
+        const latestAnalysisId = result.data.records[0].id;
+        console.log(`📄 最新集合竞价分析ID: ${latestAnalysisId}`);
+
+        // 获取分析详情
+        const detailResponse = await fetch(`/api/analysis/call-auction/${latestAnalysisId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!detailResponse.ok) {
+            throw new Error('获取分析详情失败');
+        }
+
+        const detailResult = await detailResponse.json();
+
+        if (detailResult.success && detailResult.data) {
+            const { analysis, marketSummary, timestamp, analysisDate } = detailResult.data;
+
+            // 显示分析内容
+            displayCallAuctionAnalysis(analysis, marketSummary, timestamp, analysisDate);
+
+            console.log('✅ 最新集合竞价分析加载成功');
+        }
+
+    } catch (error) {
+        console.error('❌ 加载最新集合竞价分析错误:', error);
+        container.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">💡</div>
+                <div class="hint-content">
+                    <p class="hint-title">AI集合竞价分析</p>
+                    <p class="hint-desc">点击"立即分析"按钮，AI将分析今日的集合竞价情况</p>
+                    <p class="hint-schedule">📅 系统每天9:30自动分析集合竞价</p>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // 加载自选股列表
@@ -872,7 +1102,8 @@ async function loadWatchlistQuotes() {
                         </div>
                     </div>
                     <div class="chart-period-selector">
-                        <button class="period-btn active" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                        <button class="period-btn active" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                        <button class="period-btn" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
                         <button class="period-btn" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
                         <button class="period-btn" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
                     </div>
@@ -885,10 +1116,10 @@ async function loadWatchlistQuotes() {
 
         container.innerHTML = html;
 
-        // 渲染图表（使用真实历史数据）
+        // 渲染图表（默认显示分时图）
         quotes.forEach((quote, index) => {
             const chartId = `chart-${quote.stockCode}-${index}`;
-            renderStockChart(chartId, quote.stockCode, 'day');
+            renderStockChart(chartId, quote.stockCode, 'intraday');
         });
 
         // 绑定周期切换按钮事件
@@ -912,360 +1143,6 @@ async function loadWatchlistQuotes() {
         console.error('加载自选股行情错误:', error);
         container.innerHTML = '<div class="error-text">获取行情数据失败</div>';
     }
-}
-
-// 全局变量存储图表实例
-const chartInstances = {};
-
-// 渲染股票价格变化图表
-async function renderStockChart(canvasId, stockCode, period = 'day') {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) {
-        console.error(`Canvas元素 ${canvasId} 不存在`);
-        return;
-    }
-
-    // 销毁已存在的图表实例
-    if (chartInstances[canvasId]) {
-        chartInstances[canvasId].destroy();
-        delete chartInstances[canvasId];
-    }
-
-    try {
-        // 根据周期确定天数和显示数量
-        let days, displayCount;
-        switch(period) {
-            case 'day':
-                days = 60;      // 获取60个交易日
-                displayCount = 30;  // 显示最近30根K线
-                break;
-            case 'week':
-                days = 300;     // 获取300个交易日（约60周）
-                displayCount = 24;  // 显示最近24根周K线
-                break;
-            case 'month':
-                days = 300;     // 获取300个交易日（约15个月，确保有12个完整月）
-                displayCount = 12;  // 显示最近12根月K线
-                break;
-            default:
-                days = 60;
-                displayCount = 30;
-        }
-
-        // 获取真实历史数据
-        const response = await fetch(`/api/stock/history/${stockCode}?days=${days}`);
-
-        if (!response.ok) {
-            throw new Error('获取历史数据失败');
-        }
-
-        const result = await response.json();
-
-        if (!result.success || !result.data.history || result.data.history.length === 0) {
-            // 如果获取失败，显示提示
-            console.error(`股票 ${stockCode} 历史数据为空`);
-            return;
-        }
-
-        let historyData = result.data.history;
-        console.log(`📊 ${stockCode} ${period}线 - 原始数据: ${historyData.length} 条`);
-        if (historyData.length > 0) {
-            console.log(`📊 原始数据日期范围: ${historyData[0].date} -> ${historyData[historyData.length-1].date}`);
-        }
-
-        // 确保数据按时间正序排列（从旧到新）
-        // 腾讯API返回的数据可能是倒序的
-        if (historyData.length > 1 && historyData[0].date > historyData[historyData.length - 1].date) {
-            historyData = historyData.reverse();
-            console.log(`📊 数据已反转为正序 (${historyData[0].date} -> ${historyData[historyData.length-1].date})`);
-        }
-
-        // 根据周期聚合数据
-        if (period === 'week') {
-            historyData = aggregateToWeekly(historyData);
-            console.log(`📊 聚合后周线数据: ${historyData.length} 条`);
-        } else if (period === 'month') {
-            historyData = aggregateToMonthly(historyData);
-            console.log(`📊 聚合后月线数据: ${historyData.length} 条`);
-        }
-
-        // 只保留最近的指定数量K线
-        if (historyData.length > displayCount) {
-            historyData = historyData.slice(-displayCount);
-            console.log(`📊 截取后显示: ${historyData.length} 条 (目标: ${displayCount} 条)`);
-        }
-
-        // 准备K线图数据
-        const labels = historyData.map(item => {
-            // 处理日期格式：可能是 "20240711" 或 "2024-07-11"
-            let dateStr = item.date;
-            if (dateStr.includes('-')) {
-                // 格式: 2024-07-11
-                const parts = dateStr.split('-');
-                if (period === 'month') {
-                    return `${parts[0]}/${parts[1]}`;
-                } else {
-                    return `${parts[1]}/${parts[2]}`;
-                }
-            } else {
-                // 格式: 20240711
-                if (period === 'month') {
-                    return dateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1/$2');
-                } else {
-                    return dateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$2/$3');
-                }
-            }
-        });
-
-        // 准备开盘收盘柱状图数据（蜡烛实体）
-        const bodyData = historyData.map(item => {
-            const isUp = item.close >= item.open;
-            return {
-                y: [item.open, item.close],
-                open: item.open,
-                close: item.close,
-                high: item.high,
-                low: item.low,
-                isUp: isUp
-            };
-        });
-
-        // 准备上下影线数据
-        const shadowData = historyData.map(item => {
-            return {
-                y: [item.low, item.high],
-                open: item.open,
-                close: item.close,
-                high: item.high,
-                low: item.low,
-                isUp: item.close >= item.open
-            };
-        });
-
-        // 计算价格变化趋势
-        const priceChange = historyData[historyData.length - 1].close - historyData[0].close;
-        const isPositive = priceChange >= 0;
-
-        // 创建K线图（A股配色：红涨绿跌）
-        const chart = new Chart(canvas, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: '影线',
-                        data: shadowData.map(d => d.y),
-                        backgroundColor: shadowData.map(d => d.isUp ? 'rgba(231, 76, 60, 0.8)' : 'rgba(39, 174, 96, 0.8)'),
-                        borderColor: shadowData.map(d => d.isUp ? '#e74c3c' : '#27ae60'),
-                        borderWidth: 1,
-                        barThickness: 2,
-                        categoryPercentage: 0.8,
-                        barPercentage: 0.9
-                    },
-                    {
-                        label: '实体',
-                        data: bodyData.map(d => d.y),
-                        backgroundColor: bodyData.map(d => d.isUp ? 'rgba(231, 76, 60, 1)' : 'rgba(39, 174, 96, 1)'),
-                        borderColor: bodyData.map(d => d.isUp ? '#e74c3c' : '#27ae60'),
-                        borderWidth: 1.5,
-                        barThickness: 10,
-                        categoryPercentage: 0.8,
-                        barPercentage: 0.9
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        borderColor: isPositive ? '#e74c3c' : '#27ae60',
-                        borderWidth: 1,
-                        padding: 10,
-                        displayColors: false,
-                        callbacks: {
-                            label: function(context) {
-                                const idx = context.dataIndex;
-                                const data = historyData[idx];
-                                return [
-                                    `开盘: ¥${data.open.toFixed(2)}`,
-                                    `最高: ¥${data.high.toFixed(2)}`,
-                                    `最低: ¥${data.low.toFixed(2)}`,
-                                    `收盘: ¥${data.close.toFixed(2)}`
-                                ];
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: true,
-                        grid: {
-                            display: false
-                        },
-                        ticks: {
-                            maxTicksLimit: 6,
-                            color: '#95a5a6',
-                            font: {
-                                size: 10
-                            }
-                        }
-                    },
-                    y: {
-                        stacked: false,
-                        display: true,
-                        position: 'right',
-                        beginAtZero: false,
-                        grace: '5%',
-                        grid: {
-                            color: 'rgba(149, 165, 166, 0.1)',
-                            drawBorder: false
-                        },
-                        ticks: {
-                            color: '#95a5a6',
-                            font: {
-                                size: 10
-                            },
-                            callback: function(value) {
-                                return '¥' + value.toFixed(2);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-
-        // 保存图表实例
-        chartInstances[canvasId] = chart;
-
-    } catch (error) {
-        console.error(`渲染股票 ${stockCode} 图表失败:`, error);
-        // 如果获取真实数据失败，不显示图表
-    }
-}
-
-// 聚合为周线数据
-function aggregateToWeekly(dailyData) {
-    const weeklyData = [];
-    let currentWeek = null;
-
-    dailyData.forEach(day => {
-        // 处理日期格式：可能是 "20240711" 或 "2024-07-11"
-        let dateStr = day.date;
-        if (!dateStr.includes('-')) {
-            // 格式: 20240711 -> 2024-07-11
-            dateStr = dateStr.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3');
-        }
-        const date = new Date(dateStr);
-        const weekNumber = getWeekNumber(date);
-
-        if (!currentWeek || currentWeek.week !== weekNumber) {
-            if (currentWeek) {
-                weeklyData.push(currentWeek.data);
-            }
-            currentWeek = {
-                week: weekNumber,
-                data: {
-                    date: day.date,
-                    open: day.open,
-                    high: day.high,
-                    low: day.low,
-                    close: day.close,
-                    volume: day.volume
-                }
-            };
-        } else {
-            currentWeek.data.high = Math.max(currentWeek.data.high, day.high);
-            currentWeek.data.low = Math.min(currentWeek.data.low, day.low);
-            currentWeek.data.close = day.close;
-            currentWeek.data.volume += day.volume;
-            currentWeek.data.date = day.date; // 使用周最后一天的日期
-        }
-    });
-
-    if (currentWeek) {
-        weeklyData.push(currentWeek.data);
-    }
-
-    return weeklyData;
-}
-
-// 聚合为月线数据
-function aggregateToMonthly(dailyData) {
-    const monthlyData = [];
-    let currentMonth = null;
-    const monthCounts = {};
-
-    dailyData.forEach((day, index) => {
-        // 处理日期格式：可能是 "20240711" 或 "2024-07-11"
-        let monthKey;
-        if (day.date.includes('-')) {
-            // 格式: 2024-07-11 -> 202407
-            monthKey = day.date.substring(0, 7).replace('-', '');
-        } else {
-            // 格式: 20240711 -> 202407
-            monthKey = day.date.substring(0, 6);
-        }
-
-        // 统计每个月的数据条数
-        monthCounts[monthKey] = (monthCounts[monthKey] || 0) + 1;
-
-        if (!currentMonth || currentMonth.month !== monthKey) {
-            if (currentMonth) {
-                monthlyData.push(currentMonth.data);
-                console.log(`📅 完成月份 ${currentMonth.month}: ${currentMonth.dayCount} 天, 最终日期: ${currentMonth.data.date}`);
-            }
-            currentMonth = {
-                month: monthKey,
-                dayCount: 1,
-                data: {
-                    date: day.date,
-                    open: day.open,       // 月初开盘价
-                    high: day.high,
-                    low: day.low,
-                    close: day.close,
-                    volume: day.volume
-                }
-            };
-            console.log(`📅 开始新月份 ${monthKey}: 起始日期 ${day.date}`);
-        } else {
-            currentMonth.dayCount++;
-            // 不更新开盘价，保持月初第一天的开盘价
-            currentMonth.data.high = Math.max(currentMonth.data.high, day.high);
-            currentMonth.data.low = Math.min(currentMonth.data.low, day.low);
-            currentMonth.data.close = day.close;  // 更新为月末收盘价
-            currentMonth.data.volume += day.volume;
-            currentMonth.data.date = day.date;    // 使用月最后一天的日期
-        }
-    });
-
-    if (currentMonth) {
-        monthlyData.push(currentMonth.data);
-        console.log(`📅 完成月份 ${currentMonth.month}: ${currentMonth.dayCount} 天, 最终日期: ${currentMonth.data.date}`);
-    }
-
-    console.log(`📅 月线聚合完成: 共 ${monthlyData.length} 个月`);
-    console.log(`📅 各月数据量:`, monthCounts);
-    if (monthlyData.length > 0) {
-        console.log(`📅 第一个月: ${monthlyData[0].date}, 最后一个月: ${monthlyData[monthlyData.length-1].date}`);
-    }
-
-    return monthlyData;
-}
-
-// 获取周数
-function getWeekNumber(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
 // 加载热点新闻
@@ -1607,7 +1484,8 @@ async function loadMarketIndices() {
                             </div>
                         </div>
                         <div class="chart-period-selector">
-                            <button class="period-btn active" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                            <button class="period-btn active" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                            <button class="period-btn" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
                             <button class="period-btn" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
                             <button class="period-btn" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
                         </div>
@@ -1622,10 +1500,10 @@ async function loadMarketIndices() {
         if (html) {
             container.innerHTML = html;
 
-            // 渲染K线图
+            // 渲染图表（默认显示分时图）
             quotes.forEach((quote, i) => {
                 const chartId = `market-index-chart-${quote.stockCode}-${i}`;
-                renderStockChart(chartId, quote.stockCode, 'day');
+                renderStockChart(chartId, quote.stockCode, 'intraday');
             });
 
             // 绑定周期切换按钮事件
@@ -1741,7 +1619,8 @@ async function loadOverviewWatchlistQuotes() {
                         </div>
                     </div>
                     <div class="chart-period-selector">
-                        <button class="period-btn active" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                        <button class="period-btn active" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                        <button class="period-btn" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
                         <button class="period-btn" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
                         <button class="period-btn" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
                     </div>
@@ -1754,10 +1633,10 @@ async function loadOverviewWatchlistQuotes() {
 
         container.innerHTML = html;
 
-        // 渲染图表（使用真实历史数据）
+        // 渲染图表（默认显示分时图）
         quotes.slice(0, 6).forEach((quote, index) => {
             const chartId = `overview-chart-${quote.stockCode}-${index}`;
-            renderStockChart(chartId, quote.stockCode, 'day');
+            renderStockChart(chartId, quote.stockCode, 'intraday');
         });
 
         // 绑定周期切换按钮事件
@@ -2943,12 +2822,13 @@ async function viewReportHistory() {
                 const typeClass = report.report_type === 'manual' ? 'report-type-manual' : 'report-type-scheduled';
 
                 html += `
-                    <div class="report-list-item" onclick="viewReportDetail(${report.id})">
-                        <div class="report-item-info">
+                    <div class="report-list-item">
+                        <div class="report-item-info" onclick="showReportDetailInModal(${report.id})" style="cursor: pointer; flex: 1;">
                             <div class="report-item-date">📅 ${dateStr}</div>
                             <span class="report-item-type ${typeClass}">${typeLabel}</span>
                         </div>
-                        <div class="report-item-action">→</div>
+                        <button class="report-delete-btn" onclick="event.stopPropagation(); deleteReport(${report.id});" title="删除报告">🗑️</button>
+                        <div class="report-item-action" onclick="showReportDetailInModal(${report.id})" style="cursor: pointer;">→</div>
                     </div>
                 `;
             });
@@ -3039,4 +2919,1490 @@ async function viewReportDetail(reportId) {
 function closeReportHistoryModal() {
     const modal = document.getElementById('reportHistoryModal');
     modal.style.display = 'none';
+}
+
+// 在弹窗中查看报告详情
+async function showReportDetailInModal(reportId) {
+    const detailModal = document.getElementById('reportDetailModal');
+    const detailContent = document.getElementById('reportDetailContent');
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    console.log(`📄 正在在弹窗中加载报告 ID: ${reportId}`);
+
+    // 显示详情模态框
+    detailModal.style.display = 'block';
+    detailContent.innerHTML = '<div class="loading-text">正在加载报告详情...</div>';
+
+    try {
+        const response = await fetch(`/api/analysis/reports/${reportId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { analysis, portfolioSummary, timestamp } = result.data;
+
+            // 格式化时间
+            const analysisTime = new Date(timestamp).toLocaleString('zh-CN');
+
+            // 使用marked.parse渲染Markdown格式的分析内容
+            const analysisHtml = marked.parse(analysis);
+
+            // 生成详情HTML（与displayPortfolioAnalysis相同的格式）
+            const html = `
+                <div class="analysis-result">
+                    <div class="analysis-summary">
+                        <h3 style="margin: 0 0 15px 0;">📊 持仓概况</h3>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <div class="summary-label">持仓股票</div>
+                                <div class="summary-value">${portfolioSummary.totalStocks}只</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">总市值</div>
+                                <div class="summary-value">¥${portfolioSummary.totalMarketValue.toFixed(2)}</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">总盈亏</div>
+                                <div class="summary-value" style="color: ${portfolioSummary.totalProfitLoss >= 0 ? '#ffeb3b' : '#ff9800'}">
+                                    ${portfolioSummary.totalProfitLoss >= 0 ? '+' : ''}¥${portfolioSummary.totalProfitLoss.toFixed(2)}
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">盈亏率</div>
+                                <div class="summary-value" style="color: ${portfolioSummary.totalProfitLoss >= 0 ? '#ffeb3b' : '#ff9800'}">
+                                    ${portfolioSummary.totalProfitLoss >= 0 ? '+' : ''}${portfolioSummary.totalProfitLossRate}%
+                                </div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">盈利股票</div>
+                                <div class="summary-value">${portfolioSummary.profitableStocks}只</div>
+                            </div>
+                            <div class="summary-item">
+                                <div class="summary-label">亏损股票</div>
+                                <div class="summary-value">${portfolioSummary.lossStocks}只</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="analysis-content">${analysisHtml}</div>
+                    <div class="analysis-timestamp">
+                        📅 分析时间：${analysisTime}
+                    </div>
+                </div>
+            `;
+
+            detailContent.innerHTML = html;
+
+            console.log('✅ 报告详情加载成功');
+        } else {
+            throw new Error(result.error || '加载失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 加载报告详情错误:', error);
+
+        detailContent.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">加载失败</p>
+                    <p class="hint-desc">${error.message || '加载报告详情失败'}</p>
+                </div>
+            </div>
+        `;
+
+        showNotification('加载报告失败', 'error');
+    }
+}
+
+// 关闭报告详情模态框
+function closeReportDetailModal() {
+    const modal = document.getElementById('reportDetailModal');
+    modal.style.display = 'none';
+}
+
+// ==================== 集合竞价分析功能 ====================
+
+// 手动触发集合竞价分析
+async function analyzeCallAuction() {
+    const container = document.getElementById('callAuctionAnalysis');
+    const analyzeBtn = document.getElementById('callAuctionAnalyzeBtn');
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录后再使用集合竞价分析功能');
+        return;
+    }
+
+    console.log('📊 开始分析集合竞价...');
+
+    // 禁用按钮
+    analyzeBtn.disabled = true;
+    analyzeBtn.innerHTML = '<span>⏳ 分析中...</span>';
+
+    // 显示加载状态
+    container.innerHTML = `
+        <div class="analysis-loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-message">AI正在分析今日集合竞价...</div>
+            <div class="loading-tips">
+                分析内容包括：市场情绪、热点板块、交易策略、风险提示等<br>
+                预计需要10-30秒，请耐心等待
+            </div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/analysis/call-auction', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { analysis, marketSummary, timestamp, analysisDate } = result.data;
+
+            // 显示分析结果
+            displayCallAuctionAnalysis(analysis, marketSummary, timestamp, analysisDate);
+
+            console.log('✅ 集合竞价分析完成');
+            showNotification('集合竞价分析完成', 'success');
+
+        } else {
+            throw new Error(result.error || '分析失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 集合竞价分析错误:', error);
+
+        container.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">分析失败</p>
+                    <p class="hint-desc">${error.message || '集合竞价分析失败，请稍后重试'}</p>
+                    <p class="hint-schedule">请稍后重试</p>
+                </div>
+            </div>
+        `;
+
+        showNotification('集合竞价分析失败: ' + error.message, 'error');
+
+    } finally {
+        // 恢复按钮
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = '<span>🔍 立即分析</span>';
+    }
+}
+
+// 显示集合竞价分析结果
+function displayCallAuctionAnalysis(analysis, summary, timestamp, analysisDate) {
+    const container = document.getElementById('callAuctionAnalysis');
+
+    const analysisTime = new Date(timestamp).toLocaleString('zh-CN');
+
+    // 使用marked.parse渲染Markdown格式的分析内容
+    const analysisHtml = marked.parse(analysis);
+
+    // 构建市场指数信息
+    let indicesHtml = '';
+    if (summary && summary.indices && summary.indices.length > 0) {
+        indicesHtml = '<div class="summary-grid">';
+        summary.indices.forEach(idx => {
+            const isPositive = parseFloat(idx.changePercent) >= 0;
+            indicesHtml += `
+                <div class="summary-item">
+                    <div class="summary-label">${idx.name}</div>
+                    <div class="summary-value">${idx.todayOpen}</div>
+                    <div class="summary-sub ${isPositive ? 'positive' : 'negative'}">
+                        ${isPositive ? '+' : ''}${idx.changePercent}%
+                    </div>
+                </div>
+            `;
+        });
+        indicesHtml += '</div>';
+    }
+
+    const html = `
+        <div class="analysis-result">
+            <div class="analysis-summary">
+                <h3 style="margin: 0 0 15px 0;">📊 集合竞价概况 (${analysisDate})</h3>
+                ${indicesHtml}
+            </div>
+            <div class="analysis-content">${analysisHtml}</div>
+            <div class="analysis-timestamp">
+                📅 分析时间：${analysisTime}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+// 查看集合竞价分析历史
+async function viewCallAuctionHistory() {
+    const modal = document.getElementById('callAuctionHistoryModal');
+    const content = document.getElementById('callAuctionHistoryContent');
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录后再查看历史记录');
+        return;
+    }
+
+    // 显示模态框
+    modal.style.display = 'block';
+    content.innerHTML = '<div class="loading-text">正在加载历史记录...</div>';
+
+    console.log('📋 开始加载集合竞价分析历史...');
+
+    try {
+        const response = await fetch('/api/analysis/call-auction/list', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data.records && result.data.records.length > 0) {
+            const records = result.data.records;
+            console.log(`✅ 成功加载 ${records.length} 份历史记录`);
+
+            let html = '<div class="report-list">';
+
+            records.forEach(record => {
+                const date = new Date(record.created_at);
+                const dateStr = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const typeLabel = record.analysis_type === 'manual' ? '手动分析' : '定时分析';
+                const typeClass = record.analysis_type === 'manual' ? 'report-type-manual' : 'report-type-scheduled';
+
+                html += `
+                    <div class="report-list-item">
+                        <div class="report-item-info" onclick="showCallAuctionDetailInModal(${record.id})" style="cursor: pointer; flex: 1;">
+                            <div class="report-item-date">📅 ${record.analysis_date}</div>
+                            <span class="report-item-type ${typeClass}">${typeLabel}</span>
+                        </div>
+                        <button class="report-delete-btn" onclick="event.stopPropagation(); deleteCallAuctionAnalysis(${record.id});" title="删除分析记录">🗑️</button>
+                        <div class="report-item-action" onclick="showCallAuctionDetailInModal(${record.id})" style="cursor: pointer;">→</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            if (result.data.hasMore) {
+                html += '<div class="loading-text" style="margin-top: 20px;">显示最近30份记录</div>';
+            }
+
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = '<div class="loading-text">暂无历史记录</div>';
+        }
+
+    } catch (error) {
+        console.error('❌ 加载历史记录错误:', error);
+        content.innerHTML = '<div class="loading-text">加载失败，请重试</div>';
+    }
+}
+
+// 在弹窗中查看集合竞价分析详情
+async function showCallAuctionDetailInModal(analysisId) {
+    const detailModal = document.getElementById('callAuctionDetailModal');
+    const detailContent = document.getElementById('callAuctionDetailContent');
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    console.log(`📄 正在加载集合竞价分析 ID: ${analysisId}`);
+
+    // 显示详情模态框
+    detailModal.style.display = 'block';
+    detailContent.innerHTML = '<div class="loading-text">正在加载分析详情...</div>';
+
+    try {
+        const response = await fetch(`/api/analysis/call-auction/${analysisId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { analysis, marketSummary, timestamp, analysisDate } = result.data;
+
+            // 格式化时间
+            const analysisTime = new Date(timestamp).toLocaleString('zh-CN');
+
+            // 使用marked.parse渲染Markdown格式的分析内容
+            const analysisHtml = marked.parse(analysis);
+
+            // 构建市场指数信息
+            let indicesHtml = '';
+            if (marketSummary && marketSummary.indices && marketSummary.indices.length > 0) {
+                indicesHtml = '<div class="summary-grid">';
+                marketSummary.indices.forEach(idx => {
+                    const isPositive = parseFloat(idx.changePercent) >= 0;
+                    indicesHtml += `
+                        <div class="summary-item">
+                            <div class="summary-label">${idx.name}</div>
+                            <div class="summary-value">${idx.todayOpen}</div>
+                            <div class="summary-sub ${isPositive ? 'positive' : 'negative'}">
+                                ${isPositive ? '+' : ''}${idx.changePercent}%
+                            </div>
+                        </div>
+                    `;
+                });
+                indicesHtml += '</div>';
+            }
+
+            // 生成详情HTML
+            const html = `
+                <div class="analysis-result">
+                    <div class="analysis-summary">
+                        <h3 style="margin: 0 0 15px 0;">📊 集合竞价概况 (${analysisDate})</h3>
+                        ${indicesHtml}
+                    </div>
+                    <div class="analysis-content">${analysisHtml}</div>
+                    <div class="analysis-timestamp">
+                        📅 分析时间：${analysisTime}
+                    </div>
+                </div>
+            `;
+
+            detailContent.innerHTML = html;
+
+            console.log('✅ 集合竞价分析详情加载成功');
+        } else {
+            throw new Error(result.error || '加载失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 加载分析详情错误:', error);
+
+        detailContent.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">加载失败</p>
+                    <p class="hint-desc">${error.message || '加载分析详情失败'}</p>
+                </div>
+            </div>
+        `;
+
+        showNotification('加载分析失败', 'error');
+    }
+}
+
+// 关闭集合竞价历史模态框
+function closeCallAuctionHistoryModal() {
+    const modal = document.getElementById('callAuctionHistoryModal');
+    modal.style.display = 'none';
+}
+
+// 关闭集合竞价详情模态框
+function closeCallAuctionDetailModal() {
+    const modal = document.getElementById('callAuctionDetailModal');
+    modal.style.display = 'none';
+}
+
+// 删除持仓分析报告
+async function deleteReport(reportId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    if (!confirm('确定要删除这份分析报告吗？此操作不可恢复。')) {
+        return;
+    }
+
+    console.log(`🗑️ 正在删除报告 ID: ${reportId}`);
+
+    try {
+        const response = await fetch(`/api/analysis/reports/${reportId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log('✅ 报告删除成功');
+            showNotification('报告删除成功', 'success');
+
+            // 刷新报告历史列表
+            viewReportHistory();
+        } else {
+            throw new Error(result.error || '删除失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 删除报告错误:', error);
+        showNotification('删除报告失败: ' + error.message, 'error');
+    }
+}
+
+// 删除集合竞价分析记录
+async function deleteCallAuctionAnalysis(analysisId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    if (!confirm('确定要删除这份集合竞价分析记录吗？此操作不可恢复。')) {
+        return;
+    }
+
+    console.log(`🗑️ 正在删除集合竞价分析 ID: ${analysisId}`);
+
+    try {
+        const response = await fetch(`/api/analysis/call-auction/${analysisId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log('✅ 集合竞价分析删除成功');
+            showNotification('分析记录删除成功', 'success');
+
+            // 刷新分析历史列表
+            viewCallAuctionHistory();
+        } else {
+            throw new Error(result.error || '删除失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 删除集合竞价分析错误:', error);
+        showNotification('删除分析记录失败: ' + error.message, 'error');
+    }
+}
+
+// 加载风险预警（从最新的持仓分析报告中提取）
+async function loadRiskWarnings() {
+    const container = document.getElementById('riskAssessment');
+
+    if (!container) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        container.innerHTML = '<div class="loading-text">请登录后查看风险预警</div>';
+        return;
+    }
+
+    try {
+        console.log('📊 正在加载风险预警...');
+
+        // 显示加载状态
+        container.innerHTML = '<div class="loading-text">正在加载风险预警...</div>';
+
+        // 获取最新的持仓分析报告
+        const response = await fetch('/api/analysis/reports?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取报告失败');
+        }
+
+        const result = await response.json();
+
+        if (!result.success || !result.data.reports || result.data.reports.length === 0) {
+            container.innerHTML = '<div class="loading-text">暂无风险预警数据，请先进行持仓分析</div>';
+            console.log('ℹ️ 没有找到持仓分析报告');
+            return;
+        }
+
+        // 获取最新报告的ID
+        const latestReportId = result.data.reports[0].id;
+        console.log(`📄 最新报告ID: ${latestReportId}`);
+
+        // 获取报告详情
+        const detailResponse = await fetch(`/api/analysis/reports/${latestReportId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!detailResponse.ok) {
+            throw new Error('获取报告详情失败');
+        }
+
+        const detailResult = await detailResponse.json();
+
+        if (!detailResult.success || !detailResult.data) {
+            throw new Error('报告数据为空');
+        }
+
+        const analysisContent = detailResult.data.analysis;
+
+        // 提取风险预警内容（寻找 ## 【风险预警】 标题）
+        const riskHeadingPattern = /##\s*【风险预警】/;
+        const match = analysisContent.match(riskHeadingPattern);
+
+        if (!match) {
+            console.log('⚠️ 未找到风险预警标题');
+            container.innerHTML = '<div class="loading-text">暂无风险预警数据<br><small>最新报告中未包含风险预警信息</small></div>';
+            return;
+        }
+
+        // 找到风险预警标题的位置
+        const headingStart = match.index;
+        const headingEnd = headingStart + match[0].length;
+
+        // 从标题后开始提取内容，直到下一个 ## 标题或文本结束
+        const contentAfterHeading = analysisContent.substring(headingEnd);
+        const nextHeadingMatch = contentAfterHeading.match(/\n##\s+/);
+
+        let riskWarningText;
+        if (nextHeadingMatch) {
+            // 提取到下一个标题之前的内容
+            riskWarningText = contentAfterHeading.substring(0, nextHeadingMatch.index).trim();
+        } else {
+            // 提取到文本结束
+            riskWarningText = contentAfterHeading.trim();
+        }
+
+        if (!riskWarningText) {
+            container.innerHTML = '<div class="loading-text">暂无风险预警数据</div>';
+            return;
+        }
+
+        console.log('✅ 成功提取风险预警内容');
+
+        // 使用marked解析Markdown格式的风险预警
+        let riskWarningHtml = marked.parse(riskWarningText);
+
+        // 对风险等级标签进行美化处理
+        riskWarningHtml = riskWarningHtml
+            .replace(/【高风险】/g, '<span class="risk-level-high">⚠️ 高风险</span>')
+            .replace(/【中风险】/g, '<span class="risk-level-medium">⚡ 中风险</span>')
+            .replace(/【注意】/g, '<span class="risk-level-notice">💡 注意</span>');
+
+        // 显示风险预警
+        const html = `
+            <div class="risk-warning-content">
+                <div class="risk-warning-header">
+                    <span class="warning-icon">⚠️</span>
+                    <span class="warning-title">最新风险预警</span>
+                    <span class="warning-time">${new Date(detailResult.data.timestamp).toLocaleString('zh-CN')}</span>
+                </div>
+                <div class="risk-warning-list">
+                    ${riskWarningHtml}
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        console.log('✅ 风险预警加载完成');
+
+    } catch (error) {
+        console.error('❌ 加载风险预警错误:', error);
+        container.innerHTML = `
+            <div class="loading-text">
+                加载失败: ${error.message}<br>
+                <small>请稍后重试或重新进行持仓分析</small>
+            </div>
+        `;
+    }
+}
+
+// ==================== 股票详情悬浮框功能 ====================
+
+let currentTooltipChart = null; // 保存当前悬浮框中的图表实例
+let currentTooltipStockCode = null; // 保存当前悬浮框显示的股票代码
+
+// 显示股票详情悬浮框
+async function showStockTooltip(stockCode, stockName, event) {
+    const tooltip = document.getElementById('stockDetailTooltip');
+    const tooltipLoading = document.getElementById('tooltipLoading');
+    const tooltipData = document.getElementById('tooltipData');
+    const tooltipStockName = document.getElementById('tooltipStockName');
+    const tooltipStockCode = document.getElementById('tooltipStockCode');
+
+    if (!tooltip) return;
+
+    console.log(`📊 显示股票详情: ${stockCode} ${stockName}`);
+
+    // 保存当前股票代码
+    currentTooltipStockCode = stockCode;
+
+    // 设置股票名称和代码
+    tooltipStockName.textContent = stockName || '加载中...';
+    tooltipStockCode.textContent = stockCode;
+
+    // 显示加载状态
+    tooltipLoading.style.display = 'flex';
+    tooltipData.style.display = 'none';
+
+    // 绑定周期切换按钮事件
+    bindTooltipPeriodButtons();
+
+    // 优化定位逻辑：智能计算悬浮框位置
+    // 注意：tooltip 使用 position: fixed，所以坐标是相对于视口的，不需要加滚动偏移
+    const tooltipWidth = 450;
+    const tooltipHeight = 600;
+    const offset = 15; // 鼠标偏移量
+    const topOffset = 20; // 悬浮框距离鼠标上方的距离
+
+    // 获取视口尺寸
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // 鼠标位置（相对于视口）
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+
+    // 智能定位：优先显示在右侧，如果空间不足则显示在左侧
+    let finalX, finalY;
+
+    // 水平方向定位
+    if (mouseX + offset + tooltipWidth < viewportWidth) {
+        // 鼠标右侧有足够空间
+        finalX = mouseX + offset;
+    } else if (mouseX - offset - tooltipWidth > 0) {
+        // 鼠标左侧有足够空间
+        finalX = mouseX - offset - tooltipWidth;
+    } else {
+        // 两侧空间都不足，居中显示
+        finalX = Math.max(10, (viewportWidth - tooltipWidth) / 2);
+    }
+
+    // 垂直方向定位：优先显示在鼠标上方
+    if (mouseY - tooltipHeight - topOffset > 10) {
+        // 上方有足够空间，显示在鼠标上方
+        finalY = mouseY - tooltipHeight - topOffset;
+    } else if (mouseY + offset + tooltipHeight < viewportHeight - 10) {
+        // 上方空间不足，显示在鼠标下方
+        finalY = mouseY + offset;
+    } else {
+        // 上下空间都不足，尽量靠上显示
+        finalY = Math.max(10, Math.min(mouseY - tooltipHeight / 2, viewportHeight - tooltipHeight - 10));
+    }
+
+    // 最终边界检查：确保不超出视口
+    finalX = Math.max(10, Math.min(finalX, viewportWidth - tooltipWidth - 10));
+    finalY = Math.max(10, Math.min(finalY, viewportHeight - tooltipHeight - 10));
+
+    tooltip.style.left = `${finalX}px`;
+    tooltip.style.top = `${finalY}px`;
+    tooltip.style.display = 'block';
+
+    try {
+        // 获取股票详情数据
+        await fetchStockDetail(stockCode, stockName);
+    } catch (error) {
+        console.error('❌ 获取股票详情失败:', error);
+        tooltipLoading.style.display = 'none';
+        tooltipData.style.display = 'block';
+        document.getElementById('tooltipCompanyInfo').textContent = '加载失败，请稍后重试';
+    }
+}
+
+// 关闭股票详情悬浮框
+function closeStockTooltip() {
+    const tooltip = document.getElementById('stockDetailTooltip');
+    if (tooltip) {
+        tooltip.style.display = 'none';
+    }
+
+    // 销毁图表实例（使用通用组件的销毁方法）
+    if (currentTooltipChart) {
+        stockChartManager.destroyChart('tooltipChart');
+        currentTooltipChart = null;
+    }
+
+    // 清除保存的股票代码
+    currentTooltipStockCode = null;
+
+    console.log('📊 关闭股票详情悬浮框');
+}
+
+// 构建详细的公司简介
+function buildCompanyInfo(quote, stockCode) {
+    // 判断交易所
+    const exchange = stockCode.startsWith('6') ? '上海证券交易所' :
+                     stockCode.startsWith('0') ? '深圳证券交易所' :
+                     stockCode.startsWith('3') ? '深圳证券交易所（创业板）' :
+                     '深圳证券交易所';
+
+    // 计算涨跌幅
+    const changePercent = parseFloat(quote.changePercent);
+    const change = parseFloat(quote.change);
+    const isPositive = changePercent >= 0;
+
+    // 计算振幅
+    const amplitude = quote.todayHigh && quote.todayLow && quote.yesterdayClose ?
+        (((quote.todayHigh - quote.todayLow) / quote.yesterdayClose) * 100).toFixed(2) : '--';
+
+    // 计算市值（如果有成交量和价格的话，这里是估算）
+    const volume = quote.volume || 0;
+    const marketValue = volume > 0 ? `约 ${(quote.currentPrice * volume / 100000000).toFixed(2)} 亿元` : '数据加载中';
+
+    return `
+        <div class="company-info-section">
+            <div class="info-row">
+                <span class="info-label">📍 交易所：</span>
+                <span class="info-value">${exchange}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">🏢 股票代码：</span>
+                <span class="info-value">${stockCode}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">📊 股票名称：</span>
+                <span class="info-value">${quote.stockName}</span>
+            </div>
+        </div>
+
+        <div class="company-info-section">
+            <div class="section-subtitle">💹 今日表现</div>
+            <div class="info-row">
+                <span class="info-label">开盘价：</span>
+                <span class="info-value">¥${quote.todayOpen.toFixed(2)}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">当前价：</span>
+                <span class="info-value" style="color: ${isPositive ? '#e74c3c' : '#27ae60'}; font-weight: 700;">
+                    ¥${quote.currentPrice.toFixed(2)}
+                    <span style="font-size: 0.85em;">(${isPositive ? '+' : ''}${changePercent.toFixed(2)}%)</span>
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">最高价：</span>
+                <span class="info-value">¥${quote.todayHigh.toFixed(2)}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">最低价：</span>
+                <span class="info-value">¥${quote.todayLow.toFixed(2)}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">涨跌额：</span>
+                <span class="info-value" style="color: ${isPositive ? '#e74c3c' : '#27ae60'};">
+                    ${isPositive ? '+' : ''}¥${change.toFixed(2)}
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">振幅：</span>
+                <span class="info-value">${amplitude}%</span>
+            </div>
+        </div>
+
+        <div class="company-info-section">
+            <div class="section-subtitle">📈 市场数据</div>
+            <div class="info-row">
+                <span class="info-label">昨收价：</span>
+                <span class="info-value">¥${quote.yesterdayClose.toFixed(2)}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">成交量：</span>
+                <span class="info-value">${volume > 0 ? (volume / 10000).toFixed(2) + ' 万股' : '数据加载中'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">成交额：</span>
+                <span class="info-value">${quote.amount ? (quote.amount / 100000000).toFixed(2) + ' 亿元' : '数据加载中'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">流通市值：</span>
+                <span class="info-value">${marketValue}</span>
+            </div>
+        </div>
+
+        <div class="company-info-section">
+            <div class="section-subtitle">ℹ️ 温馨提示</div>
+            <p style="font-size: 0.85rem; color: #7f8c8d; line-height: 1.6; margin: 0;">
+                以上数据仅供参考，投资有风险，入市需谨慎。建议您在投资前充分了解公司基本面、行业前景和市场风险。
+            </p>
+        </div>
+    `;
+}
+
+// 获取股票详情数据
+async function fetchStockDetail(stockCode, stockName) {
+    const tooltipLoading = document.getElementById('tooltipLoading');
+    const tooltipData = document.getElementById('tooltipData');
+
+    try {
+        // 获取股票行情数据
+        const quoteResponse = await fetch(`/api/stock/quote/${stockCode}`);
+
+        if (!quoteResponse.ok) {
+            throw new Error('获取数据失败');
+        }
+
+        const quoteResult = await quoteResponse.json();
+
+        if (!quoteResult.success) {
+            throw new Error('数据解析失败');
+        }
+
+        const quote = quoteResult.data;
+
+        // 更新股票名称（使用实时数据中的名称）
+        document.getElementById('tooltipStockName').textContent = quote.stockName || stockName;
+
+        // 构建详细的公司简介
+        const companyInfo = buildCompanyInfo(quote, stockCode);
+        document.getElementById('tooltipCompanyInfo').innerHTML = companyInfo;
+
+        // 更新实时行情
+        const changePercent = parseFloat(quote.changePercent);
+        const isPositive = changePercent >= 0;
+
+        document.getElementById('tooltipCurrentPrice').textContent = `¥${quote.currentPrice.toFixed(2)}`;
+        document.getElementById('tooltipCurrentPrice').className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
+
+        document.getElementById('tooltipChangePercent').textContent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
+        document.getElementById('tooltipChangePercent').className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
+
+        document.getElementById('tooltipHigh').textContent = `¥${quote.todayHigh.toFixed(2)}`;
+        document.getElementById('tooltipLow').textContent = `¥${quote.todayLow.toFixed(2)}`;
+
+        // 隐藏加载状态，显示数据（先显示行情数据）
+        tooltipLoading.style.display = 'none';
+        tooltipData.style.display = 'block';
+
+        // 异步渲染K线图（使用通用组件）
+        renderTooltipChart(stockCode);
+
+        console.log('✅ 股票详情加载成功');
+
+    } catch (error) {
+        console.error('❌ 获取股票详情错误:', error);
+        throw error;
+    }
+}
+
+// 渲染悬浮框中的K线图（使用通用组件）
+async function renderTooltipChart(stockCode, period = 'intraday') {
+    const canvasId = 'tooltipChart';
+
+    try {
+        // 销毁旧图表
+        if (currentTooltipChart) {
+            stockChartManager.destroyChart(canvasId);
+            currentTooltipChart = null;
+        }
+
+        // 使用通用K线图组件渲染图表
+        const options = period === 'intraday' ? {
+            limit: 48,  // 48个5分钟数据点
+            intradayPeriod: 5  // 5分钟K线
+        } : {};
+
+        await stockChartManager.renderChart(canvasId, stockCode, period, options);
+
+        // 保存图表实例的引用（用于后续销毁）
+        currentTooltipChart = stockChartManager.chartInstances[canvasId];
+
+        console.log(`✅ 悬浮框K线图渲染完成（${period}）`);
+    } catch (error) {
+        console.error('❌ 渲染悬浮框K线图失败:', error);
+    }
+}
+
+// 绑定悬浮框周期切换按钮事件
+function bindTooltipPeriodButtons() {
+    const periodButtons = document.querySelectorAll('.tooltip-period-btn');
+
+    periodButtons.forEach(btn => {
+        // 移除之前的事件监听器（如果有）
+        btn.replaceWith(btn.cloneNode(true));
+    });
+
+    // 重新获取按钮并绑定事件
+    document.querySelectorAll('.tooltip-period-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const period = this.getAttribute('data-period');
+            switchTooltipChartPeriod(period);
+        });
+    });
+
+    console.log('✅ 悬浮框周期切换按钮已绑定');
+}
+
+// 切换悬浮框图表周期
+async function switchTooltipChartPeriod(period) {
+    if (!currentTooltipStockCode) {
+        console.error('❌ 无当前股票代码');
+        return;
+    }
+
+    console.log(`🔄 切换悬浮框图表周期: ${period}`);
+
+    // 更新按钮状态
+    document.querySelectorAll('.tooltip-period-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-period') === period) {
+            btn.classList.add('active');
+        }
+    });
+
+    // 重新渲染图表
+    await renderTooltipChart(currentTooltipStockCode, period);
+}
+
+// 初始化股票代码悬停功能
+function initStockCodeHover() {
+    console.log('🔍 初始化股票代码悬停功能...');
+
+    // 为所有包含股票代码的元素添加悬停事件
+    // 策略：查找所有显示股票代码的元素，为其添加 .stock-hoverable 类和事件
+
+    // 辅助函数：为元素添加悬停事件
+    const addHoverEvents = (el, stockCode, stockName) => {
+        el.classList.add('stock-hoverable');
+
+        // 鼠标进入时显示悬浮框
+        el.addEventListener('mouseenter', (e) => {
+            showStockTooltip(stockCode, stockName, e);
+        });
+
+        // 鼠标离开时延迟关闭悬浮框（给用户时间移动到悬浮框上）
+        el.addEventListener('mouseleave', () => {
+            setTimeout(() => {
+                const tooltip = document.getElementById('stockDetailTooltip');
+                // 检查鼠标是否在悬浮框上
+                if (tooltip && !tooltip.matches(':hover')) {
+                    closeStockTooltip();
+                }
+            }, 200);
+        });
+    };
+
+    // 1. 持仓卡片中的股票代码
+    document.querySelectorAll('.position-card .stock-symbol').forEach(el => {
+        const stockCode = el.textContent.trim();
+        const stockName = el.parentElement.querySelector('.stock-name')?.textContent.trim() || '';
+        if (stockCode && /^\d{6}$/.test(stockCode)) {
+            addHoverEvents(el, stockCode, stockName);
+        }
+    });
+
+    // 2. 自选股列表中的股票代码
+    document.querySelectorAll('.watchlist-item .stock-code').forEach(el => {
+        const stockCode = el.textContent.trim();
+        const stockName = el.parentElement.querySelector('.stock-name')?.textContent.trim() || '';
+        if (stockCode && /^\d{6}$/.test(stockCode)) {
+            addHoverEvents(el, stockCode, stockName);
+        }
+    });
+
+    // 3. 行情卡片中的股票代码（提取括号中的代码）
+    document.querySelectorAll('.quote-symbol').forEach(el => {
+        const text = el.textContent.trim();
+        const match = text.match(/\((\d{6})\)/);
+        if (match) {
+            const stockCode = match[1];
+            const stockName = text.replace(/\(.*\)/, '').trim();
+            addHoverEvents(el, stockCode, stockName);
+        }
+    });
+
+    // 4. 涨跌幅榜中的股票代码
+    document.querySelectorAll('.ranking-code').forEach(el => {
+        const stockCode = el.textContent.trim();
+        const stockName = el.parentElement.querySelector('.ranking-name')?.textContent.trim() || '';
+        if (stockCode && /^\d{6}$/.test(stockCode)) {
+            addHoverEvents(el, stockCode, stockName);
+        }
+    });
+
+    // 5. 新闻中的股票标签
+    document.querySelectorAll('.stock-tag').forEach(el => {
+        const text = el.textContent.trim();
+        const match = text.match(/\((\d{6})\)/);
+        if (match) {
+            const stockCode = match[1];
+            const stockName = text.replace(/\(.*\)/, '').trim();
+            addHoverEvents(el, stockCode, stockName);
+        }
+    });
+
+    // 为悬浮框本身添加鼠标事件，允许用户将鼠标移到悬浮框上
+    const tooltip = document.getElementById('stockDetailTooltip');
+    if (tooltip) {
+        // 鼠标离开悬浮框时关闭
+        tooltip.addEventListener('mouseleave', () => {
+            closeStockTooltip();
+        });
+    }
+
+    console.log('✅ 股票代码悬停功能初始化完成');
+}
+
+// 在页面加载和内容更新时调用初始化函数
+// 添加到现有的 DOMContentLoaded 事件监听器中
+document.addEventListener('DOMContentLoaded', function() {
+    // 延迟初始化，等待内容加载完成
+    setTimeout(() => {
+        initStockCodeHover();
+    }, 1000);
+
+    // 使用 MutationObserver 监听DOM变化，自动为新添加的股票代码添加悬停功能
+    const observer = new MutationObserver((mutations) => {
+        let shouldReinit = false;
+        mutations.forEach((mutation) => {
+            if (mutation.addedNodes.length > 0) {
+                shouldReinit = true;
+            }
+        });
+        if (shouldReinit) {
+            // 延迟重新初始化，避免频繁触发
+            setTimeout(() => {
+                initStockCodeHover();
+            }, 500);
+        }
+    });
+
+    // 监听整个容器的变化
+    const container = document.querySelector('.container');
+    if (container) {
+        observer.observe(container, {
+            childList: true,
+            subtree: true
+        });
+    }
+});
+
+// 导出函数供全局使用
+window.showStockTooltip = showStockTooltip;
+window.closeStockTooltip = closeStockTooltip;
+
+// ==================== 股票推荐功能 ====================
+
+// 生成股票推荐
+async function generateRecommendation() {
+    const container = document.getElementById('stockRecommendation');
+    const generateBtn = document.getElementById('generateRecommendationBtn');
+
+    console.log('💎 开始生成股票推荐...');
+
+    // 禁用按钮
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span>⏳ 生成中...</span>';
+
+    // 显示加载状态
+    container.innerHTML = `
+        <div class="analysis-loading">
+            <div class="loading-spinner"></div>
+            <div class="loading-message">AI正在分析市场并生成股票推荐...</div>
+            <div class="loading-tips">
+                分析内容包括：市场趋势、推荐股票、买入策略、止盈止损建议等<br>
+                预计需要20-40秒，请耐心等待
+            </div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/recommendations/generate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { recommendation, marketData, recommendationDate, nextTradingDay, timestamp } = result.data;
+
+            // 显示推荐结果
+            displayStockRecommendation(recommendation, marketData, recommendationDate, nextTradingDay, timestamp);
+
+            console.log('✅ 股票推荐生成完成');
+            showNotification('股票推荐生成完成', 'success');
+
+        } else {
+            throw new Error(result.error || '生成失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 股票推荐生成错误:', error);
+
+        container.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">生成失败</p>
+                    <p class="hint-desc">${error.message || '股票推荐生成失败，请稍后重试'}</p>
+                </div>
+            </div>
+        `;
+
+        showNotification('股票推荐生成失败: ' + error.message, 'error');
+
+    } finally {
+        // 恢复按钮
+        generateBtn.disabled = false;
+        generateBtn.innerHTML = '<span>🔍 生成推荐</span>';
+    }
+}
+
+// 显示股票推荐内容
+function displayStockRecommendation(recommendation, marketData, recommendationDate, nextTradingDay, timestamp) {
+    const container = document.getElementById('stockRecommendation');
+
+    const recommendationTime = new Date(timestamp).toLocaleString('zh-CN');
+
+    // 使用marked.parse渲染Markdown格式的推荐内容
+    const recommendationHtml = marked.parse(recommendation);
+
+    // 构建市场指数信息
+    let indicesHtml = '';
+    if (marketData && marketData.indices && marketData.indices.length > 0) {
+        indicesHtml = '<div class="summary-grid">';
+        marketData.indices.forEach(idx => {
+            const isPositive = parseFloat(idx.changePercent) >= 0;
+            indicesHtml += `
+                <div class="summary-item">
+                    <div class="summary-label">${idx.name}</div>
+                    <div class="summary-value">${idx.currentPrice}</div>
+                    <div class="summary-sub ${isPositive ? 'positive' : 'negative'}">
+                        ${isPositive ? '+' : ''}${idx.changePercent}%
+                    </div>
+                </div>
+            `;
+        });
+        indicesHtml += '</div>';
+    }
+
+    const html = `
+        <div class="analysis-result">
+            <div class="analysis-summary">
+                <h3 style="margin: 0 0 15px 0;">💎 股票推荐 (${nextTradingDay})</h3>
+                <div class="recommendation-date-info">
+                    <span>📅 基于 ${recommendationDate} 市场数据</span>
+                    <span>🎯 推荐交易日：${nextTradingDay}</span>
+                </div>
+                ${indicesHtml}
+            </div>
+            <div class="analysis-content">${recommendationHtml}</div>
+            <div class="analysis-timestamp">
+                📅 生成时间：${recommendationTime}
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+// 按日期加载推荐
+async function loadRecommendationByDate() {
+    const datePicker = document.getElementById('recommendationDatePicker');
+    const selectedDate = datePicker.value;
+
+    if (!selectedDate) {
+        alert('请选择日期');
+        return;
+    }
+
+    const container = document.getElementById('stockRecommendation');
+
+    console.log(`📅 加载日期 ${selectedDate} 的推荐...`);
+
+    // 显示加载状态
+    container.innerHTML = '<div class="loading-text">正在加载推荐...</div>';
+
+    try {
+        const response = await fetch(`/api/recommendations/${selectedDate}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { recommendation, marketData, recommendationDate, timestamp } = result.data;
+            const nextTradingDay = marketData.nextTradingDay || recommendationDate;
+
+            // 显示推荐结果
+            displayStockRecommendation(recommendation, marketData, recommendationDate, nextTradingDay, timestamp);
+
+            console.log('✅ 推荐加载成功');
+        } else {
+            container.innerHTML = `
+                <div class="analysis-hint">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">暂无推荐</p>
+                        <p class="hint-desc">${selectedDate} 暂无股票推荐记录</p>
+                    </div>
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error('❌ 加载推荐错误:', error);
+        container.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">加载失败</p>
+                    <p class="hint-desc">加载推荐失败，请重试</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// 查看推荐历史
+async function viewRecommendationHistory() {
+    const modal = document.getElementById('recommendationHistoryModal');
+    const content = document.getElementById('recommendationHistoryContent');
+
+    // 显示模态框
+    modal.style.display = 'block';
+    content.innerHTML = '<div class="loading-text">正在加载历史推荐...</div>';
+
+    console.log('📋 开始加载历史推荐...');
+
+    try {
+        const response = await fetch('/api/recommendations/list');
+        const result = await response.json();
+
+        if (result.success && result.data.records && result.data.records.length > 0) {
+            const records = result.data.records;
+            console.log(`✅ 成功加载 ${records.length} 份历史推荐`);
+
+            let html = '<div class="report-list">';
+
+            records.forEach(record => {
+                const date = new Date(record.created_at);
+                const dateStr = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                const typeLabel = record.recommendation_type === 'manual' ? '手动生成' : '自动生成';
+                const typeClass = record.recommendation_type === 'manual' ? 'report-type-manual' : 'report-type-scheduled';
+
+                html += `
+                    <div class="report-list-item">
+                        <div class="report-item-info" onclick="showRecommendationDetailInModal(${record.id})" style="cursor: pointer; flex: 1;">
+                            <div class="report-item-date">📅 ${record.recommendation_date}</div>
+                            <span class="report-item-type ${typeClass}">${typeLabel}</span>
+                        </div>
+                        <button class="report-delete-btn" onclick="event.stopPropagation(); deleteRecommendation(${record.id});" title="删除推荐">🗑️</button>
+                        <div class="report-item-action" onclick="showRecommendationDetailInModal(${record.id})" style="cursor: pointer;">→</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            if (result.data.hasMore) {
+                html += '<div class="loading-text" style="margin-top: 20px;">显示最近30份推荐</div>';
+            }
+
+            content.innerHTML = html;
+        } else {
+            content.innerHTML = '<div class="loading-text">暂无历史推荐</div>';
+        }
+
+    } catch (error) {
+        console.error('❌ 加载历史推荐错误:', error);
+        content.innerHTML = '<div class="loading-text">加载失败，请重试</div>';
+    }
+}
+
+// 在弹窗中查看推荐详情
+async function showRecommendationDetailInModal(recommendationId) {
+    const detailModal = document.getElementById('recommendationDetailModal');
+    const detailContent = document.getElementById('recommendationDetailContent');
+
+    console.log(`📄 正在加载推荐 ID: ${recommendationId}`);
+
+    // 显示详情模态框
+    detailModal.style.display = 'block';
+    detailContent.innerHTML = '<div class="loading-text">正在加载推荐详情...</div>';
+
+    try {
+        const response = await fetch(`/api/recommendations/${recommendationId}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { recommendation, marketData, recommendationDate, timestamp } = result.data;
+            const nextTradingDay = marketData.nextTradingDay || recommendationDate;
+
+            // 格式化时间
+            const recommendationTime = new Date(timestamp).toLocaleString('zh-CN');
+
+            // 使用marked.parse渲染Markdown格式的推荐内容
+            const recommendationHtml = marked.parse(recommendation);
+
+            // 构建市场指数信息
+            let indicesHtml = '';
+            if (marketData && marketData.indices && marketData.indices.length > 0) {
+                indicesHtml = '<div class="summary-grid">';
+                marketData.indices.forEach(idx => {
+                    const isPositive = parseFloat(idx.changePercent) >= 0;
+                    indicesHtml += `
+                        <div class="summary-item">
+                            <div class="summary-label">${idx.name}</div>
+                            <div class="summary-value">${idx.currentPrice}</div>
+                            <div class="summary-sub ${isPositive ? 'positive' : 'negative'}">
+                                ${isPositive ? '+' : ''}${idx.changePercent}%
+                            </div>
+                        </div>
+                    `;
+                });
+                indicesHtml += '</div>';
+            }
+
+            // 生成详情HTML
+            const html = `
+                <div class="analysis-result">
+                    <div class="analysis-summary">
+                        <h3 style="margin: 0 0 15px 0;">💎 股票推荐 (${nextTradingDay})</h3>
+                        <div class="recommendation-date-info">
+                            <span>📅 基于 ${recommendationDate} 市场数据</span>
+                            <span>🎯 推荐交易日：${nextTradingDay}</span>
+                        </div>
+                        ${indicesHtml}
+                    </div>
+                    <div class="analysis-content">${recommendationHtml}</div>
+                    <div class="analysis-timestamp">
+                        📅 生成时间：${recommendationTime}
+                    </div>
+                </div>
+            `;
+
+            detailContent.innerHTML = html;
+
+            console.log('✅ 推荐详情加载成功');
+        } else {
+            throw new Error(result.error || '加载失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 加载推荐详情错误:', error);
+
+        detailContent.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">加载失败</p>
+                    <p class="hint-desc">${error.message || '加载推荐详情失败'}</p>
+                </div>
+            </div>
+        `;
+
+        showNotification('加载推荐失败', 'error');
+    }
+}
+
+// 关闭推荐历史模态框
+function closeRecommendationHistoryModal() {
+    const modal = document.getElementById('recommendationHistoryModal');
+    modal.style.display = 'none';
+}
+
+// 关闭推荐详情模态框
+function closeRecommendationDetailModal() {
+    const modal = document.getElementById('recommendationDetailModal');
+    modal.style.display = 'none';
+}
+
+// 删除推荐记录
+async function deleteRecommendation(recommendationId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    if (!confirm('确定要删除这份推荐记录吗？此操作不可恢复。')) {
+        return;
+    }
+
+    console.log(`🗑️ 正在删除推荐 ID: ${recommendationId}`);
+
+    try {
+        const response = await fetch(`/api/recommendations/${recommendationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log('✅ 推荐删除成功');
+            showNotification('推荐记录删除成功', 'success');
+
+            // 刷新推荐历史列表
+            viewRecommendationHistory();
+        } else {
+            throw new Error(result.error || '删除失败');
+        }
+
+    } catch (error) {
+        console.error('❌ 删除推荐错误:', error);
+        showNotification('删除推荐失败: ' + error.message, 'error');
+    }
+}
+
+// 加载今日推荐（自动加载）
+async function loadTodayRecommendation() {
+    const container = document.getElementById('stockRecommendation');
+
+    if (!container) return;
+
+    try {
+        const today = new Date().toISOString().split('T')[0];
+        console.log(`📅 自动加载今日推荐 (${today})...`);
+
+        const response = await fetch(`/api/recommendations/${today}`);
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            const { recommendation, marketData, recommendationDate, timestamp } = result.data;
+            const nextTradingDay = marketData.nextTradingDay || recommendationDate;
+
+            // 显示推荐结果
+            displayStockRecommendation(recommendation, marketData, recommendationDate, nextTradingDay, timestamp);
+
+            console.log('✅ 今日推荐加载成功');
+        } else {
+            console.log('ℹ️ 今日暂无推荐');
+        }
+
+    } catch (error) {
+        console.error('❌ 加载今日推荐错误:', error);
+    }
 }

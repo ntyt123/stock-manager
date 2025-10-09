@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(curl -s \"http://localhost:3000/api/news/hot?category=tech\")",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "WebSearch",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

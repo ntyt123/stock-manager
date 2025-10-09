@@ -8,7 +8,7 @@ const XLSX = require('xlsx');
 const iconv = require('iconv-lite');
 const axios = require('axios');
 const cron = require('node-cron');
-const { initDatabase, userModel, positionModel, positionUpdateModel, watchlistModel, analysisReportModel } = require('./database');
+const { initDatabase, userModel, positionModel, positionUpdateModel, watchlistModel, analysisReportModel, callAuctionAnalysisModel, stockRecommendationModel } = require('./database');
 const stockCache = require('./stockCache');
 
 const app = express();
@@ -1114,6 +1114,96 @@ app.get('/api/stock/history/:stockCode', async (req, res) => {
     }
 });
 
+// 获取股票分时数据（分钟K线）
+app.get('/api/stock/intraday/:stockCode', async (req, res) => {
+    try {
+        const { stockCode } = req.params;
+        const { period = '5', limit = 100 } = req.query;
+
+        console.log(`📊 获取 ${stockCode} 的 ${period} 分钟分时数据`);
+
+        // 判断股票市场
+        const market = stockCode.startsWith('6') ? 'sh' : 'sz';
+        const fullCode = `${market}${stockCode}`;
+
+        // 周期映射
+        const periodMap = {
+            '1': '1',      // 1分钟（可能不稳定）
+            '5': '5',      // 5分钟
+            '15': '15',    // 15分钟
+            '30': '30',    // 30分钟
+            '60': '60',    // 60分钟（1小时）
+            '240': '240'   // 240分钟（日线）
+        };
+
+        const scale = periodMap[period] || '5';
+
+        // 使用新浪财经API获取分时数据
+        const sinaUrl = `http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${fullCode}&scale=${scale}&datalen=${limit}`;
+
+        const response = await axios.get(sinaUrl, {
+            headers: {
+                'Referer': 'https://finance.sina.com.cn'
+            },
+            timeout: 10000
+        });
+
+        // 检查响应
+        if (!response.data || response.data === 'null' || (Array.isArray(response.data) && response.data.length === 0)) {
+            return res.status(404).json({
+                success: false,
+                error: '未找到分时数据（可能当前无交易或数据源暂无此周期数据）'
+            });
+        }
+
+        // 解析并格式化数据
+        const intradayData = response.data;
+        const formattedData = intradayData.map(item => ({
+            time: item.day,                    // 时间
+            open: parseFloat(item.open),       // 开盘价
+            high: parseFloat(item.high),       // 最高价
+            low: parseFloat(item.low),         // 最低价
+            close: parseFloat(item.close),     // 收盘价
+            volume: parseInt(item.volume)      // 成交量
+        }));
+
+        // 获取股票名称（从实时行情）
+        let stockName = '';
+        try {
+            const cached = stockCache.getQuote(stockCode);
+            if (cached) {
+                stockName = cached.stockName;
+            }
+        } catch (e) {
+            // 忽略错误
+        }
+
+        const result = {
+            stockCode: stockCode,
+            stockName: stockName,
+            period: period,
+            scale: scale,
+            count: formattedData.length,
+            intraday: formattedData
+        };
+
+        console.log(`✅ 获取到 ${formattedData.length} 条 ${period} 分钟数据`);
+
+        res.json({
+            success: true,
+            data: result,
+            cached: false
+        });
+
+    } catch (error) {
+        console.error('获取分时数据错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '获取分时数据失败: ' + error.message
+        });
+    }
+});
+
 // 批量获取股票行情
 app.post('/api/stock/quotes', async (req, res) => {
     try {
@@ -1289,6 +1379,166 @@ app.delete('/api/positions', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             error: '清空持仓数据失败'
+        });
+    }
+});
+
+// 使用 easytrader 同步券商持仓数据
+app.post('/api/positions/sync-ebroker', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        console.log(`🔄 用户 ${userId} 请求从券商同步持仓数据...`);
+
+        const { spawn } = require('child_process');
+        const fs = require('fs');
+
+        // 检查 Python 脚本是否存在
+        const scriptPath = path.join(__dirname, 'ebroker_sync.py');
+        if (!fs.existsSync(scriptPath)) {
+            return res.status(500).json({
+                success: false,
+                error: '同步脚本不存在，请联系管理员'
+            });
+        }
+
+        // 检查配置文件是否存在
+        const configPath = path.join(__dirname, 'account.json');
+        if (!fs.existsSync(configPath)) {
+            return res.status(400).json({
+                success: false,
+                error: '配置文件不存在，请先创建 account.json 配置文件',
+                hint: '运行命令: python ebroker_sync.py init'
+            });
+        }
+
+        // 调用 Python 脚本同步持仓
+        const python = spawn('python', [scriptPath, 'sync', configPath]);
+
+        let stdout = '';
+        let stderr = '';
+
+        python.stdout.on('data', (data) => {
+            stdout += data.toString();
+            console.log(data.toString());
+        });
+
+        python.stderr.on('data', (data) => {
+            stderr += data.toString();
+            console.error(data.toString());
+        });
+
+        python.on('close', async (code) => {
+            if (code !== 0) {
+                console.error(`❌ Python 脚本执行失败，退出码: ${code}`);
+                console.error('错误输出:', stderr);
+
+                await positionUpdateModel.recordUpdate(
+                    userId,
+                    '券商同步',
+                    'failed',
+                    stderr || 'Python脚本执行失败',
+                    0,
+                    0
+                );
+
+                return res.status(500).json({
+                    success: false,
+                    error: 'easytrader 同步失败',
+                    details: stderr || 'Python脚本执行失败',
+                    stdout: stdout
+                });
+            }
+
+            try {
+                // 解析 Python 脚本的输出（JSON 格式）
+                const jsonMatch = stdout.match(/\{[\s\S]*"success"[\s\S]*\}/);
+                if (!jsonMatch) {
+                    throw new Error('无法从Python脚本输出中找到JSON数据');
+                }
+
+                const result = JSON.parse(jsonMatch[0]);
+
+                if (!result.success || !result.data || result.data.length === 0) {
+                    await positionUpdateModel.recordUpdate(
+                        userId,
+                        '券商同步',
+                        'failed',
+                        '未获取到持仓数据',
+                        0,
+                        0
+                    );
+
+                    return res.json({
+                        success: false,
+                        error: '未获取到持仓数据，可能账户无持仓或登录失败'
+                    });
+                }
+
+                // 保存同步的持仓数据到数据库
+                const positions = result.data;
+                const saveResult = await positionModel.saveOrUpdatePositions(userId, positions);
+
+                console.log(`✅ 从券商同步 ${positions.length} 个持仓，已保存到数据库`);
+
+                // 记录同步成功
+                await positionUpdateModel.recordUpdate(
+                    userId,
+                    '券商同步 (easytrader)',
+                    'success',
+                    null,
+                    positions.length,
+                    positions.length
+                );
+
+                // 计算汇总信息
+                const totalMarketValue = positions.reduce((sum, pos) => sum + pos.marketValue, 0);
+                const totalCost = positions.reduce((sum, pos) => sum + (pos.costPrice * pos.quantity), 0);
+                const totalProfitLoss = positions.reduce((sum, pos) => sum + pos.profitLoss, 0);
+                const totalProfitLossRate = totalCost > 0 ? (totalProfitLoss / totalCost * 100).toFixed(2) : 0;
+
+                res.json({
+                    success: true,
+                    message: '从券商同步持仓数据成功',
+                    data: {
+                        positions: positions,
+                        summary: {
+                            totalMarketValue: totalMarketValue,
+                            totalProfitLoss: totalProfitLoss,
+                            totalProfitLossRate: totalProfitLossRate,
+                            positionCount: positions.length,
+                            lastUpdate: new Date().toISOString(),
+                            fileName: '券商同步 (easytrader)'
+                        },
+                        syncTime: result.summary.syncTime
+                    }
+                });
+
+            } catch (parseError) {
+                console.error('❌ 解析 Python 输出失败:', parseError);
+
+                await positionUpdateModel.recordUpdate(
+                    userId,
+                    '券商同步',
+                    'failed',
+                    parseError.message,
+                    0,
+                    0
+                );
+
+                res.status(500).json({
+                    success: false,
+                    error: '解析同步数据失败',
+                    details: parseError.message,
+                    stdout: stdout
+                });
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ 券商同步错误:', error);
+        res.status(500).json({
+            success: false,
+            error: '券商同步失败: ' + error.message
         });
     }
 });
@@ -1627,10 +1877,29 @@ ${portfolioSummary.detailedPositions}
    - 指出哪些股票值得继续持有
    - 指出哪些股票需要警惕或减仓
 
-3. **风险提示**
-   - 识别当前持仓的主要风险点
-   - 提出具体的风险控制建议
-   - 建议设置止损位
+3. **风险预警** ⚠️ **【关键】此部分必须包含且格式必须严格遵守，否则风险预警将无法正常显示！**
+
+   **重要格式要求：**
+   - 必须使用独立的二级标题：## 【风险预警】（必须独占一行，前后各空一行）
+   - 在标题下方列出3-5个具体的风险预警点
+   - 每个预警必须以 "-" 开头，独立一行
+   - 每个预警必须包含风险等级标识：【高风险】、【中风险】或【注意】
+   - 每个预警必须包含具体的数据和操作建议
+
+   **标准格式示例（请严格遵守此格式）：**
+
+   ## 【风险预警】
+
+   - ⚠️ 【高风险】XX股票亏损严重（当前亏损-XX%），建议设置止损位于¥XX，避免进一步损失
+   - ⚠️ 【中风险】持仓过于集中在XX行业（占比XX%），建议分散投资到其他板块
+   - ⚠️ 【注意】XX股票短期涨幅过大（已上涨XX%），注意回调风险，建议适当减仓
+   - ⚠️ 【注意】市场波动较大，建议控制仓位在XX%以内，保留现金应对风险
+
+   **内容要求：**
+   - 识别当前持仓的主要风险点（如个股风险、行业集中度风险、市场系统性风险等）
+   - 提出具体的、可执行的风险控制建议
+   - 对亏损较大的股票建议具体的止损位（基于实际成本价和当前价）
+   - 对盈利较多的股票建议止盈策略
 
 4. **操作建议**
    - 短期（1-2周）操作建议
@@ -1742,6 +2011,57 @@ app.get('/api/analysis/reports/:reportId', authenticateToken, async (req, res) =
     }
 });
 
+// 删除持仓分析报告API
+app.delete('/api/analysis/reports/:reportId', authenticateToken, async (req, res) => {
+    const reportId = parseInt(req.params.reportId);
+    const userId = req.user.id;
+
+    try {
+        // 先获取报告，验证所有权
+        const report = await analysisReportModel.findById(reportId);
+
+        if (!report) {
+            return res.status(404).json({
+                success: false,
+                error: '报告不存在'
+            });
+        }
+
+        // 验证报告所有权
+        if (report.user_id !== userId) {
+            return res.status(403).json({
+                success: false,
+                error: '无权删除此报告'
+            });
+        }
+
+        // 执行删除
+        const result = await analysisReportModel.delete(reportId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: '报告不存在或已被删除'
+            });
+        }
+
+        console.log(`✅ 用户 ${userId} 删除了持仓分析报告 ID: ${reportId}`);
+
+        res.json({
+            success: true,
+            message: '报告删除成功',
+            deletedCount: result.changes
+        });
+
+    } catch (error) {
+        console.error('❌ 删除报告错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '删除报告失败'
+        });
+    }
+});
+
 // 构建持仓摘要
 function buildPortfolioSummary(positions) {
     let totalMarketValue = 0;
@@ -1835,6 +2155,252 @@ async function callDeepSeekAPI(userMessage, systemMessage = '你是一位专业�
     }
 }
 
+// 集合竞价分析API - 手动触发分析
+app.post('/api/analysis/call-auction', async (req, res) => {
+    try {
+        console.log('📊 开始集合竞价分析...');
+
+        // 获取今天的日期
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // 1. 获取主要市场指数数据
+        const indexCodes = ['000001', '399001', '399006']; // 上证指数、深证成指、创业板指
+        const indexQuotes = [];
+
+        for (const code of indexCodes) {
+            try {
+                const market = code.startsWith('6') ? 'sh' : 'sz';
+                const fullCode = `${market}${code}`;
+                const sinaUrl = `https://hq.sinajs.cn/list=${fullCode}`;
+
+                const response = await axios.get(sinaUrl, {
+                    headers: { 'Referer': 'https://finance.sina.com.cn' },
+                    timeout: 5000,
+                    responseType: 'arraybuffer'
+                });
+
+                const data = iconv.decode(Buffer.from(response.data), 'gbk');
+                const match = data.match(/="(.+)"/);
+
+                if (match && match[1]) {
+                    const values = match[1].split(',');
+                    if (values.length >= 32) {
+                        indexQuotes.push({
+                            code: code,
+                            name: values[0],
+                            currentPrice: parseFloat(values[3]),
+                            yesterdayClose: parseFloat(values[2]),
+                            change: (parseFloat(values[3]) - parseFloat(values[2])).toFixed(2),
+                            changePercent: ((parseFloat(values[3]) - parseFloat(values[2])) / parseFloat(values[2]) * 100).toFixed(2),
+                            todayOpen: parseFloat(values[1]),
+                            todayHigh: parseFloat(values[4]),
+                            todayLow: parseFloat(values[5]),
+                            volume: parseInt(values[8]),
+                            amount: parseFloat(values[9])
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`获取指数 ${code} 数据失败:`, error.message);
+            }
+        }
+
+        if (indexQuotes.length === 0) {
+            return res.json({
+                success: false,
+                error: '无法获取市场指数数据'
+            });
+        }
+
+        // 2. 构建市场概况摘要
+        const marketSummary = {
+            date: today,
+            indices: indexQuotes,
+            analysisTime: new Date().toISOString()
+        };
+
+        // 3. 构建AI分析提示词
+        const analysisPrompt = `请作为专业的股票分析师，对今日（${today}）的A股市场集合竞价情况进行分析：
+
+【市场指数概况】
+${indexQuotes.map(idx =>
+    `- ${idx.name} (${idx.code}):
+   开盘价: ¥${idx.todayOpen} | 现价: ¥${idx.currentPrice}
+   涨跌: ${idx.change >= 0 ? '+' : ''}${idx.change} (${idx.changePercent >= 0 ? '+' : ''}${idx.changePercent}%)
+   最高: ¥${idx.todayHigh} | 最低: ¥${idx.todayLow}
+   成交量: ${(idx.volume / 100000000).toFixed(2)}亿股 | 成交额: ${(idx.amount / 100000000).toFixed(2)}亿元`
+).join('\n\n')}
+
+请从以下几个方面进行专业分析：
+
+1. **集合竞价特征**
+   - 分析三大指数的开盘情况和市场情绪
+   - 判断今日市场的整体强弱
+   - 识别是否有明显的主力资金动向
+
+2. **市场热点**
+   - 根据指数表现推断可能的热点板块
+   - 分析资金流向和市场偏好
+   - 预判今日可能活跃的行业
+
+3. **交易策略建议**
+   - 今日操作建议（激进/稳健/观望）
+   - 重点关注的指数区间
+   - 仓位控制建议
+
+4. **风险提示**
+   - 识别今日潜在风险点
+   - 提醒需要警惕的市场信号
+   - 建议设置止损位
+
+5. **全天展望**
+   - 预测今日市场可能走势
+   - 关键时间节点提醒
+   - 收盘预期
+
+请提供简明扼要、可执行的专业分析建议。注意：以上建议仅供参考，不构成具体投资建议。`;
+
+        // 4. 调用DeepSeek AI进行分析
+        const aiAnalysis = await callDeepSeekAPI(analysisPrompt, '你是一位专业的A股市场分析师，擅长解读集合竞价和盘前信息。');
+
+        console.log('✅ 集合竞价AI分析完成');
+
+        // 5. 保存分析结果到数据库
+        const savedAnalysis = await callAuctionAnalysisModel.save(today, aiAnalysis, marketSummary, 'manual');
+        console.log(`📄 集合竞价分析已保存，ID: ${savedAnalysis.id}`);
+
+        // 6. 返回分析结果
+        res.json({
+            success: true,
+            data: {
+                analysisId: savedAnalysis.id,
+                analysisDate: today,
+                analysis: aiAnalysis,
+                marketSummary: marketSummary,
+                timestamp: savedAnalysis.created_at
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ 集合竞价分析错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '集合竞价分析失败: ' + error.message
+        });
+    }
+});
+
+// 获取集合竞价分析历史记录列表API
+app.get('/api/analysis/call-auction/list', async (req, res) => {
+    const limit = parseInt(req.query.limit) || 30;
+    const offset = parseInt(req.query.offset) || 0;
+
+    try {
+        const records = await callAuctionAnalysisModel.findAll(limit, offset);
+        const totalCount = await callAuctionAnalysisModel.getCount();
+
+        res.json({
+            success: true,
+            data: {
+                records: records,
+                totalCount: totalCount,
+                hasMore: offset + records.length < totalCount
+            }
+        });
+    } catch (error) {
+        console.error('❌ 获取集合竞价分析列表错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '获取分析列表失败'
+        });
+    }
+});
+
+// 获取单个集合竞价分析详情API
+app.get('/api/analysis/call-auction/:param', async (req, res) => {
+    const param = req.params.param;
+
+    try {
+        let analysis;
+
+        // 判断参数是ID还是日期（日期格式：YYYY-MM-DD）
+        if (/^\d{4}-\d{2}-\d{2}$/.test(param)) {
+            // 按日期查询
+            analysis = await callAuctionAnalysisModel.findByDate(param);
+        } else {
+            // 按ID查询
+            analysis = await callAuctionAnalysisModel.findById(parseInt(param));
+        }
+
+        if (!analysis) {
+            return res.status(404).json({
+                success: false,
+                error: '分析记录不存在'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                analysisId: analysis.id,
+                analysisDate: analysis.analysis_date,
+                analysis: analysis.analysis_content,
+                marketSummary: analysis.market_summary,
+                analysisType: analysis.analysis_type,
+                timestamp: analysis.created_at
+            }
+        });
+    } catch (error) {
+        console.error('❌ 获取集合竞价分析详情错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '获取分析详情失败'
+        });
+    }
+});
+
+// 删除集合竞价分析记录API
+app.delete('/api/analysis/call-auction/:analysisId', authenticateToken, async (req, res) => {
+    const analysisId = parseInt(req.params.analysisId);
+
+    try {
+        // 先获取分析记录，确认存在
+        const analysis = await callAuctionAnalysisModel.findById(analysisId);
+
+        if (!analysis) {
+            return res.status(404).json({
+                success: false,
+                error: '分析记录不存在'
+            });
+        }
+
+        // 执行删除
+        const result = await callAuctionAnalysisModel.delete(analysisId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: '分析记录不存在或已被删除'
+            });
+        }
+
+        console.log(`✅ 用户 ${req.user.id} 删除了集合竞价分析 ID: ${analysisId} (日期: ${analysis.analysis_date})`);
+
+        res.json({
+            success: true,
+            message: '分析记录删除成功',
+            deletedCount: result.changes
+        });
+
+    } catch (error) {
+        console.error('❌ 删除集合竞价分析错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '删除分析记录失败'
+        });
+    }
+});
+
 // 定时任务：每天下午5点自动分析所有用户的持仓
 // cron表达式：0 17 * * * 表示每天17:00执行
 cron.schedule('0 17 * * *', async () => {
@@ -1842,7 +2408,7 @@ cron.schedule('0 17 * * *', async () => {
 
     try {
         // 获取所有用户
-        const users = await userModel.getAllUsers();
+        const users = await userModel.findAll();
 
         for (const user of users) {
             try {
@@ -1899,6 +2465,410 @@ ${portfolioSummary.detailedPositions}
 });
 
 console.log('⏰ 定时任务已启动：每天17:00自动分析持仓');
+
+// 定时任务：每天上午9:30自动分析集合竞价
+// cron表达式：30 9 * * * 表示每天9:30执行
+cron.schedule('30 9 * * *', async () => {
+    console.log('⏰ 定时任务触发：开始自动分析集合竞价...');
+
+    try {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+        // 检查今日是否已经分析过（避免重复）
+        const existingAnalysis = await callAuctionAnalysisModel.findByDate(today);
+        if (existingAnalysis) {
+            console.log(`ℹ️ 今日 (${today}) 已存在集合竞价分析，跳过自动分析`);
+            return;
+        }
+
+        // 1. 获取主要市场指数数据
+        const indexCodes = ['000001', '399001', '399006']; // 上证指数、深证成指、创业板指
+        const indexQuotes = [];
+
+        for (const code of indexCodes) {
+            try {
+                const market = code.startsWith('6') ? 'sh' : 'sz';
+                const fullCode = `${market}${code}`;
+                const sinaUrl = `https://hq.sinajs.cn/list=${fullCode}`;
+
+                const response = await axios.get(sinaUrl, {
+                    headers: { 'Referer': 'https://finance.sina.com.cn' },
+                    timeout: 5000,
+                    responseType: 'arraybuffer'
+                });
+
+                const data = iconv.decode(Buffer.from(response.data), 'gbk');
+                const match = data.match(/="(.+)"/);
+
+                if (match && match[1]) {
+                    const values = match[1].split(',');
+                    if (values.length >= 32) {
+                        indexQuotes.push({
+                            code: code,
+                            name: values[0],
+                            currentPrice: parseFloat(values[3]),
+                            yesterdayClose: parseFloat(values[2]),
+                            change: (parseFloat(values[3]) - parseFloat(values[2])).toFixed(2),
+                            changePercent: ((parseFloat(values[3]) - parseFloat(values[2])) / parseFloat(values[2]) * 100).toFixed(2),
+                            todayOpen: parseFloat(values[1]),
+                            todayHigh: parseFloat(values[4]),
+                            todayLow: parseFloat(values[5]),
+                            volume: parseInt(values[8]),
+                            amount: parseFloat(values[9])
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`获取指数 ${code} 数据失败:`, error.message);
+            }
+        }
+
+        if (indexQuotes.length === 0) {
+            console.log('❌ 无法获取市场指数数据，跳过集合竞价分析');
+            return;
+        }
+
+        // 2. 构建市场概况摘要
+        const marketSummary = {
+            date: today,
+            indices: indexQuotes,
+            analysisTime: new Date().toISOString()
+        };
+
+        // 3. 构建AI分析提示词
+        const analysisPrompt = `请作为专业的股票分析师，对今日（${today}）的A股市场集合竞价情况进行分析：
+
+【市场指数概况】
+${indexQuotes.map(idx =>
+    `- ${idx.name} (${idx.code}):
+   开盘价: ¥${idx.todayOpen} | 现价: ¥${idx.currentPrice}
+   涨跌: ${idx.change >= 0 ? '+' : ''}${idx.change} (${idx.changePercent >= 0 ? '+' : ''}${idx.changePercent}%)
+   最高: ¥${idx.todayHigh} | 最低: ¥${idx.todayLow}
+   成交量: ${(idx.volume / 100000000).toFixed(2)}亿股 | 成交额: ${(idx.amount / 100000000).toFixed(2)}亿元`
+).join('\n\n')}
+
+请从以下几个方面进行专业分析：
+
+1. **集合竞价特征**
+   - 分析三大指数的开盘情况和市场情绪
+   - 判断今日市场的整体强弱
+   - 识别是否有明显的主力资金动向
+
+2. **市场热点**
+   - 根据指数表现推断可能的热点板块
+   - 分析资金流向和市场偏好
+   - 预判今日可能活跃的行业
+
+3. **交易策略建议**
+   - 今日操作建议（激进/稳健/观望）
+   - 重点关注的指数区间
+   - 仓位控制建议
+
+4. **风险提示**
+   - 识别今日潜在风险点
+   - 提醒需要警惕的市场信号
+   - 建议设置止损位
+
+5. **全天展望**
+   - 预测今日市场可能走势
+   - 关键时间节点提醒
+   - 收盘预期
+
+请提供简明扼要、可执行的专业分析建议。注意：以上建议仅供参考，不构成具体投资建议。`;
+
+        // 4. 调用DeepSeek AI进行分析
+        const aiAnalysis = await callDeepSeekAPI(analysisPrompt, '你是一位专业的A股市场分析师，擅长解读集合竞价和盘前信息。');
+
+        console.log('✅ 集合竞价AI分析完成');
+
+        // 5. 保存分析结果到数据库
+        const savedAnalysis = await callAuctionAnalysisModel.save(today, aiAnalysis, marketSummary, 'scheduled');
+        console.log(`📄 集合竞价分析已保存，ID: ${savedAnalysis.id}, 日期: ${today}`);
+
+        console.log('✅ 集合竞价自动分析完成');
+
+    } catch (error) {
+        console.error('❌ 集合竞价自动分析失败:', error.message);
+    }
+}, {
+    timezone: 'Asia/Shanghai'
+});
+
+console.log('⏰ 定时任务已启动：每天9:30自动分析集合竞价');
+
+// 股票推荐API - 手动触发生成推荐
+app.post('/api/recommendations/generate', async (req, res) => {
+    try {
+        console.log('📊 开始生成股票推荐...');
+
+        // 获取今天的日期
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+        const nextTradingDay = getNextTradingDay(); // 获取下一个交易日
+
+        // 1. 获取主要市场指数数据
+        const indexCodes = ['000001', '399001', '399006']; // 上证指数、深证成指、创业板指
+        const indexQuotes = [];
+
+        for (const code of indexCodes) {
+            try {
+                const market = code.startsWith('6') ? 'sh' : 'sz';
+                const fullCode = `${market}${code}`;
+                const sinaUrl = `https://hq.sinajs.cn/list=${fullCode}`;
+
+                const response = await axios.get(sinaUrl, {
+                    headers: { 'Referer': 'https://finance.sina.com.cn' },
+                    timeout: 5000,
+                    responseType: 'arraybuffer'
+                });
+
+                const data = iconv.decode(Buffer.from(response.data), 'gbk');
+                const match = data.match(/="(.+)"/);
+
+                if (match && match[1]) {
+                    const values = match[1].split(',');
+                    if (values.length >= 32) {
+                        indexQuotes.push({
+                            code: code,
+                            name: values[0],
+                            currentPrice: parseFloat(values[3]),
+                            yesterdayClose: parseFloat(values[2]),
+                            change: (parseFloat(values[3]) - parseFloat(values[2])).toFixed(2),
+                            changePercent: ((parseFloat(values[3]) - parseFloat(values[2])) / parseFloat(values[2]) * 100).toFixed(2),
+                            todayOpen: parseFloat(values[1]),
+                            todayHigh: parseFloat(values[4]),
+                            todayLow: parseFloat(values[5]),
+                            volume: parseInt(values[8]),
+                            amount: parseFloat(values[9])
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error(`获取指数 ${code} 数据失败:`, error.message);
+            }
+        }
+
+        if (indexQuotes.length === 0) {
+            return res.json({
+                success: false,
+                error: '无法获取市场指数数据'
+            });
+        }
+
+        // 2. 构建市场数据摘要
+        const marketData = {
+            date: today,
+            nextTradingDay: nextTradingDay,
+            indices: indexQuotes,
+            generationTime: new Date().toISOString()
+        };
+
+        // 3. 构建AI推荐提示词
+        const recommendationPrompt = `请作为专业的股票投资顾问，基于当前市场数据，为投资者推荐${nextTradingDay}（下一个交易日）值得关注和买入的股票：
+
+【市场概况 - ${today}】
+${indexQuotes.map(idx =>
+    `- ${idx.name} (${idx.code}):
+   收盘价: ¥${idx.currentPrice}
+   涨跌: ${idx.change >= 0 ? '+' : ''}${idx.change} (${idx.changePercent >= 0 ? '+' : ''}${idx.changePercent}%)
+   成交量: ${(idx.volume / 100000000).toFixed(2)}亿股 | 成交额: ${(idx.amount / 100000000).toFixed(2)}亿元`
+).join('\n\n')}
+
+请从以下几个方面进行专业推荐：
+
+1. **市场趋势分析**
+   - 分析当前市场整体走势和情绪
+   - 识别市场热点板块和资金流向
+   - 判断短期市场机会
+
+2. **推荐股票（3-5只）**
+
+   对于每只推荐的股票，请按以下格式提供：
+
+   **股票名称 (股票代码)**
+   - **推荐理由**: 详细说明推荐该股票的理由（如基本面、技术面、消息面等）
+   - **目标买入价**: ¥XX.XX - ¥XX.XX（给出合理的买入价格区间）
+   - **止盈位**: ¥XX.XX（建议盈利XX%止盈）
+   - **止损位**: ¥XX.XX（建议跌破此价格止损）
+   - **持仓建议**: X%（建议占总仓位的比例）
+   - **投资周期**: 短线/中线/长线
+   - **风险等级**: 高/中/低
+
+3. **交易策略**
+   - ${nextTradingDay}具体操作建议
+   - 仓位控制建议
+   - 分批买入策略
+
+4. **风险提示**
+   - 市场风险警示
+   - 个股风险提示
+   - 注意事项
+
+5. **免责声明**
+   以上推荐仅供参考，不构成具体投资建议。投资有风险，入市需谨慎。
+
+请提供详细、专业、可执行的股票推荐和交易建议。`;
+
+        // 4. 调用DeepSeek AI生成推荐
+        const aiRecommendation = await callDeepSeekAPI(recommendationPrompt, '你是一位专业的A股投资顾问，擅长分析市场趋势和推荐优质股票。');
+
+        console.log('✅ 股票推荐AI生成完成');
+
+        // 5. 保存推荐结果到数据库
+        const savedRecommendation = await stockRecommendationModel.save(today, aiRecommendation, marketData, 'manual');
+        console.log(`📄 股票推荐已保存，ID: ${savedRecommendation.id}`);
+
+        // 6. 返回推荐结果
+        res.json({
+            success: true,
+            data: {
+                recommendationId: savedRecommendation.id,
+                recommendationDate: today,
+                nextTradingDay: nextTradingDay,
+                recommendation: aiRecommendation,
+                marketData: marketData,
+                timestamp: savedRecommendation.created_at
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ 股票推荐生成错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '股票推荐生成失败: ' + error.message
+        });
+    }
+});
+
+// 获取股票推荐历史记录列表API
+app.get('/api/recommendations/list', async (req, res) => {
+    const limit = parseInt(req.query.limit) || 30;
+    const offset = parseInt(req.query.offset) || 0;
+
+    try {
+        const records = await stockRecommendationModel.findAll(limit, offset);
+        const totalCount = await stockRecommendationModel.getCount();
+
+        res.json({
+            success: true,
+            data: {
+                records: records,
+                totalCount: totalCount,
+                hasMore: offset + records.length < totalCount
+            }
+        });
+    } catch (error) {
+        console.error('❌ 获取推荐列表错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '获取推荐列表失败'
+        });
+    }
+});
+
+// 获取单个股票推荐详情API
+app.get('/api/recommendations/:param', async (req, res) => {
+    const param = req.params.param;
+
+    try {
+        let recommendation;
+
+        // 判断参数是ID还是日期（日期格式：YYYY-MM-DD）
+        if (/^\d{4}-\d{2}-\d{2}$/.test(param)) {
+            // 按日期查询
+            recommendation = await stockRecommendationModel.findByDate(param);
+        } else {
+            // 按ID查询
+            recommendation = await stockRecommendationModel.findById(parseInt(param));
+        }
+
+        if (!recommendation) {
+            return res.status(404).json({
+                success: false,
+                error: '推荐记录不存在'
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                recommendationId: recommendation.id,
+                recommendationDate: recommendation.recommendation_date,
+                recommendation: recommendation.recommendation_content,
+                marketData: recommendation.market_data,
+                recommendationType: recommendation.recommendation_type,
+                timestamp: recommendation.created_at
+            }
+        });
+    } catch (error) {
+        console.error('❌ 获取推荐详情错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '获取推荐详情失败'
+        });
+    }
+});
+
+// 删除股票推荐记录API
+app.delete('/api/recommendations/:recommendationId', authenticateToken, async (req, res) => {
+    const recommendationId = parseInt(req.params.recommendationId);
+
+    try {
+        // 先获取推荐记录，确认存在
+        const recommendation = await stockRecommendationModel.findById(recommendationId);
+
+        if (!recommendation) {
+            return res.status(404).json({
+                success: false,
+                error: '推荐记录不存在'
+            });
+        }
+
+        // 执行删除
+        const result = await stockRecommendationModel.delete(recommendationId);
+
+        if (result.changes === 0) {
+            return res.status(404).json({
+                success: false,
+                error: '推荐记录不存在或已被删除'
+            });
+        }
+
+        console.log(`✅ 用户 ${req.user.id} 删除了股票推荐 ID: ${recommendationId} (日期: ${recommendation.recommendation_date})`);
+
+        res.json({
+            success: true,
+            message: '推荐记录删除成功',
+            deletedCount: result.changes
+        });
+
+    } catch (error) {
+        console.error('❌ 删除推荐记录错误:', error.message);
+        res.status(500).json({
+            success: false,
+            error: '删除推荐记录失败'
+        });
+    }
+});
+
+// 辅助函数：获取下一个交易日
+function getNextTradingDay() {
+    const today = new Date();
+    let nextDay = new Date(today);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    // 如果明天是周六，跳到周一
+    if (nextDay.getDay() === 6) {
+        nextDay.setDate(nextDay.getDate() + 2);
+    }
+    // 如果明天是周日，跳到周一
+    else if (nextDay.getDay() === 0) {
+        nextDay.setDate(nextDay.getDate() + 1);
+    }
+
+    return nextDay.toISOString().split('T')[0];
+}
+
+console.log('⏰ 定时任务已启动：每天9:30自动分析集合竞价');
 
 // 检查端口是否可用
 function isPortAvailable(port) {

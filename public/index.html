@@ -234,6 +234,17 @@
                         <div class="loading-text">正在加载热点新闻...</div>
                     </div>
                 </div>
+
+                <!-- 行业分布 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🏢</div>
+                        <div class="card-title">行业分布</div>
+                    </div>
+                    <div class="industry-distribution" id="industryDistribution">
+                        <div class="loading-text">暂无行业分布数据</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -278,6 +289,58 @@
                     </div>
                 </div>
 
+                <!-- 股票推荐 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">💎</div>
+                        <div class="card-title">AI股票推荐</div>
+                        <div class="header-actions">
+                            <button class="refresh-btn" onclick="viewRecommendationHistory()" id="recommendationHistoryBtn">
+                                <span>📅 查看历史</span>
+                            </button>
+                            <button class="refresh-btn" onclick="generateRecommendation()" id="generateRecommendationBtn">
+                                <span>🔍 生成推荐</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="stock-recommendation" id="stockRecommendation">
+                        <div class="analysis-hint">
+                            <div class="hint-icon">💡</div>
+                            <div class="hint-content">
+                                <p class="hint-title">AI智能股票推荐</p>
+                                <p class="hint-desc">点击"生成推荐"按钮，AI将基于当前市场数据推荐值得买入的股票</p>
+                                <p class="hint-features">✅ 推荐理由 | ✅ 买入价位 | ✅ 止盈止损 | ✅ 风险提示</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 集合竞价分析 -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">🕘</div>
+                        <div class="card-title">集合竞价分析</div>
+                        <div class="header-actions">
+                            <button class="refresh-btn" onclick="viewCallAuctionHistory()" id="callAuctionHistoryBtn">
+                                <span>📅 查看历史</span>
+                            </button>
+                            <button class="refresh-btn" onclick="analyzeCallAuction()" id="callAuctionAnalyzeBtn">
+                                <span>🔍 立即分析</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="call-auction-analysis" id="callAuctionAnalysis">
+                        <div class="analysis-hint">
+                            <div class="hint-icon">💡</div>
+                            <div class="hint-content">
+                                <p class="hint-title">AI集合竞价分析</p>
+                                <p class="hint-desc">点击"立即分析"按钮，AI将分析今日的集合竞价情况</p>
+                                <p class="hint-schedule">📅 系统每天9:30自动分析集合竞价</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 持仓分析 -->
                 <div class="card">
                     <div class="card-header">
@@ -304,25 +367,19 @@
                     </div>
                 </div>
 
-                <!-- 行业分布 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🏢</div>
-                        <div class="card-title">行业分布</div>
-                    </div>
-                    <div class="industry-distribution" id="industryDistribution">
-                        <div class="loading-text">暂无行业分布数据</div>
-                    </div>
-                </div>
-
-                <!-- 风险评估 -->
+                <!-- 风险预警 -->
                 <div class="card">
                     <div class="card-header">
                         <div class="card-icon">⚠️</div>
-                        <div class="card-title">风险评估</div>
+                        <div class="card-title">风险预警</div>
+                        <div class="header-actions">
+                            <button class="refresh-btn" onclick="loadRiskWarnings()">
+                                <span>🔄 刷新</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="risk-assessment" id="riskAssessment">
-                        <div class="loading-text">暂无风险评估数据</div>
+                        <div class="loading-text">暂无风险预警数据，请先进行持仓分析</div>
                     </div>
                 </div>
             </div>
@@ -371,12 +428,166 @@
             </div>
         </div>
 
+        <!-- 报告详情模态框 -->
+        <div id="reportDetailModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>📊 持仓分析报告详情</h3>
+                    <button class="close-btn" onclick="closeReportDetailModal()">×</button>
+                </div>
+
+                <div class="report-detail-content" id="reportDetailContent">
+                    <div class="loading-text">正在加载报告详情...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeReportDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 集合竞价历史记录模态框 -->
+        <div id="callAuctionHistoryModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 90%; width: 1000px;">
+                <div class="modal-header">
+                    <h3>📅 历史集合竞价分析</h3>
+                    <button class="close-btn" onclick="closeCallAuctionHistoryModal()">×</button>
+                </div>
+
+                <div class="call-auction-history-content" id="callAuctionHistoryContent">
+                    <div class="loading-text">正在加载历史记录...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeCallAuctionHistoryModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 集合竞价详情模态框 -->
+        <div id="callAuctionDetailModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>🕘 集合竞价分析详情</h3>
+                    <button class="close-btn" onclick="closeCallAuctionDetailModal()">×</button>
+                </div>
+
+                <div class="call-auction-detail-content" id="callAuctionDetailContent">
+                    <div class="loading-text">正在加载详情...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeCallAuctionDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 股票推荐历史记录模态框 -->
+        <div id="recommendationHistoryModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 90%; width: 1000px;">
+                <div class="modal-header">
+                    <h3>📅 历史股票推荐</h3>
+                    <button class="close-btn" onclick="closeRecommendationHistoryModal()">×</button>
+                </div>
+
+                <div class="recommendation-history-content" id="recommendationHistoryContent">
+                    <div class="loading-text">正在加载历史推荐...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeRecommendationHistoryModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 股票推荐详情模态框 -->
+        <div id="recommendationDetailModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>💎 股票推荐详情</h3>
+                    <button class="close-btn" onclick="closeRecommendationDetailModal()">×</button>
+                </div>
+
+                <div class="recommendation-detail-content" id="recommendationDetailContent">
+                    <div class="loading-text">正在加载详情...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeRecommendationDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 股票详情悬浮框 -->
+        <div id="stockDetailTooltip" class="stock-tooltip" style="display: none;">
+            <div class="stock-tooltip-header">
+                <div class="stock-tooltip-title">
+                    <span class="tooltip-stock-name" id="tooltipStockName">--</span>
+                    <span class="tooltip-stock-code" id="tooltipStockCode">--</span>
+                </div>
+                <button class="tooltip-close-btn" onclick="closeStockTooltip()">×</button>
+            </div>
+            <div class="stock-tooltip-content">
+                <div class="tooltip-loading" id="tooltipLoading">
+                    <div class="loading-spinner-small"></div>
+                    <span>正在加载股票详情...</span>
+                </div>
+                <div class="tooltip-data" id="tooltipData" style="display: none;">
+                    <!-- 公司简介 -->
+                    <div class="tooltip-section">
+                        <div class="tooltip-section-title">公司简介</div>
+                        <div class="tooltip-section-content" id="tooltipCompanyInfo">暂无数据</div>
+                    </div>
+                    <!-- 实时行情 -->
+                    <div class="tooltip-section">
+                        <div class="tooltip-section-title">实时行情</div>
+                        <div class="tooltip-quote-grid">
+                            <div class="tooltip-quote-item">
+                                <span class="quote-label">当前价</span>
+                                <span class="quote-value" id="tooltipCurrentPrice">--</span>
+                            </div>
+                            <div class="tooltip-quote-item">
+                                <span class="quote-label">涨跌幅</span>
+                                <span class="quote-value" id="tooltipChangePercent">--</span>
+                            </div>
+                            <div class="tooltip-quote-item">
+                                <span class="quote-label">最高价</span>
+                                <span class="quote-value" id="tooltipHigh">--</span>
+                            </div>
+                            <div class="tooltip-quote-item">
+                                <span class="quote-label">最低价</span>
+                                <span class="quote-value" id="tooltipLow">--</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- K线图 -->
+                    <div class="tooltip-section">
+                        <div class="tooltip-section-header">
+                            <div class="tooltip-section-title">K线图</div>
+                            <div class="tooltip-period-selector">
+                                <button class="tooltip-period-btn active" data-period="intraday">分时</button>
+                                <button class="tooltip-period-btn" data-period="day">日线</button>
+                                <button class="tooltip-period-btn" data-period="week">周线</button>
+                                <button class="tooltip-period-btn" data-period="month">月线</button>
+                            </div>
+                        </div>
+                        <div class="tooltip-chart-container">
+                            <canvas id="tooltipChart" class="tooltip-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>© 2024 个人股票信息系统 | 版本 0.1</p>
             <p>系统状态: 正常运行 | 最后更新: <span id="update-time"></span></p>
         </div>
     </div>
 
+    <!-- 股票图表模块 -->
+    <script src="/js/stockChart.js"></script>
+    <!-- 主程序 -->
     <script src="/js/main.js"></script>
 </body>
 </html>
