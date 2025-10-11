@@ -52,12 +52,25 @@ const TradingPlanManager = {
             }
         });
 
+        // 监听计划类型变化，处理卖出计划的特殊逻辑
+        document.addEventListener('change', (e) => {
+            if (e.target.id === 'planType') {
+                this.handlePlanTypeChange(e.target.value);
+            }
+        });
+
         // 股票代码输入框监听 - 当失去焦点或按回车时自动获取股票信息
         document.addEventListener('change', (e) => {
             if (e.target.id === 'planStockCode') {
                 const stockCode = e.target.value.trim();
                 if (stockCode) {
                     this.fetchStockInfo(stockCode);
+
+                    // 如果是卖出或减仓计划，自动设置卖出计划
+                    const planType = document.getElementById('planType').value;
+                    if (planType === 'sell' || planType === 'reduce') {
+                        this.setupSellPlan(stockCode);
+                    }
                 }
             }
         });
@@ -68,6 +81,12 @@ const TradingPlanManager = {
                 const stockCode = e.target.value.trim();
                 if (stockCode) {
                     this.fetchStockInfo(stockCode);
+
+                    // 如果是卖出或减仓计划，自动设置卖出计划
+                    const planType = document.getElementById('planType').value;
+                    if (planType === 'sell' || planType === 'reduce') {
+                        this.setupSellPlan(stockCode);
+                    }
                 }
             }
         });
@@ -436,6 +455,14 @@ const TradingPlanManager = {
         // 显示模态框
         modal.style.display = 'block';
 
+        // 如果是卖出或减仓计划，且有股票代码，自动设置卖出计划
+        const planType = prefilledData.planType || prefilledData.plan_type;
+        if ((planType === 'sell' || planType === 'reduce') && stockCode) {
+            setTimeout(() => {
+                this.setupSellPlan(stockCode);
+            }, 500);
+        }
+
         // 聚焦到第一个未填充的必填字段
         setTimeout(() => {
             if (!document.getElementById('planType').value) {
@@ -591,6 +618,218 @@ const TradingPlanManager = {
 
         if (stopLossSlider && stopLossSlider.value != 0) {
             this.updatePriceFromSlider('stopLoss', stopLossSlider.value);
+        }
+    },
+
+    // ==================== 处理计划类型变化 ====================
+    async handlePlanTypeChange(planType) {
+        const stockCode = document.getElementById('planStockCode').value.trim();
+
+        if (planType === 'sell' || planType === 'reduce') {
+            // 卖出或减仓计划的特殊处理
+            if (stockCode) {
+                await this.setupSellPlan(stockCode);
+            }
+        } else {
+            // 买入或加仓计划，显示止盈止损输入框
+            this.showStopPricesInput();
+            this.hideQuantitySlider();
+        }
+    },
+
+    // ==================== 设置卖出计划 ====================
+    async setupSellPlan(stockCode) {
+        try {
+            console.log(`🔍 获取股票 ${stockCode} 的持仓和计划信息...`);
+
+            // 获取持仓信息和历史买入计划
+            const positionInfo = await this.fetchStockPositionInfo(stockCode);
+
+            if (positionInfo) {
+                // 显示只读止盈止损价格
+                if (positionInfo.stopProfitPrice || positionInfo.stopLossPrice) {
+                    this.showStopPricesReadonly(positionInfo.stopProfitPrice, positionInfo.stopLossPrice);
+                } else {
+                    this.showFormStatus('⚠️ 未找到该股票的止盈止损设置', 'warning');
+                }
+
+                // 设置数量滑块
+                if (positionInfo.quantity > 0) {
+                    this.showQuantitySlider(positionInfo.quantity);
+                } else {
+                    this.showFormStatus('⚠️ 未找到该股票的持仓信息', 'warning');
+                }
+            }
+        } catch (error) {
+            console.error('❌ 获取股票信息失败:', error);
+            this.showFormStatus('⚠️ 获取股票信息失败: ' + error.message, 'error');
+        }
+    },
+
+    // ==================== 获取股票持仓和计划信息 ====================
+    async fetchStockPositionInfo(stockCode) {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error('请先登录');
+            }
+
+            // 并行获取持仓信息和历史买入计划
+            const [positionsResponse, plansResponse] = await Promise.all([
+                fetch('/api/positions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                }),
+                fetch(`/api/trading-plans?stockCode=${stockCode}&planType=buy&status=executed&limit=1`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+            ]);
+
+            let quantity = 0;
+            let stopProfitPrice = null;
+            let stopLossPrice = null;
+
+            // 从持仓中获取数量
+            if (positionsResponse.ok) {
+                const positionsData = await positionsResponse.json();
+                if (positionsData.success && positionsData.data.positions) {
+                    const position = positionsData.data.positions.find(p => p.stockCode === stockCode || p.stock_code === stockCode);
+                    if (position) {
+                        quantity = position.quantity || 0;
+                    }
+                }
+            }
+
+            // 从历史买入计划中获取止盈止损价格
+            if (plansResponse.ok) {
+                const plansData = await plansResponse.json();
+                if (plansData.success && plansData.data.plans && plansData.data.plans.length > 0) {
+                    const latestBuyPlan = plansData.data.plans[0];
+                    stopProfitPrice = latestBuyPlan.stop_profit_price;
+                    stopLossPrice = latestBuyPlan.stop_loss_price;
+                }
+            }
+
+            return {
+                quantity,
+                stopProfitPrice,
+                stopLossPrice
+            };
+        } catch (error) {
+            console.error('获取股票持仓和计划信息错误:', error);
+            throw error;
+        }
+    },
+
+    // ==================== 显示只读止盈止损价格 ====================
+    showStopPricesReadonly(stopProfitPrice, stopLossPrice) {
+        // 隐藏止盈止损输入区域
+        const stopProfitGroup = document.querySelector('#planStopProfitPrice').closest('.form-group');
+        const stopLossGroup = document.querySelector('#planStopLossPrice').closest('.form-group');
+
+        if (stopProfitGroup) stopProfitGroup.style.display = 'none';
+        if (stopLossGroup) stopLossGroup.style.display = 'none';
+
+        // 显示只读止盈止损信息
+        let readonlyContainer = document.getElementById('stopPricesReadonly');
+        if (!readonlyContainer) {
+            readonlyContainer = document.createElement('div');
+            readonlyContainer.id = 'stopPricesReadonly';
+            readonlyContainer.className = 'form-row readonly-prices';
+
+            // 插入到止盈止损输入框的位置
+            const formRow = stopProfitGroup.parentElement;
+            formRow.insertBefore(readonlyContainer, stopProfitGroup);
+        }
+
+        readonlyContainer.style.display = 'flex';
+        readonlyContainer.innerHTML = `
+            <div class="form-group">
+                <label>止盈价格（参考）</label>
+                <div class="readonly-price-display">
+                    <span class="price-value">${stopProfitPrice ? '¥' + stopProfitPrice.toFixed(2) : '未设置'}</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>止损价格（参考）</label>
+                <div class="readonly-price-display">
+                    <span class="price-value">${stopLossPrice ? '¥' + stopLossPrice.toFixed(2) : '未设置'}</span>
+                </div>
+            </div>
+        `;
+    },
+
+    // ==================== 显示止盈止损输入框 ====================
+    showStopPricesInput() {
+        // 显示止盈止损输入区域
+        const stopProfitGroup = document.querySelector('#planStopProfitPrice')?.closest('.form-group');
+        const stopLossGroup = document.querySelector('#planStopLossPrice')?.closest('.form-group');
+
+        if (stopProfitGroup) stopProfitGroup.style.display = 'block';
+        if (stopLossGroup) stopLossGroup.style.display = 'block';
+
+        // 隐藏只读止盈止损信息
+        const readonlyContainer = document.getElementById('stopPricesReadonly');
+        if (readonlyContainer) {
+            readonlyContainer.style.display = 'none';
+        }
+    },
+
+    // ==================== 显示数量滑块 ====================
+    showQuantitySlider(maxQuantity) {
+        // 隐藏原来的数量输入框
+        const quantityInput = document.getElementById('planQuantity');
+        if (quantityInput) {
+            quantityInput.style.display = 'none';
+        }
+
+        // 显示或创建数量滑块
+        let sliderContainer = document.getElementById('quantitySliderContainer');
+        if (!sliderContainer) {
+            sliderContainer = document.createElement('div');
+            sliderContainer.id = 'quantitySliderContainer';
+            sliderContainer.className = 'quantity-slider-container';
+
+            const quantityGroup = quantityInput.closest('.form-group');
+            quantityGroup.appendChild(sliderContainer);
+        }
+
+        sliderContainer.style.display = 'block';
+        sliderContainer.innerHTML = `
+            <input type="range" id="quantitySlider" class="quantity-slider"
+                   min="0" max="${maxQuantity}" value="${Math.floor(maxQuantity / 2)}" step="1">
+            <div class="slider-labels">
+                <span>0股</span>
+                <span id="currentQuantity">${Math.floor(maxQuantity / 2)}股</span>
+                <span>${maxQuantity}股 (全部)</span>
+            </div>
+        `;
+
+        // 监听滑块变化
+        const slider = document.getElementById('quantitySlider');
+        if (slider) {
+            slider.addEventListener('input', (e) => {
+                const quantity = parseInt(e.target.value);
+                document.getElementById('currentQuantity').textContent = `${quantity}股`;
+                // 同步更新隐藏的输入框值
+                if (quantityInput) {
+                    quantityInput.value = quantity;
+                }
+            });
+        }
+    },
+
+    // ==================== 隐藏数量滑块 ====================
+    hideQuantitySlider() {
+        // 显示原来的数量输入框
+        const quantityInput = document.getElementById('planQuantity');
+        if (quantityInput) {
+            quantityInput.style.display = 'block';
+        }
+
+        // 隐藏数量滑块
+        const sliderContainer = document.getElementById('quantitySliderContainer');
+        if (sliderContainer) {
+            sliderContainer.style.display = 'none';
         }
     },
 
