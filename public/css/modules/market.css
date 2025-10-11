@@ -1,0 +1,348 @@
+        /* 交易时段提醒样式 */
+        .trade-time-reminder {
+            padding: 10px 0;
+        }
+
+        .trade-time-status {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .trade-time-status.trading {
+            background: linear-gradient(135deg, #fff9e6 0%, #fff3cc 100%);
+            border-color: rgba(255, 193, 7, 0.5);
+        }
+
+        .trade-time-status.call-auction {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+            border-color: rgba(231, 76, 60, 0.3);
+        }
+
+        .trade-time-status.pre-trading {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-color: rgba(76, 175, 80, 0.3);
+        }
+
+        .trade-time-status.lunch-break {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-color: rgba(33, 150, 243, 0.3);
+        }
+
+        .trade-time-status.closed {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-color: rgba(156, 163, 175, 0.3);
+        }
+
+        .trade-time-main {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .trade-time-icon {
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .trade-time-info {
+            flex: 1;
+        }
+
+        .trade-time-status-text {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .trade-time-message {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+        }
+
+        .trade-time-countdown {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #667eea;
+            text-align: center;
+            padding: 10px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .trade-time-schedule {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .schedule-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .schedule-label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+
+        .schedule-time {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* 市场概览样式 */
+        .market-overview {
+            padding: 10px 0;
+        }
+
+        .market-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .market-index-item {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .market-index-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .market-index-item.up {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+            border-color: rgba(231, 76, 60, 0.3);
+        }
+
+        .market-index-item.down {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: rgba(39, 174, 96, 0.3);
+        }
+
+        .index-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .index-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .index-code {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        .index-price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin: 10px 0;
+        }
+
+        .index-change {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .change-value {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .change-percent {
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .market-index-item.up .change-value,
+        .market-index-item.up .change-percent {
+            color: #e74c3c;
+        }
+
+        .market-index-item.down .change-value,
+        .market-index-item.down .change-percent {
+            color: #27ae60;
+        }
+
+        .market-index-item.up .change-percent {
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .market-index-item.down .change-percent {
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        /* 涨跌幅榜样式 */
+        .top-gainers,
+        .top-losers {
+            padding: 10px 0;
+        }
+
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .ranking-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .ranking-item:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+        }
+
+        .ranking-number {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #95a5a6;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .ranking-number.top-three {
+            color: #f39c12;
+            font-size: 1.4rem;
+        }
+
+        .ranking-stock {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .ranking-name {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .ranking-code {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        .ranking-price {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .ranking-change {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 3px;
+            min-width: 100px;
+        }
+
+        .ranking-percent {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .ranking-value {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .ranking-change.up .ranking-percent {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .ranking-change.up .ranking-value {
+            color: #e74c3c;
+        }
+
+        .ranking-change.down .ranking-percent {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .ranking-change.down .ranking-value {
+            color: #27ae60;
+        }
+
+        /* 响应式设计 - 市场信息模块 */
+        @media (max-width: 768px) {
+            .trade-time-schedule {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .schedule-item {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .market-overview-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ranking-item {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .ranking-number {
+                min-width: 25px;
+            }
+
+            .ranking-price {
+                min-width: auto;
+            }
+
+            .ranking-change {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+

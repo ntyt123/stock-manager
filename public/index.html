@@ -65,184 +65,332 @@
 
         <!-- 总览页签内容 -->
         <div class="tab-content active" id="overview-tab">
-            <div class="dashboard">
-            <!-- 自选股行情卡片 -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">📈</div>
-                    <div class="card-title">自选股行情</div>
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="overview-watchlist">
+                        <span class="sub-tab-icon">📈</span>
+                        <span class="sub-tab-text">自选股行情</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-positions">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">我的持仓</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-market">
+                        <span class="sub-tab-icon">🌍</span>
+                        <span class="sub-tab-text">市场动态</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-stats">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">持仓概览</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-distribution">
+                        <span class="sub-tab-icon">📈</span>
+                        <span class="sub-tab-text">涨跌分布</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-system">
+                        <span class="sub-tab-icon">⚙️</span>
+                        <span class="sub-tab-text">系统统计</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-trading-plans">
+                        <span class="sub-tab-icon">📋</span>
+                        <span class="sub-tab-text">交易计划</span>
+                    </button>
                 </div>
-                <div class="watchlist-quotes" id="overviewWatchlistQuotes">
-                    <div class="loading-text">正在加载自选股行情...</div>
-                </div>
-            </div>
 
-            <!-- 我的持仓卡片 -->
-        <div class="card">
-            <div class="card-header">
-                <div class="card-icon">📊</div>
-                <div class="card-title">我的持仓</div>
-                <div class="header-actions">
-                    <button class="refresh-btn" onclick="openExcelUploadModal()">导入Excel</button>
-                    <button class="refresh-btn" onclick="clearUploadedData()">清空数据</button>
-                </div>
-            </div>
-            
-            <div class="portfolio-value" id="uploadedTotalValue">¥0.00</div>
-            <div class="portfolio-change" id="uploadedProfitLoss">总盈亏: ¥0.00 (0.00%)</div>
-            <div class="positions-container" id="uploadedPositions">
-                <div class="loading-text">请导入Excel文件查看持仓数据</div>
-            </div>
-        </div>
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 快捷操作卡片 - 始终显示 -->
+                    <div class="quick-action-banner">
+                        <div class="quick-action-card primary-action" onclick="openManualPositionModal()">
+                            <div class="action-icon">✍️</div>
+                            <div class="action-content">
+                                <div class="action-title">手动录入持仓</div>
+                                <div class="action-desc">快速添加您的股票持仓信息</div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </div>
+                        <div class="quick-action-card secondary-action" onclick="openTradeRecordModal()">
+                            <div class="action-icon">📝</div>
+                            <div class="action-content">
+                                <div class="action-title">记录交易操作</div>
+                                <div class="action-desc">记录买入、卖出等交易记录</div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </div>
+                        <div class="quick-action-card info-action" onclick="viewTradeHistory()">
+                            <div class="action-icon">📊</div>
+                            <div class="action-content">
+                                <div class="action-title">交易历史</div>
+                                <div class="action-desc">查看所有历史交易记录</div>
+                            </div>
+                            <div class="action-arrow">→</div>
+                        </div>
+                    </div>
 
-            <!-- 市场动态卡片 -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">🌍</div>
-                    <div class="card-title">市场动态</div>
-                </div>
-                <div class="watchlist-quotes" id="marketIndices">
-                    <div class="loading-text">正在加载市场指数...</div>
-                </div>
-            </div>
+                    <!-- 自选股行情 -->
+                    <div class="sub-tab-content active" id="overview-watchlist">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📈</div>
+                                <div class="card-title">自选股行情</div>
+                            </div>
+                            <div class="watchlist-quotes" id="overviewWatchlistQuotes">
+                                <div class="loading-text">正在加载自选股行情...</div>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- 持仓概览统计卡片 -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">📊</div>
-                    <div class="card-title">持仓概览统计</div>
-                </div>
-                <div class="portfolio-stats" id="portfolioStats">
-                    <div class="loading-text">正在加载持仓统计...</div>
-                </div>
-            </div>
+                    <!-- 我的持仓 -->
+                    <div class="sub-tab-content" id="overview-positions">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">我的持仓</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="openExcelUploadModal()">导入Excel</button>
+                                    <button class="refresh-btn" onclick="clearUploadedData()">清空数据</button>
+                                </div>
+                            </div>
 
-            <!-- 涨跌分布卡片 -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">📈</div>
-                    <div class="card-title">涨跌分布</div>
-                </div>
-                <div class="change-distribution" id="changeDistribution">
-                    <div class="loading-text">正在加载涨跌分布...</div>
-                </div>
-            </div>
+                            <div class="portfolio-value" id="uploadedTotalValue">¥0.00</div>
+                            <div class="portfolio-change" id="uploadedProfitLoss">总盈亏: ¥0.00 (0.00%)</div>
+                            <div class="positions-container" id="uploadedPositions">
+                                <div class="loading-text">请导入Excel文件查看持仓数据</div>
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- 系统使用统计卡片 -->
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">⚙️</div>
-                    <div class="card-title">系统使用统计</div>
-                </div>
-                <div class="system-stats" id="systemStats">
-                    <div class="loading-text">正在加载系统统计...</div>
+                    <!-- 市场动态 -->
+                    <div class="sub-tab-content" id="overview-market">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🌍</div>
+                                <div class="card-title">市场动态</div>
+                            </div>
+                            <div class="watchlist-quotes" id="marketIndices">
+                                <div class="loading-text">正在加载市场指数...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 持仓概览统计 -->
+                    <div class="sub-tab-content" id="overview-stats">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">持仓概览统计</div>
+                            </div>
+                            <div class="portfolio-stats" id="portfolioStats">
+                                <div class="loading-text">正在加载持仓统计...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 涨跌分布 -->
+                    <div class="sub-tab-content" id="overview-distribution">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📈</div>
+                                <div class="card-title">涨跌分布</div>
+                            </div>
+                            <div class="change-distribution" id="changeDistribution">
+                                <div class="loading-text">正在加载涨跌分布...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 系统使用统计 -->
+                    <div class="sub-tab-content" id="overview-system">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">⚙️</div>
+                                <div class="card-title">系统使用统计</div>
+                            </div>
+                            <div class="system-stats" id="systemStats">
+                                <div class="loading-text">正在加载系统统计...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 交易计划管理 -->
+                    <div class="sub-tab-content" id="overview-trading-plans">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📋</div>
+                                <div class="card-title">交易计划管理</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn btn-create-plan">
+                                        <span>➕ 新建计划</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="trading-plans-container" id="tradingPlansContainer">
+                                <div class="loading-text">正在加载交易计划...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
 
         <!-- 股市信息页签 -->
         <div id="market-tab" class="tab-content">
-            <div class="dashboard">
-                <!-- 交易时段提醒 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🔔</div>
-                        <div class="card-title">交易时段</div>
-                    </div>
-                    <div class="trade-time-reminder" id="tradeTimeReminder">
-                        <div class="loading-text">正在加载交易时段信息...</div>
-                    </div>
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="market-trade-time">
+                        <span class="sub-tab-icon">🔔</span>
+                        <span class="sub-tab-text">交易时段</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-overview">
+                        <span class="sub-tab-icon">🌍</span>
+                        <span class="sub-tab-text">市场概览</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-gainers">
+                        <span class="sub-tab-icon">🔥</span>
+                        <span class="sub-tab-text">涨幅榜</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-losers">
+                        <span class="sub-tab-icon">📉</span>
+                        <span class="sub-tab-text">跌幅榜</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-watchlist-manage">
+                        <span class="sub-tab-icon">⭐</span>
+                        <span class="sub-tab-text">自选股管理</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-watchlist-quotes">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">自选股行情</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-news">
+                        <span class="sub-tab-icon">📰</span>
+                        <span class="sub-tab-text">热点新闻</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-industry">
+                        <span class="sub-tab-icon">🏢</span>
+                        <span class="sub-tab-text">行业分布</span>
+                    </button>
                 </div>
 
-                <!-- 市场概览 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🌍</div>
-                        <div class="card-title">市场概览</div>
-                    </div>
-                    <div class="market-overview" id="marketOverview">
-                        <div class="loading-text">正在加载市场概览...</div>
-                    </div>
-                </div>
-
-                <!-- 涨幅榜 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🔥</div>
-                        <div class="card-title">涨幅榜 TOP10</div>
-                    </div>
-                    <div class="top-gainers" id="topGainers">
-                        <div class="loading-text">正在加载涨幅榜...</div>
-                    </div>
-                </div>
-
-                <!-- 跌幅榜 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">📉</div>
-                        <div class="card-title">跌幅榜 TOP10</div>
-                    </div>
-                    <div class="top-losers" id="topLosers">
-                        <div class="loading-text">正在加载跌幅榜...</div>
-                    </div>
-                </div>
-
-                <!-- 自选股管理 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">⭐</div>
-                        <div class="card-title">自选股管理</div>
-                    </div>
-                    <div class="watchlist-section">
-                        <div class="watchlist-input">
-                            <input type="text" id="stockCodeInput" placeholder="输入股票代码或名称" class="input-field">
-                            <button class="action-btn" onclick="addToWatchlist()">添加自选股</button>
-                        </div>
-                        <div class="watchlist-container" id="watchlistContainer">
-                            <div class="loading-text">暂无自选股，请添加股票代码</div>
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 交易时段 -->
+                    <div class="sub-tab-content active" id="market-trade-time">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🔔</div>
+                                <div class="card-title">交易时段</div>
+                            </div>
+                            <div class="trade-time-reminder" id="tradeTimeReminder">
+                                <div class="loading-text">正在加载交易时段信息...</div>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 自选股行情 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">📊</div>
-                        <div class="card-title">自选股行情</div>
+                    <!-- 市场概览 -->
+                    <div class="sub-tab-content" id="market-overview">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🌍</div>
+                                <div class="card-title">市场概览</div>
+                            </div>
+                            <div class="market-overview" id="marketOverview">
+                                <div class="loading-text">正在加载市场概览...</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="watchlist-quotes" id="watchlistQuotes">
-                        <div class="loading-text">暂无自选股行情数据</div>
-                    </div>
-                </div>
 
-                <!-- 热点新闻 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">📰</div>
-                        <div class="card-title">热点新闻</div>
+                    <!-- 涨幅榜 -->
+                    <div class="sub-tab-content" id="market-gainers">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🔥</div>
+                                <div class="card-title">涨幅榜 TOP10</div>
+                            </div>
+                            <div class="top-gainers" id="topGainers">
+                                <div class="loading-text">正在加载涨幅榜...</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="news-categories">
-                        <button class="news-category-btn active" data-category="latest">最新热点</button>
-                        <button class="news-category-btn" data-category="stock">股市行情</button>
-                        <button class="news-category-btn" data-category="tech">科技前沿</button>
-                        <button class="news-category-btn" data-category="policy">政策解读</button>
-                        <button class="news-category-btn" data-category="international">国际财经</button>
-                        <button class="news-category-btn" data-category="positions">📊 我的持仓</button>
-                    </div>
-                    <div class="news-container" id="newsContainer">
-                        <div class="loading-text">正在加载热点新闻...</div>
-                    </div>
-                </div>
 
-                <!-- 行业分布 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🏢</div>
-                        <div class="card-title">行业分布</div>
+                    <!-- 跌幅榜 -->
+                    <div class="sub-tab-content" id="market-losers">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📉</div>
+                                <div class="card-title">跌幅榜 TOP10</div>
+                            </div>
+                            <div class="top-losers" id="topLosers">
+                                <div class="loading-text">正在加载跌幅榜...</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="industry-distribution" id="industryDistribution">
-                        <div class="loading-text">暂无行业分布数据</div>
+
+                    <!-- 自选股管理 -->
+                    <div class="sub-tab-content" id="market-watchlist-manage">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">⭐</div>
+                                <div class="card-title">自选股管理</div>
+                            </div>
+                            <div class="watchlist-section">
+                                <div class="watchlist-input">
+                                    <input type="text" id="stockCodeInput" placeholder="输入股票代码或名称" class="input-field">
+                                    <button class="action-btn" onclick="addToWatchlist()">添加自选股</button>
+                                </div>
+                                <div class="watchlist-container" id="watchlistContainer">
+                                    <div class="loading-text">暂无自选股，请添加股票代码</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 自选股行情 -->
+                    <div class="sub-tab-content" id="market-watchlist-quotes">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">自选股行情</div>
+                            </div>
+                            <div class="watchlist-quotes" id="watchlistQuotes">
+                                <div class="loading-text">暂无自选股行情数据</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 热点新闻 -->
+                    <div class="sub-tab-content" id="market-news">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📰</div>
+                                <div class="card-title">热点新闻</div>
+                            </div>
+                            <div class="news-categories">
+                                <button class="news-category-btn active" data-category="latest">最新热点</button>
+                                <button class="news-category-btn" data-category="stock">股市行情</button>
+                                <button class="news-category-btn" data-category="tech">科技前沿</button>
+                                <button class="news-category-btn" data-category="policy">政策解读</button>
+                                <button class="news-category-btn" data-category="international">国际财经</button>
+                                <button class="news-category-btn" data-category="positions">📊 我的持仓公告</button>
+                            </div>
+                            <div class="news-container" id="newsContainer">
+                                <div class="loading-text">正在加载热点新闻...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 行业分布 -->
+                    <div class="sub-tab-content" id="market-industry">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🏢</div>
+                                <div class="card-title">行业分布</div>
+                            </div>
+                            <div class="industry-distribution" id="industryDistribution">
+                                <div class="loading-text">暂无行业分布数据</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -250,136 +398,173 @@
 
         <!-- 分析页签 -->
         <div id="analysis-tab" class="tab-content">
-            <div class="dashboard">
-                <!-- AI投资助手 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🤖</div>
-                        <div class="card-title">AI投资助手</div>
-                    </div>
-                    <div class="ai-assistant" id="aiAssistant">
-                        <div class="ai-input-section">
-                            <textarea
-                                id="aiInputText"
-                                class="ai-textarea"
-                                placeholder="请输入您的问题，例如：分析一下当前持仓的风险情况..."
-                                rows="4"
-                            ></textarea>
-                            <div class="ai-actions">
-                                <button class="action-btn" onclick="sendToAI()">
-                                    <span class="btn-icon">🚀</span>
-                                    <span class="btn-text">发送询问</span>
-                                </button>
-                                <button class="action-btn secondary" onclick="clearAIChat()">
-                                    <span class="btn-icon">🗑️</span>
-                                    <span class="btn-text">清空对话</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="ai-response-section" id="aiResponseSection" style="display: none;">
-                            <div class="ai-response-header">
-                                <span class="response-icon">💡</span>
-                                <span class="response-title">AI分析结果</span>
-                                <span class="response-time" id="aiResponseTime"></span>
-                            </div>
-                            <div class="ai-response-content" id="aiResponseContent">
-                                <div class="loading-text">正在思考中...</div>
-                            </div>
-                        </div>
-                    </div>
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="analysis-ai-assistant">
+                        <span class="sub-tab-icon">🤖</span>
+                        <span class="sub-tab-text">AI投资助手</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-recommendation">
+                        <span class="sub-tab-icon">💎</span>
+                        <span class="sub-tab-text">股票推荐</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-call-auction">
+                        <span class="sub-tab-icon">🕘</span>
+                        <span class="sub-tab-text">集合竞价</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-portfolio">
+                        <span class="sub-tab-icon">📈</span>
+                        <span class="sub-tab-text">持仓分析</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-risk">
+                        <span class="sub-tab-icon">⚠️</span>
+                        <span class="sub-tab-text">风险预警</span>
+                    </button>
                 </div>
 
-                <!-- 股票推荐 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">💎</div>
-                        <div class="card-title">AI股票推荐</div>
-                        <div class="header-actions">
-                            <button class="refresh-btn" onclick="viewRecommendationHistory()" id="recommendationHistoryBtn">
-                                <span>📅 查看历史</span>
-                            </button>
-                            <button class="refresh-btn" onclick="generateRecommendation()" id="generateRecommendationBtn">
-                                <span>🔍 生成推荐</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="stock-recommendation" id="stockRecommendation">
-                        <div class="analysis-hint">
-                            <div class="hint-icon">💡</div>
-                            <div class="hint-content">
-                                <p class="hint-title">AI智能股票推荐</p>
-                                <p class="hint-desc">点击"生成推荐"按钮，AI将基于当前市场数据推荐值得买入的股票</p>
-                                <p class="hint-features">✅ 推荐理由 | ✅ 买入价位 | ✅ 止盈止损 | ✅ 风险提示</p>
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- AI投资助手 -->
+                    <div class="sub-tab-content active" id="analysis-ai-assistant">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🤖</div>
+                                <div class="card-title">AI投资助手</div>
+                            </div>
+                            <div class="ai-assistant" id="aiAssistant">
+                                <div class="ai-input-section">
+                                    <textarea
+                                        id="aiInputText"
+                                        class="ai-textarea"
+                                        placeholder="请输入您的问题，例如：分析一下当前持仓的风险情况..."
+                                        rows="4"
+                                    ></textarea>
+                                    <div class="ai-actions">
+                                        <button class="action-btn" onclick="sendToAI()">
+                                            <span class="btn-icon">🚀</span>
+                                            <span class="btn-text">发送询问</span>
+                                        </button>
+                                        <button class="action-btn secondary" onclick="clearAIChat()">
+                                            <span class="btn-icon">🗑️</span>
+                                            <span class="btn-text">清空对话</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="ai-response-section" id="aiResponseSection" style="display: none;">
+                                    <div class="ai-response-header">
+                                        <span class="response-icon">💡</span>
+                                        <span class="response-title">AI分析结果</span>
+                                        <span class="response-time" id="aiResponseTime"></span>
+                                    </div>
+                                    <div class="ai-response-content" id="aiResponseContent">
+                                        <div class="loading-text">正在思考中...</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 集合竞价分析 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">🕘</div>
-                        <div class="card-title">集合竞价分析</div>
-                        <div class="header-actions">
-                            <button class="refresh-btn" onclick="viewCallAuctionHistory()" id="callAuctionHistoryBtn">
-                                <span>📅 查看历史</span>
-                            </button>
-                            <button class="refresh-btn" onclick="analyzeCallAuction()" id="callAuctionAnalyzeBtn">
-                                <span>🔍 立即分析</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="call-auction-analysis" id="callAuctionAnalysis">
-                        <div class="analysis-hint">
-                            <div class="hint-icon">💡</div>
-                            <div class="hint-content">
-                                <p class="hint-title">AI集合竞价分析</p>
-                                <p class="hint-desc">点击"立即分析"按钮，AI将分析今日的集合竞价情况</p>
-                                <p class="hint-schedule">📅 系统每天9:30自动分析集合竞价</p>
+                    <!-- 股票推荐 -->
+                    <div class="sub-tab-content" id="analysis-recommendation">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">💎</div>
+                                <div class="card-title">AI股票推荐</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="viewRecommendationHistory()" id="recommendationHistoryBtn">
+                                        <span>📅 查看历史</span>
+                                    </button>
+                                    <button class="refresh-btn" onclick="generateRecommendation()" id="generateRecommendationBtn">
+                                        <span>🔍 生成推荐</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="stock-recommendation" id="stockRecommendation">
+                                <div class="analysis-hint">
+                                    <div class="hint-icon">💡</div>
+                                    <div class="hint-content">
+                                        <p class="hint-title">AI智能股票推荐</p>
+                                        <p class="hint-desc">点击"生成推荐"按钮，AI将基于当前市场数据推荐值得买入的股票</p>
+                                        <p class="hint-features">✅ 推荐理由 | ✅ 买入价位 | ✅ 止盈止损 | ✅ 风险提示</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 持仓分析 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">📈</div>
-                        <div class="card-title">持仓分析报告</div>
-                        <div class="header-actions">
-                            <button class="refresh-btn" onclick="viewReportHistory()" id="historyBtn">
-                                <span>📋 查看历史</span>
-                            </button>
-                            <button class="refresh-btn" onclick="analyzePortfolio()" id="analyzeBtn">
-                                <span>🔍 立即分析</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="portfolio-analysis" id="portfolioAnalysis">
-                        <div class="analysis-hint">
-                            <div class="hint-icon">💡</div>
-                            <div class="hint-content">
-                                <p class="hint-title">AI智能持仓分析</p>
-                                <p class="hint-desc">点击"立即分析"按钮，AI将对您的持仓进行全面深度分析</p>
-                                <p class="hint-schedule">📅 系统每天下午5点自动分析持仓</p>
+                    <!-- 集合竞价分析 -->
+                    <div class="sub-tab-content" id="analysis-call-auction">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🕘</div>
+                                <div class="card-title">集合竞价分析</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="viewCallAuctionHistory()" id="callAuctionHistoryBtn">
+                                        <span>📅 查看历史</span>
+                                    </button>
+                                    <button class="refresh-btn" onclick="analyzeCallAuction()" id="callAuctionAnalyzeBtn">
+                                        <span>🔍 立即分析</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="call-auction-analysis" id="callAuctionAnalysis">
+                                <div class="analysis-hint">
+                                    <div class="hint-icon">💡</div>
+                                    <div class="hint-content">
+                                        <p class="hint-title">AI集合竞价分析</p>
+                                        <p class="hint-desc">点击"立即分析"按钮，AI将分析今日的集合竞价情况</p>
+                                        <p class="hint-schedule">📅 系统每天9:30自动分析集合竞价</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- 风险预警 -->
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-icon">⚠️</div>
-                        <div class="card-title">风险预警</div>
-                        <div class="header-actions">
-                            <button class="refresh-btn" onclick="loadRiskWarnings()">
-                                <span>🔄 刷新</span>
-                            </button>
+                    <!-- 持仓分析 -->
+                    <div class="sub-tab-content" id="analysis-portfolio">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📈</div>
+                                <div class="card-title">持仓分析报告</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="viewReportHistory()" id="historyBtn">
+                                        <span>📋 查看历史</span>
+                                    </button>
+                                    <button class="refresh-btn" onclick="analyzePortfolio()" id="analyzeBtn">
+                                        <span>🔍 立即分析</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="portfolio-analysis" id="portfolioAnalysis">
+                                <div class="analysis-hint">
+                                    <div class="hint-icon">💡</div>
+                                    <div class="hint-content">
+                                        <p class="hint-title">AI智能持仓分析</p>
+                                        <p class="hint-desc">点击"立即分析"按钮，AI将对您的持仓进行全面深度分析</p>
+                                        <p class="hint-schedule">📅 系统每天下午5点自动分析持仓</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="risk-assessment" id="riskAssessment">
-                        <div class="loading-text">暂无风险预警数据，请先进行持仓分析</div>
+
+                    <!-- 风险预警 -->
+                    <div class="sub-tab-content" id="analysis-risk">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">⚠️</div>
+                                <div class="card-title">风险预警</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="loadRiskWarnings()">
+                                        <span>🔄 刷新</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="risk-assessment" id="riskAssessment">
+                                <div class="loading-text">暂无风险预警数据，请先进行持仓分析</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -518,6 +703,287 @@
             </div>
         </div>
 
+        <!-- 手动持仓录入模态框 -->
+        <div id="manualPositionModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>✍️ 手动录入持仓</h3>
+                    <button class="close-btn" onclick="closeManualPositionModal()">×</button>
+                </div>
+
+                <div class="form-container">
+                    <form id="manualPositionForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="posStockCode">股票代码 *</label>
+                                <input type="text" id="posStockCode" class="form-input" placeholder="例如: 600519" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="posStockName">股票名称 *</label>
+                                <input type="text" id="posStockName" class="form-input" placeholder="例如: 贵州茅台" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="posQuantity">持仓数量 *</label>
+                                <input type="number" id="posQuantity" class="form-input" placeholder="例如: 1000" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="posCostPrice">成本价 *</label>
+                                <input type="number" id="posCostPrice" class="form-input" placeholder="例如: 18.50" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="posBuyDate">买入日期 *</label>
+                                <input type="date" id="posBuyDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="posCurrentPrice">当前价</label>
+                                <input type="number" id="posCurrentPrice" class="form-input" placeholder="留空将自动获取" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="posNotes">备注</label>
+                            <textarea id="posNotes" class="form-textarea" placeholder="记录买入理由、目标价位等信息..." rows="3"></textarea>
+                        </div>
+
+                        <div class="form-status" id="positionFormStatus"></div>
+                    </form>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeManualPositionModal()">取消</button>
+                    <button class="action-btn" onclick="submitManualPosition()">
+                        <span>💾 保存持仓</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易记录录入模态框 -->
+        <div id="tradeRecordModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>📝 记录交易操作</h3>
+                    <button class="close-btn" onclick="closeTradeRecordModal()">×</button>
+                </div>
+
+                <div class="form-container">
+                    <form id="tradeRecordForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tradeType">交易类型 *</label>
+                                <select id="tradeType" class="form-input" required>
+                                    <option value="">请选择交易类型</option>
+                                    <option value="buy">买入</option>
+                                    <option value="sell">卖出</option>
+                                    <option value="add">加仓</option>
+                                    <option value="reduce">减仓</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="tradeDate">交易日期 *</label>
+                                <input type="date" id="tradeDate" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tradeStockCode">股票代码 *</label>
+                                <input type="text" id="tradeStockCode" class="form-input" placeholder="例如: 600519" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tradeStockName">股票名称 *</label>
+                                <input type="text" id="tradeStockName" class="form-input" placeholder="例如: 贵州茅台" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tradeQuantity">交易数量 *</label>
+                                <input type="number" id="tradeQuantity" class="form-input" placeholder="例如: 500" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="tradePrice">交易价格 *</label>
+                                <input type="number" id="tradePrice" class="form-input" placeholder="例如: 19.20" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="tradeFee">手续费</label>
+                                <input type="number" id="tradeFee" class="form-input" placeholder="例如: 5.00" step="0.01" min="0" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="tradeAmount">交易金额</label>
+                                <input type="number" id="tradeAmount" class="form-input" placeholder="自动计算" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="tradeNotes">交易备注</label>
+                            <textarea id="tradeNotes" class="form-textarea" placeholder="记录交易理由、市场分析等信息..." rows="3"></textarea>
+                        </div>
+
+                        <div class="form-status" id="tradeFormStatus"></div>
+                    </form>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeTradeRecordModal()">取消</button>
+                    <button class="action-btn" onclick="submitTradeRecord()">
+                        <span>💾 保存记录</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易历史模态框 -->
+        <div id="tradeHistoryModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>📊 交易历史</h3>
+                    <button class="close-btn" onclick="closeTradeHistoryModal()">×</button>
+                </div>
+
+                <div class="trade-history-container" id="tradeHistoryContent">
+                    <div class="loading-text">正在加载交易历史...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeTradeHistoryModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易计划模态框 -->
+        <div id="tradingPlanModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h3 id="tradingPlanModalTitle">📝 新建交易计划</h3>
+                    <button class="close-btn" onclick="TradingPlanManager.closePlanModal()">×</button>
+                </div>
+
+                <div class="form-container">
+                    <form id="tradingPlanForm">
+                        <!-- 基本信息 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planType">计划类型 *</label>
+                                <select id="planType" class="form-input" required>
+                                    <option value="">请选择</option>
+                                    <option value="buy">买入</option>
+                                    <option value="sell">卖出</option>
+                                    <option value="add">加仓</option>
+                                    <option value="reduce">减仓</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="planDate">执行日期 *</label>
+                                <input type="date" id="planDate" class="form-input" required>
+                            </div>
+                        </div>
+
+                        <!-- 股票信息 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planStockCode">股票代码 *</label>
+                                <input type="text" id="planStockCode" class="form-input" placeholder="例如: 600519" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="planStockName">股票名称 *</label>
+                                <input type="text" id="planStockName" class="form-input" placeholder="例如: 贵州茅台" required>
+                            </div>
+                        </div>
+
+                        <!-- 价格设定 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planTargetPrice">目标价格 *</label>
+                                <input type="number" id="planTargetPrice" class="form-input" placeholder="例如: 1850.00" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="planCurrentPrice">当前价格</label>
+                                <input type="number" id="planCurrentPrice" class="form-input" placeholder="自动获取" step="0.01" min="0" readonly>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planStopProfitPrice">
+                                    止盈价格
+                                    <span class="price-percentage" id="stopProfitPercentage">+0%</span>
+                                </label>
+                                <input type="number" id="planStopProfitPrice" class="form-input" placeholder="例如: 1950.00" step="0.01" min="0">
+                                <input type="range" id="stopProfitSlider" class="price-slider" min="-50" max="50" value="0" step="1">
+                                <div class="slider-labels">
+                                    <span>-50%</span>
+                                    <span>0%</span>
+                                    <span>+50%</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="planStopLossPrice">
+                                    止损价格
+                                    <span class="price-percentage" id="stopLossPercentage">-0%</span>
+                                </label>
+                                <input type="number" id="planStopLossPrice" class="form-input" placeholder="例如: 1800.00" step="0.01" min="0">
+                                <input type="range" id="stopLossSlider" class="price-slider" min="-50" max="50" value="0" step="1">
+                                <div class="slider-labels">
+                                    <span>-50%</span>
+                                    <span>0%</span>
+                                    <span>+50%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 数量信息 -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planQuantity">计划数量（股）</label>
+                                <input type="number" id="planQuantity" class="form-input" placeholder="例如: 100" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="planPriority">优先级</label>
+                                <select id="planPriority" class="form-input">
+                                    <option value="1">⭐ 1 - 普通</option>
+                                    <option value="2">⭐⭐ 2 - 较低</option>
+                                    <option value="3" selected>⭐⭐⭐ 3 - 一般</option>
+                                    <option value="4">⭐⭐⭐⭐ 4 - 重要</option>
+                                    <option value="5">⭐⭐⭐⭐⭐ 5 - 最高</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- 计划理由 -->
+                        <div class="form-group">
+                            <label for="planReason">计划理由 *</label>
+                            <textarea id="planReason" class="form-textarea" placeholder="例如: 突破重要支撑位，技术面向好，MACD金叉..." rows="3" required></textarea>
+                        </div>
+
+                        <!-- 备注说明 -->
+                        <div class="form-group">
+                            <label for="planNotes">备注说明</label>
+                            <textarea id="planNotes" class="form-textarea" placeholder="例如: 分批买入，先买50%，观察后续走势..." rows="2"></textarea>
+                        </div>
+
+                        <div class="form-status" id="planFormStatus"></div>
+                    </form>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="TradingPlanManager.closePlanModal()">取消</button>
+                    <button class="action-btn" onclick="TradingPlanManager.submitPlan()">
+                        <span id="planSubmitBtnText">💾 创建计划</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- 股票详情悬浮框 -->
         <div id="stockDetailTooltip" class="stock-tooltip" style="display: none;">
             <div class="stock-tooltip-header">
@@ -587,7 +1053,28 @@
 
     <!-- 股票图表模块 -->
     <script src="/js/stockChart.js"></script>
-    <!-- 主程序 -->
-    <script src="/js/main.js"></script>
+
+    <!--  ==================== 功能模块 ====================  -->
+    <!-- UI工具模块 -->
+    <script src="/js/modules/ui-utils.js"></script>
+    <!-- 持仓管理模块 -->
+    <script src="/js/modules/position-manager.js"></script>
+    <!-- 自选股管理模块 -->
+    <script src="/js/modules/watchlist-manager.js"></script>
+    <!-- 分析功能模块 -->
+    <script src="/js/modules/analysis-manager.js"></script>
+    <!-- 市场数据模块 -->
+    <script src="/js/modules/market-data.js"></script>
+    <!-- 股票详情模块 -->
+    <script src="/js/modules/stock-detail.js"></script>
+    <!-- 推荐管理模块 -->
+    <script src="/js/modules/recommendation-manager.js"></script>
+    <!-- 交易管理模块 -->
+    <script src="/js/modules/trade-manager.js"></script>
+    <!-- 交易计划管理模块 -->
+    <script src="/js/modules/trading-plan-manager.js"></script>
+
+    <!-- 核心初始化模块 -->
+    <script src="/js/main-core.js"></script>
 </body>
 </html>

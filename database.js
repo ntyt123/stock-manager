@@ -1,5 +1,6 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const { getNextTradingDay, isTradingDay } = require('./utils/tradingCalendar');
 
 // 数据库文件路径
 const dbPath = path.join(__dirname, 'stock_manager.db');
@@ -102,6 +103,80 @@ function initDatabase() {
                 market_data TEXT NOT NULL,
                 recommendation_type TEXT NOT NULL DEFAULT 'manual',
                 created_at TEXT NOT NULL
+            )`).run();
+
+            // 创建手动持仓表
+            db.prepare(`CREATE TABLE IF NOT EXISTS manual_positions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                stock_code TEXT NOT NULL,
+                stock_name TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                cost_price REAL NOT NULL,
+                buy_date TEXT NOT NULL,
+                current_price REAL,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`).run();
+
+            // 创建交易操作记录表
+            db.prepare(`CREATE TABLE IF NOT EXISTS trade_operations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                trade_type TEXT NOT NULL,
+                trade_date TEXT NOT NULL,
+                stock_code TEXT NOT NULL,
+                stock_name TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                price REAL NOT NULL,
+                fee REAL DEFAULT 0,
+                amount REAL NOT NULL,
+                notes TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`).run();
+
+            // 创建交易计划表
+            db.prepare(`CREATE TABLE IF NOT EXISTS trading_plans (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                stock_code TEXT NOT NULL,
+                stock_name TEXT NOT NULL,
+                plan_type TEXT NOT NULL,
+                plan_status TEXT NOT NULL DEFAULT 'pending',
+                target_price REAL NOT NULL,
+                current_price REAL,
+                stop_profit_price REAL,
+                stop_loss_price REAL,
+                quantity REAL,
+                estimated_amount REAL,
+                plan_date TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                executed_at TEXT,
+                reason TEXT,
+                notes TEXT,
+                priority INTEGER DEFAULT 3,
+                alert_enabled INTEGER DEFAULT 1,
+                alert_range REAL DEFAULT 0.02,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`).run();
+
+            // 创建计划执行记录表
+            db.prepare(`CREATE TABLE IF NOT EXISTS plan_executions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                plan_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                execution_type TEXT NOT NULL,
+                execution_price REAL NOT NULL,
+                execution_quantity REAL NOT NULL,
+                execution_amount REAL NOT NULL,
+                execution_time TEXT NOT NULL,
+                price_deviation REAL,
+                notes TEXT,
+                FOREIGN KEY (plan_id) REFERENCES trading_plans (id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             )`).run();
 
             // 检查是否需要插入默认用户
@@ -329,6 +404,69 @@ const positionModel = {
                 reject(err);
             }
         });
+    },
+
+    // 根据股票代码查询单个持仓
+    findByStockCode: (userId, stockCode) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT * FROM user_positions WHERE user_id = ? AND stockCode = ?`).get(userId, stockCode);
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 添加单个持仓
+    addPosition: (userId, positionData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const { stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate } = positionData;
+
+                const info = db.prepare(`INSERT INTO user_positions
+                    (user_id, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(userId, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, currentTime, currentTime);
+
+                resolve({ id: info.lastInsertRowid, created_at: currentTime });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 更新单个持仓
+    updatePosition: (userId, stockCode, positionData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const { stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate } = positionData;
+
+                const info = db.prepare(`UPDATE user_positions SET
+                    stockName = ?, quantity = ?, costPrice = ?, currentPrice = ?,
+                    marketValue = ?, profitLoss = ?, profitLossRate = ?, updated_at = ?
+                    WHERE user_id = ? AND stockCode = ?`)
+                    .run(stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, currentTime, userId, stockCode);
+
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 删除单个持仓
+    deletePosition: (userId, stockCode) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`DELETE FROM user_positions WHERE user_id = ? AND stockCode = ?`).run(userId, stockCode);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
 };
 
@@ -447,19 +585,36 @@ const watchlistModel = {
 
 // 持仓分析报告相关数据库操作
 const analysisReportModel = {
-    // 保存分析报告
+    // 保存分析报告（自动删除同一天的旧报告）
     save: (userId, analysisContent, portfolioSummary, reportType = 'manual') => {
         return new Promise((resolve, reject) => {
             try {
                 const currentTime = new Date().toISOString();
                 const summaryJson = JSON.stringify(portfolioSummary);
+                const today = currentTime.split('T')[0]; // 获取日期部分 YYYY-MM-DD
 
-                const info = db.prepare(`INSERT INTO analysis_reports
-                    (user_id, analysis_content, portfolio_summary, report_type, created_at)
-                    VALUES (?, ?, ?, ?, ?)`)
-                    .run(userId, analysisContent, summaryJson, reportType, currentTime);
+                // 使用事务：先删除当天的旧报告，再插入新报告
+                const saveWithDeduplication = db.transaction(() => {
+                    // 删除当天该用户的所有报告
+                    const deleteStmt = db.prepare(`DELETE FROM analysis_reports
+                        WHERE user_id = ? AND DATE(created_at) = ?`);
+                    const deleteResult = deleteStmt.run(userId, today);
 
-                resolve({ id: info.lastInsertRowid, created_at: currentTime });
+                    if (deleteResult.changes > 0) {
+                        console.log(`🗑️ 删除了用户 ${userId} 在 ${today} 的 ${deleteResult.changes} 份旧报告`);
+                    }
+
+                    // 插入新报告
+                    const insertStmt = db.prepare(`INSERT INTO analysis_reports
+                        (user_id, analysis_content, portfolio_summary, report_type, created_at)
+                        VALUES (?, ?, ?, ?, ?)`);
+                    const info = insertStmt.run(userId, analysisContent, summaryJson, reportType, currentTime);
+
+                    return { id: info.lastInsertRowid, created_at: currentTime, deletedCount: deleteResult.changes };
+                });
+
+                const result = saveWithDeduplication();
+                resolve(result);
             } catch (err) {
                 reject(err);
             }
@@ -775,6 +930,527 @@ const stockRecommendationModel = {
     }
 };
 
+// 手动持仓相关数据库操作
+const manualPositionModel = {
+    // 获取用户的所有手动持仓
+    findByUserId: (userId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT * FROM manual_positions WHERE user_id = ? ORDER BY created_at DESC`).all(userId);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 添加手动持仓
+    add: (userId, positionData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const { stockCode, stockName, quantity, costPrice, buyDate, currentPrice, notes } = positionData;
+
+                const info = db.prepare(`INSERT INTO manual_positions
+                    (user_id, stock_code, stock_name, quantity, cost_price, buy_date, current_price, notes, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(userId, stockCode, stockName, quantity, costPrice, buyDate, currentPrice || null, notes || null, currentTime, currentTime);
+
+                resolve({ id: info.lastInsertRowid, created_at: currentTime });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 更新手动持仓
+    update: (id, positionData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const { stockCode, stockName, quantity, costPrice, buyDate, currentPrice, notes } = positionData;
+
+                const info = db.prepare(`UPDATE manual_positions SET
+                    stock_code = ?, stock_name = ?, quantity = ?, cost_price = ?,
+                    buy_date = ?, current_price = ?, notes = ?, updated_at = ?
+                    WHERE id = ?`)
+                    .run(stockCode, stockName, quantity, costPrice, buyDate, currentPrice || null, notes || null, currentTime, id);
+
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 删除手动持仓
+    delete: (id) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`DELETE FROM manual_positions WHERE id = ?`).run(id);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 根据ID获取持仓
+    findById: (id) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT * FROM manual_positions WHERE id = ?`).get(id);
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 根据股票代码获取持仓
+    findByStockCode: (userId, stockCode) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT * FROM manual_positions WHERE user_id = ? AND stock_code = ?`).get(userId, stockCode);
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+};
+
+// 交易操作记录相关数据库操作
+const tradeOperationModel = {
+    // 获取用户的所有交易记录
+    findByUserId: (userId, limit = 100, offset = 0) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT * FROM trade_operations WHERE user_id = ? ORDER BY trade_date DESC, created_at DESC LIMIT ? OFFSET ?`).all(userId, limit, offset);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 添加交易记录
+    add: (userId, tradeData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const { tradeType, tradeDate, stockCode, stockName, quantity, price, fee, amount, notes } = tradeData;
+
+                const info = db.prepare(`INSERT INTO trade_operations
+                    (user_id, trade_type, trade_date, stock_code, stock_name, quantity, price, fee, amount, notes, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(userId, tradeType, tradeDate, stockCode, stockName, quantity, price, fee || 0, amount, notes || null, currentTime);
+
+                resolve({ id: info.lastInsertRowid, created_at: currentTime });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 根据股票代码获取交易记录
+    findByStockCode: (userId, stockCode) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT * FROM trade_operations WHERE user_id = ? AND stock_code = ? ORDER BY trade_date DESC`).all(userId, stockCode);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 删除交易记录
+    delete: (id) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`DELETE FROM trade_operations WHERE id = ?`).run(id);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 根据ID获取交易记录
+    findById: (id) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare(`SELECT * FROM trade_operations WHERE id = ?`).get(id);
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取交易统计（按交易类型）
+    getStatsByType: (userId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT trade_type, COUNT(*) as count, SUM(amount) as total_amount FROM trade_operations WHERE user_id = ? GROUP BY trade_type`).all(userId);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+};
+
+// 交易计划相关数据库操作
+const tradingPlanModel = {
+    // 创建交易计划
+    create: (userId, planData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const {
+                    stock_code, stock_name, plan_type, plan_date,
+                    target_price, current_price, stop_profit_price, stop_loss_price,
+                    quantity, estimated_amount, reason, notes, priority,
+                    alert_enabled, alert_range
+                } = planData;
+
+                const info = db.prepare(`INSERT INTO trading_plans
+                    (user_id, stock_code, stock_name, plan_type, plan_status, target_price, current_price,
+                     stop_profit_price, stop_loss_price, quantity, estimated_amount, plan_date, created_at,
+                     reason, notes, priority, alert_enabled, alert_range)
+                    VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+                    userId, stock_code, stock_name, plan_type, target_price, current_price || null,
+                    stop_profit_price || null, stop_loss_price || null, quantity || null,
+                    estimated_amount || null, plan_date, currentTime, reason || null, notes || null,
+                    priority || 3, alert_enabled !== false ? 1 : 0, alert_range || 0.02
+                );
+
+                resolve({ id: info.lastInsertRowid, created_at: currentTime });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取用户的所有计划（带筛选和分页）
+    findByUserId: (userId, filters = {}) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const { status, planType, stockCode, startDate, endDate, limit = 100, offset = 0 } = filters;
+
+                let query = 'SELECT * FROM trading_plans WHERE user_id = ?';
+                const params = [userId];
+
+                if (status) {
+                    query += ' AND plan_status = ?';
+                    params.push(status);
+                }
+                if (planType) {
+                    query += ' AND plan_type = ?';
+                    params.push(planType);
+                }
+                if (stockCode) {
+                    query += ' AND stock_code = ?';
+                    params.push(stockCode);
+                }
+                if (startDate) {
+                    query += ' AND plan_date >= ?';
+                    params.push(startDate);
+                }
+                if (endDate) {
+                    query += ' AND plan_date <= ?';
+                    params.push(endDate);
+                }
+
+                query += ' ORDER BY plan_date DESC, priority DESC, created_at DESC LIMIT ? OFFSET ?';
+                params.push(limit, offset);
+
+                const rows = db.prepare(query).all(...params);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取今日计划（实际为下一个交易日的计划）
+    getTodayPlans: (userId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                // 判断今天是否为交易日
+                const now = new Date();
+                const today = now.toISOString().split('T')[0];
+                let targetDate;
+
+                if (isTradingDay(now)) {
+                    // 如果今天是交易日，返回今天的计划
+                    targetDate = today;
+                } else {
+                    // 如果今天不是交易日（周末或节假日），返回下一个交易日的计划
+                    const nextTradingDay = getNextTradingDay(now);
+                    targetDate = nextTradingDay.toISOString().split('T')[0];
+                }
+
+                console.log(`📅 获取交易计划 - 今天: ${today}, 目标日期: ${targetDate}`);
+
+                const rows = db.prepare(`SELECT * FROM trading_plans
+                    WHERE user_id = ? AND plan_date = ? AND plan_status = 'pending'
+                    ORDER BY priority DESC, created_at ASC`).all(userId, targetDate);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 根据ID获取计划
+    findById: (planId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const row = db.prepare('SELECT * FROM trading_plans WHERE id = ?').get(planId);
+                resolve(row);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 更新计划
+    update: (planId, planData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const fields = [];
+                const values = [];
+
+                const allowedFields = [
+                    'stock_code', 'stock_name', 'plan_type', 'plan_date', 'target_price',
+                    'current_price', 'stop_profit_price', 'stop_loss_price', 'quantity',
+                    'estimated_amount', 'reason', 'notes', 'priority', 'alert_enabled', 'alert_range'
+                ];
+
+                allowedFields.forEach(field => {
+                    if (planData[field] !== undefined) {
+                        fields.push(`${field} = ?`);
+                        values.push(planData[field]);
+                    }
+                });
+
+                if (fields.length === 0) {
+                    resolve({ changes: 0 });
+                    return;
+                }
+
+                values.push(planId);
+                const query = `UPDATE trading_plans SET ${fields.join(', ')} WHERE id = ?`;
+                const info = db.prepare(query).run(...values);
+
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 执行计划
+    execute: (planId, userId, executionData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const currentTime = new Date().toISOString();
+                const { executionType, executionPrice, executionQuantity, notes } = executionData;
+
+                // 开始事务
+                const executeTransaction = db.transaction(() => {
+                    // 1. 更新计划状态为已执行
+                    db.prepare(`UPDATE trading_plans SET plan_status = 'executed', executed_at = ? WHERE id = ?`)
+                        .run(currentTime, planId);
+
+                    // 2. 获取计划信息计算偏差
+                    const plan = db.prepare('SELECT * FROM trading_plans WHERE id = ?').get(planId);
+                    const executionAmount = executionPrice * executionQuantity;
+                    const priceDeviation = ((executionPrice - plan.target_price) / plan.target_price * 100);
+
+                    // 3. 插入执行记录
+                    const info = db.prepare(`INSERT INTO plan_executions
+                        (plan_id, user_id, execution_type, execution_price, execution_quantity,
+                         execution_amount, execution_time, price_deviation, notes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+                        planId, userId, executionType, executionPrice, executionQuantity,
+                        executionAmount, currentTime, priceDeviation, notes || null
+                    );
+
+                    return {
+                        executionId: info.lastInsertRowid,
+                        plan: plan,
+                        execution: {
+                            id: info.lastInsertRowid,
+                            execution_price: executionPrice,
+                            execution_quantity: executionQuantity,
+                            execution_amount: executionAmount,
+                            price_deviation: priceDeviation,
+                            execution_time: currentTime
+                        }
+                    };
+                });
+
+                const result = executeTransaction();
+                resolve(result);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 取消计划
+    cancel: (planId, reason) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`UPDATE trading_plans
+                    SET plan_status = 'cancelled', notes = ?
+                    WHERE id = ?`).run(reason || '用户取消', planId);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 删除计划
+    delete: (planId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare('DELETE FROM trading_plans WHERE id = ?').run(planId);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 批量操作
+    batchOperate: (planIds, action, reason) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const batchTransaction = db.transaction(() => {
+                    let processed = 0;
+                    let failed = 0;
+
+                    planIds.forEach(planId => {
+                        try {
+                            if (action === 'cancel') {
+                                db.prepare(`UPDATE trading_plans SET plan_status = 'cancelled', notes = ? WHERE id = ?`)
+                                    .run(reason || '批量取消', planId);
+                            } else if (action === 'delete') {
+                                db.prepare('DELETE FROM trading_plans WHERE id = ?').run(planId);
+                            }
+                            processed++;
+                        } catch (err) {
+                            failed++;
+                        }
+                    });
+
+                    return { processed, failed };
+                });
+
+                const result = batchTransaction();
+                resolve(result);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取计划统计
+    getStatistics: (userId, days = 30) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - days);
+                const startDateStr = startDate.toISOString().split('T')[0];
+
+                // 总计划数和状态分布
+                const statusStats = db.prepare(`SELECT plan_status, COUNT(*) as count
+                    FROM trading_plans
+                    WHERE user_id = ? AND created_at >= ?
+                    GROUP BY plan_status`).all(userId, startDateStr);
+
+                // 计划类型分布
+                const typeStats = db.prepare(`SELECT plan_type, COUNT(*) as count
+                    FROM trading_plans
+                    WHERE user_id = ? AND created_at >= ?
+                    GROUP BY plan_type`).all(userId, startDateStr);
+
+                // 执行统计
+                const executionStats = db.prepare(`SELECT
+                    COUNT(*) as total_executions,
+                    AVG(price_deviation) as avg_price_deviation,
+                    MAX(price_deviation) as max_positive_deviation,
+                    MIN(price_deviation) as max_negative_deviation
+                    FROM plan_executions
+                    WHERE user_id = ? AND execution_time >= ?`).get(userId, startDateStr);
+
+                resolve({
+                    statusStats,
+                    typeStats,
+                    executionStats
+                });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 标记过期计划
+    markExpiredPlans: () => {
+        return new Promise((resolve, reject) => {
+            try {
+                const today = new Date().toISOString().split('T')[0];
+                const info = db.prepare(`UPDATE trading_plans
+                    SET plan_status = 'expired'
+                    WHERE plan_status = 'pending' AND plan_date < ?`).run(today);
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+};
+
+// 计划执行记录相关数据库操作
+const planExecutionModel = {
+    // 获取计划的所有执行记录
+    findByPlanId: (planId) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT * FROM plan_executions
+                    WHERE plan_id = ?
+                    ORDER BY execution_time DESC`).all(planId);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 获取用户的所有执行记录
+    findByUserId: (userId, limit = 50) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const rows = db.prepare(`SELECT pe.*, tp.stock_code, tp.stock_name, tp.plan_type
+                    FROM plan_executions pe
+                    JOIN trading_plans tp ON pe.plan_id = tp.id
+                    WHERE pe.user_id = ?
+                    ORDER BY pe.execution_time DESC
+                    LIMIT ?`).all(userId, limit);
+                resolve(rows);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+};
+
 // 关闭数据库连接
 function closeDatabase() {
     try {
@@ -795,5 +1471,9 @@ module.exports = {
     analysisReportModel,
     callAuctionAnalysisModel,
     stockRecommendationModel,
+    manualPositionModel,
+    tradeOperationModel,
+    tradingPlanModel,
+    planExecutionModel,
     closeDatabase
 };

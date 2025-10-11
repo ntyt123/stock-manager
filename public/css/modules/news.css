@@ -1,0 +1,194 @@
+        /* 新闻类别选择器样式 */
+        .news-categories {
+            display: flex;
+            gap: 8px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .news-category-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #495057;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .news-category-btn:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
+            transform: translateY(-1px);
+        }
+
+        .news-category-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        /* 新闻容器样式 */
+        .news-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .news-item {
+            padding: 15px;
+            border-bottom: 1px solid #f1f3f4;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .news-item:hover {
+            background: #f8f9fa;
+        }
+
+        .news-item.news-clickable {
+            cursor: pointer;
+        }
+
+        .news-item.news-clickable:hover {
+            background: #e9ecef;
+            transform: translateX(3px);
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            padding-right: 30px;
+        }
+
+        .news-item.news-clickable .news-title:hover {
+            color: #667eea;
+        }
+
+        .news-link-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.2rem;
+            opacity: 0.5;
+            transition: all 0.2s ease;
+        }
+
+        .news-item.news-clickable:hover .news-link-icon {
+            opacity: 1;
+            transform: rotate(-45deg);
+        }
+
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            flex-wrap: wrap;
+        }
+
+        .stock-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* 分析页面样式 */
+        .analysis-section {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+
+        .analysis-charts {
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .analysis-stats {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-card .title {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-card .value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .industry-distribution,
+        .risk-assessment {
+            min-height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+            .analysis-section {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .tab-navigation {
+                flex-direction: column;
+                padding: 0;
+            }
+            
+            .tab-btn {
+                text-align: center;
+                border-bottom: 1px solid #e9ecef;
+                border-radius: 0;
+            }
+            
+            .tab-btn.active {
+                border-bottom-color: #667eea;
+            }
+        }
+        

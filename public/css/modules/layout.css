@@ -1,0 +1,131 @@
+        /* 左右分栏布局样式 */
+        .tab-content-layout {
+            display: flex;
+            gap: 20px;
+            min-height: 500px;
+            width: 100%;
+        }
+
+        /* 左侧子页签导航样式 */
+        .sub-tab-navigation {
+            width: 200px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sub-tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: none;
+            border: none;
+            border-left: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            color: #6c757d;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .sub-tab-btn:hover {
+            background: rgba(102, 126, 234, 0.08);
+            color: #667eea;
+            border-left-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .sub-tab-btn.active {
+            background: linear-gradient(90deg, rgba(102, 126, 234, 0.15) 0%, transparent 100%);
+            color: #667eea;
+            border-left-color: #667eea;
+            font-weight: 600;
+        }
+
+        .sub-tab-icon {
+            font-size: 1.3rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        .sub-tab-text {
+            flex: 1;
+        }
+
+        /* 右侧内容区域样式 */
+        .sub-tab-content-area {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sub-tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .sub-tab-content.active {
+            display: block;
+        }
+
+        .sub-tab-content .card {
+            margin-bottom: 0;
+        }
+
+        /* 响应式设计 - 左右分栏 */
+        @media (max-width: 1024px) {
+            .tab-content-layout {
+                flex-direction: column;
+            }
+
+            .sub-tab-navigation {
+                width: 100%;
+                flex-direction: row;
+                overflow-x: auto;
+                position: static;
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .sub-tab-btn {
+                flex-shrink: 0;
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                padding: 10px 16px;
+            }
+
+            .sub-tab-btn.active {
+                background: linear-gradient(180deg, rgba(102, 126, 234, 0.15) 0%, transparent 100%);
+                border-left-color: transparent;
+                border-bottom-color: #667eea;
+            }
+
+            .sub-tab-btn:hover {
+                border-left-color: transparent;
+                border-bottom-color: rgba(102, 126, 234, 0.3);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sub-tab-navigation {
+                gap: 5px;
+            }
+
+            .sub-tab-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+
+            .sub-tab-icon {
+                font-size: 1.1rem;
+            }
+        }
+

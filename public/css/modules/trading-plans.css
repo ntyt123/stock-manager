@@ -1,0 +1,897 @@
+/* ==================== 交易计划模块样式 ==================== */
+
+/* 今日交易计划横幅 */
+.today-plans-banner {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    animation: slideIn 0.5s ease;
+}
+
+.today-plans-empty {
+    text-align: center;
+    padding: 50px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.today-plans-empty .empty-icon {
+    font-size: 4rem;
+    opacity: 0.5;
+}
+
+.today-plans-empty .empty-text {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+.today-plans-card {
+    width: 100%;
+}
+
+.plans-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.plans-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.plans-title i {
+    font-size: 1.5rem;
+    color: #667eea;
+}
+
+.plans-date {
+    font-size: 0.95rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.plans-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.plans-summary {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 10px;
+}
+
+.summary-item {
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.summary-item strong {
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.summary-item.alert-highlight {
+    animation: pulse 2s infinite;
+}
+
+.plans-section {
+    margin-bottom: 25px;
+}
+
+.plans-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.section-title i {
+    color: #667eea;
+}
+
+.plans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 交易计划卡片 */
+.plan-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.plan-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #d1d5db;
+}
+
+.plan-card.high-priority::before {
+    background: linear-gradient(180deg, #f39c12 0%, #f1c40f 100%);
+}
+
+.plan-card.price-near-target {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.plan-card.price-near-target::before {
+    background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%);
+    animation: pulse 2s infinite;
+}
+
+.plan-card.price-can-buy {
+    border-color: #10b981;
+}
+
+.plan-card.price-can-sell {
+    border-color: #ef4444;
+}
+
+.plan-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: #667eea;
+}
+
+.plan-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.plan-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.plan-priority {
+    font-size: 0.9rem;
+}
+
+.plan-type {
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+}
+
+.plan-type.type-buy {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.plan-type.type-sell {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.plan-type.type-add {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.plan-type.type-reduce {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.plan-stock {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.plan-time {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.plan-card-body {
+    margin-bottom: 15px;
+}
+
+.plan-prices {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.price-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.price-label {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.price-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.price-item.current .price-value {
+    font-size: 1.2rem;
+}
+
+.plan-quantity {
+    display: flex;
+    gap: 20px;
+    padding: 10px 15px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.plan-reason {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-left: 3px solid #667eea;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.plan-reason i {
+    color: #667eea;
+    margin-right: 5px;
+}
+
+.plan-card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.plan-card-actions .btn {
+    flex: 1;
+    min-width: 80px;
+}
+
+/* 徽章样式 */
+.badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.badge-success {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.badge-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.badge-warning {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.badge-secondary {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.btn-outline {
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}
+
+/* 交易计划管理页面 */
+.trading-plans-container {
+    padding: 10px 0;
+}
+
+/* 响应式设计 - 交易计划 */
+@media (max-width: 768px) {
+    .today-plans-banner {
+        padding: 20px 15px;
+    }
+
+    .plans-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .plans-actions {
+        width: 100%;
+    }
+
+    .plans-actions .btn {
+        flex: 1;
+    }
+
+    .plans-summary {
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .plan-card {
+        padding: 15px;
+    }
+
+    .plan-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .plan-prices {
+        gap: 12px;
+    }
+
+    .plan-card-actions {
+        flex-direction: column;
+    }
+
+    .plan-card-actions .btn {
+        width: 100%;
+    }
+}
+
+/* ==================== 快速创建计划按钮样式 ==================== */
+.create-plan-btn {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.create-plan-btn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.create-plan-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+/* 在period-selector中的create-plan-btn */
+.chart-period-selector .create-plan-btn {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 0.75rem;
+}
+
+/* 在position-summary中的create-plan-btn */
+.position-summary .create-plan-btn {
+    margin-left: 10px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .create-plan-btn {
+        font-size: 0.75rem;
+        padding: 5px 10px;
+    }
+
+    .chart-period-selector .create-plan-btn {
+        font-size: 0.7rem;
+        padding: 5px 8px;
+    }
+}
+
+/* ==================== 交易计划 - 止盈止损滑块样式 ==================== */
+.price-percentage {
+    float: right;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.price-slider {
+    width: 100%;
+    height: 6px;
+    margin: 10px 0;
+    -webkit-appearance: none;
+    appearance: none;
+    background: linear-gradient(90deg, #27ae60 0%, #95a5a6 50%, #e74c3c 100%);
+    outline: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.price-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: #667eea;
+    cursor: pointer;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.price-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #764ba2;
+}
+
+.price-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: #667eea;
+    cursor: pointer;
+    border-radius: 50%;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.price-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    background: #764ba2;
+}
+
+.slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #7f8c8d;
+    margin-top: 5px;
+}
+
+.slider-labels span {
+    font-weight: 600;
+}
+
+/* ==================== 交易计划管理界面样式 ==================== */
+.plans-management-container {
+    padding: 10px 0;
+}
+
+.plans-filter-bar {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+.plans-stats {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.plans-stats .stat-item {
+    font-size: 0.95rem;
+    color: #495057;
+}
+
+.plans-stats .stat-item strong {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.plans-stats .stat-item .text-primary {
+    color: #667eea;
+}
+
+.plans-stats .stat-item .text-success {
+    color: #10b981;
+}
+
+.plans-stats .stat-item .text-secondary {
+    color: #7f8c8d;
+}
+
+.plans-stats .stat-item .text-danger {
+    color: #ef4444;
+}
+
+.plans-group {
+    margin-bottom: 30px;
+}
+
+.plans-group:last-child {
+    margin-bottom: 0;
+}
+
+.group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    color: white;
+}
+
+.group-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* 管理界面计划卡片样式 */
+.plan-management-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.plan-management-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: #d1d5db;
+}
+
+.plan-management-card.status-pending::before {
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.plan-management-card.status-executed::before {
+    background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+
+.plan-management-card.status-cancelled::before {
+    background: linear-gradient(180deg, #ef4444 0%, #dc2626 100%);
+}
+
+.plan-management-card.status-expired::before {
+    background: linear-gradient(180deg, #7f8c8d 0%, #6c757d 100%);
+}
+
+.plan-management-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    border-color: #667eea;
+}
+
+.plan-management-card .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.plan-management-card .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.plan-priority-badge {
+    font-size: 0.9rem;
+}
+
+.plan-type-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+}
+
+.plan-status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.plan-status-badge.status-pending {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.plan-status-badge.status-executed {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.plan-status-badge.status-cancelled {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.plan-status-badge.status-expired {
+    background: #e9ecef;
+    color: #6c757d;
+}
+
+.plan-management-card .card-date {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+.plan-management-card .card-body {
+    margin-bottom: 15px;
+}
+
+.stock-info-section {
+    margin-bottom: 12px;
+}
+
+.stock-info-section .stock-code {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.stock-info-section .stock-name {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.price-section {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.price-section .price-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.price-section .price-label {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    font-weight: 500;
+}
+
+.price-section .price-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.price-section .price-gap {
+    font-size: 0.85rem;
+}
+
+.quantity-section {
+    display: flex;
+    gap: 20px;
+    padding: 10px 15px;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #495057;
+    margin-bottom: 12px;
+}
+
+.reason-section {
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-left: 3px solid #667eea;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.9rem;
+    color: #495057;
+    line-height: 1.6;
+}
+
+.reason-section i {
+    color: #667eea;
+    margin-right: 5px;
+}
+
+.plan-management-card .card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.plan-management-card .card-actions .btn {
+    flex: 1;
+    min-width: 70px;
+}
+
+/* 空状态样式 */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+}
+
+.empty-state .empty-icon {
+    font-size: 4rem;
+    opacity: 0.4;
+}
+
+.empty-state .empty-text {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    font-weight: 600;
+}
+
+/* 错误消息样式 */
+.error-message {
+    text-align: center;
+    padding: 50px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.error-message .error-icon {
+    font-size: 3.5rem;
+    opacity: 0.5;
+}
+
+.error-message .error-text {
+    font-size: 1.1rem;
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* 响应式设计 - 交易计划管理 */
+@media (max-width: 768px) {
+    .plans-filter-bar {
+        padding: 15px;
+    }
+
+    .plans-stats {
+        gap: 12px;
+    }
+
+    .plans-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .plan-management-card {
+        padding: 15px;
+    }
+
+    .plan-management-card .card-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .price-section {
+        gap: 12px;
+    }
+
+    .plan-management-card .card-actions {
+        flex-direction: column;
+    }
+
+    .plan-management-card .card-actions .btn {
+        width: 100%;
+    }
+}
+

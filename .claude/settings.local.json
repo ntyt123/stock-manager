@@ -6,7 +6,14 @@
       "Bash(npm run dev:*)",
       "Bash(npm install)",
       "WebSearch",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm start)",
+      "Bash(cd:*)",
+      "Bash(node server.js)",
+      "Bash(timeout:*)",
+      "Bash(sqlite3:*)",
+      "Bash(node check-plans.js)",
+      "Bash(node check-users.js)"
     ],
     "deny": [],
     "ask": []

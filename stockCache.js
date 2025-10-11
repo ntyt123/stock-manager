@@ -4,6 +4,7 @@ class StockCache {
         // 缓存存储：{ stockCode: { data, timestamp, expiresAt } }
         this.quoteCache = new Map();
         this.historyCache = new Map();
+        this.intradayCache = new Map(); // 分时数据缓存
     }
 
     /**
@@ -228,11 +229,71 @@ class StockCache {
     }
 
     /**
+     * 获取分时数据缓存
+     * @param {string} stockCode - 股票代码
+     * @param {string} period - 时间周期（1, 5, 15, 30, 60）
+     * @param {number} limit - 数据条数
+     */
+    getIntraday(stockCode, period, limit) {
+        const key = `${stockCode}_${period}_${limit}`;
+        const cached = this.intradayCache.get(key);
+
+        if (!cached) {
+            return null;
+        }
+
+        const now = Date.now();
+
+        // 检查是否过期
+        if (now > cached.expiresAt) {
+            this.intradayCache.delete(key);
+            return null;
+        }
+
+        console.log(`📦 使用缓存的分时数据: ${stockCode} (${period}分钟), 剩余有效时间: ${Math.floor((cached.expiresAt - now) / 1000)}秒`);
+        return cached.data;
+    }
+
+    /**
+     * 设置分时数据缓存
+     * @param {string} stockCode - 股票代码
+     * @param {string} period - 时间周期（1, 5, 15, 30, 60）
+     * @param {number} limit - 数据条数
+     * @param {object} data - 分时数据
+     */
+    setIntraday(stockCode, period, limit, data) {
+        const key = `${stockCode}_${period}_${limit}`;
+
+        // 分时数据在交易时间内缓存时间更短（1分钟），非交易时间缓存到下一个交易时段
+        const now = Date.now();
+        let expiresAt;
+
+        if (this.isTradeTime()) {
+            // 交易时间：缓存1分钟（分时数据更新更频繁）
+            expiresAt = now + 60 * 1000;
+        } else {
+            // 非交易时间：缓存到下一个交易时段
+            expiresAt = this.getNextTradeTimeStart();
+        }
+
+        const ttl = Math.floor((expiresAt - now) / 1000);
+
+        this.intradayCache.set(key, {
+            data,
+            timestamp: now,
+            expiresAt
+        });
+
+        console.log(`💾 缓存分时数据: ${stockCode} (${period}分钟, ${limit}条), 有效期: ${ttl}秒 (${this.isTradeTime() ? '交易时间' : '非交易时间'})`);
+    }
+
+    /**
      * 清空所有缓存
      */
     clearAll() {
         this.quoteCache.clear();
         this.historyCache.clear();
+        this.intradayCache.clear();
         console.log('🗑️ 已清空所有缓存');
     }
 
@@ -259,6 +320,14 @@ class StockCache {
             }
         }
 
+        // 清理过期的分时数据缓存
+        for (const [key, value] of this.intradayCache.entries()) {
+            if (now > value.expiresAt) {
+                this.intradayCache.delete(key);
+                cleanedCount++;
+            }
+        }
+
         if (cleanedCount > 0) {
             console.log(`🧹 清理了 ${cleanedCount} 条过期缓存`);
         }
@@ -271,6 +340,7 @@ class StockCache {
         return {
             quoteCount: this.quoteCache.size,
             historyCount: this.historyCache.size,
+            intradayCount: this.intradayCache.size,
             isTradeTime: this.isTradeTime()
         };
     }

@@ -49,6 +49,12 @@ class StockChartManager {
 
             if (!historyData || historyData.length === 0) {
                 console.error(`股票 ${stockCode} ${period} 数据为空`);
+                // 显示友好的错误提示
+                const errorTitle = period === 'intraday' ? '暂无分时数据' : '暂无历史数据';
+                const errorMessage = period === 'intraday'
+                    ? '当前可能处于非交易时段，分时数据暂不可用'
+                    : '该股票暂无历史行情数据';
+                this._renderErrorMessage(canvas, errorTitle, errorMessage);
                 return;
             }
 
@@ -74,6 +80,10 @@ class StockChartManager {
 
         } catch (error) {
             console.error(`渲染股票 ${stockCode} 图表失败:`, error);
+            // 显示友好的错误提示
+            const errorTitle = '加载失败';
+            const errorMessage = error.message || '数据加载失败，请稍后重试';
+            this._renderErrorMessage(canvas, errorTitle, errorMessage);
         }
     }
 
@@ -221,6 +231,70 @@ class StockChartManager {
                 }
             }
         });
+    }
+
+    /**
+     * 在Canvas上渲染错误消息
+     * @private
+     */
+    _renderErrorMessage(canvas, title, message) {
+        const ctx = canvas.getContext('2d');
+        const width = canvas.offsetWidth || canvas.width;
+        const height = canvas.offsetHeight || canvas.height;
+
+        // 设置Canvas尺寸
+        canvas.width = width;
+        canvas.height = height;
+
+        // 清空画布
+        ctx.clearRect(0, 0, width, height);
+
+        // 绘制背景
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(0, 0, width, height);
+
+        // 绘制边框
+        ctx.strokeStyle = '#dee2e6';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, width, height);
+
+        // 绘制图标
+        ctx.font = 'bold 40px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#95a5a6';
+        ctx.fillText('📊', width / 2, height / 2 - 40);
+
+        // 绘制标题
+        ctx.font = 'bold 16px Arial';
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillText(title, width / 2, height / 2 + 10);
+
+        // 绘制消息
+        ctx.font = '12px Arial';
+        ctx.fillStyle = '#7f8c8d';
+
+        // 如果消息太长，分行显示
+        const maxWidth = width - 40;
+        const words = message.split('');
+        let line = '';
+        let y = height / 2 + 35;
+
+        for (let i = 0; i < words.length; i++) {
+            const testLine = line + words[i];
+            const metrics = ctx.measureText(testLine);
+
+            if (metrics.width > maxWidth && i > 0) {
+                ctx.fillText(line, width / 2, y);
+                line = words[i];
+                y += 18;
+            } else {
+                line = testLine;
+            }
+        }
+        ctx.fillText(line, width / 2, y);
+
+        console.log(`📊 已显示错误消息: ${title} - ${message}`);
     }
 
     /**

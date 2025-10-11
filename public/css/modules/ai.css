@@ -1,0 +1,581 @@
+        /* AI投资助手样式 */
+        .ai-assistant {
+            padding: 10px 0;
+        }
+
+        .ai-input-section {
+            margin-bottom: 20px;
+        }
+
+        .ai-textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            resize: vertical;
+            min-height: 100px;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .ai-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .ai-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .ai-actions .action-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            font-size: 1.2rem;
+        }
+
+        .btn-text {
+            font-size: 0.95rem;
+        }
+
+        .ai-response-section {
+            margin-top: 25px;
+            border-top: 2px solid #e9ecef;
+            padding-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .ai-response-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            color: white;
+        }
+
+        .response-icon {
+            font-size: 1.5rem;
+        }
+
+        .response-title {
+            font-size: 1rem;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .response-time {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .ai-response-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 150px;
+            line-height: 1.8;
+            color: #2c3e50;
+            font-size: 0.95rem;
+            border: 1px solid #e9ecef;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .ai-response-content.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+            color: #7f8c8d;
+        }
+
+        .ai-response-content.loading::before {
+            content: '⏳';
+            font-size: 1.5rem;
+            margin-right: 10px;
+            animation: rotate 2s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* 响应式设计 - AI助手 */
+        @media (max-width: 768px) {
+            .ai-actions {
+                flex-direction: column;
+            }
+
+            .ai-textarea {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
+
+            .ai-response-header {
+                flex-wrap: wrap;
+            }
+
+            .response-time {
+                width: 100%;
+                margin-top: 5px;
+            }
+        }
+
+        /* 持仓分析样式 */
+        .portfolio-analysis {
+            padding: 10px 0;
+        }
+
+        .analysis-hint {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 2px dashed #dee2e6;
+        }
+
+        .hint-icon {
+            font-size: 3rem;
+            opacity: 0.8;
+        }
+
+        .hint-content {
+            flex: 1;
+        }
+
+        .hint-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .hint-desc {
+            font-size: 0.95rem;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+        }
+
+        .hint-schedule {
+            font-size: 0.9rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .analysis-result {
+            margin-top: 20px;
+        }
+
+        .analysis-summary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px 12px 0 0;
+            margin-bottom: 0;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 5px;
+        }
+
+        .summary-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .analysis-content {
+            background: white;
+            border: 2px solid #667eea;
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 25px;
+            line-height: 1.8;
+            word-wrap: break-word;
+            font-size: 0.95rem;
+            color: #2c3e50;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Markdown样式 */
+        .analysis-content h1,
+        .analysis-content h2,
+        .analysis-content h3,
+        .analysis-content h4 {
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .analysis-content h1 {
+            font-size: 1.8rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .analysis-content h2 {
+            font-size: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 8px;
+        }
+
+        .analysis-content h3 {
+            font-size: 1.3rem;
+        }
+
+        .analysis-content h4 {
+            font-size: 1.1rem;
+        }
+
+        .analysis-content p {
+            margin-bottom: 15px;
+        }
+
+        .analysis-content ul,
+        .analysis-content ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .analysis-content li {
+            margin-bottom: 8px;
+        }
+
+        .analysis-content strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .analysis-content em {
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .analysis-content code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        .analysis-content pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        .analysis-content pre code {
+            background: none;
+            padding: 0;
+            color: #2c3e50;
+        }
+
+        .analysis-content blockquote {
+            border-left: 4px solid #667eea;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .analysis-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .analysis-content table th,
+        .analysis-content table td {
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .analysis-content table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        .analysis-content table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .analysis-content hr {
+            border: none;
+            border-top: 2px solid #e9ecef;
+            margin: 20px 0;
+        }
+
+        .analysis-content a {
+            color: #667eea;
+            text-decoration: none;
+            border-bottom: 1px solid #667eea;
+        }
+
+        .analysis-content a:hover {
+            color: #764ba2;
+            border-bottom-color: #764ba2;
+        }
+
+        /* AI响应内容也使用相同的Markdown样式 */
+        .ai-response-content h1,
+        .ai-response-content h2,
+        .ai-response-content h3,
+        .ai-response-content h4 {
+            color: #2c3e50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .ai-response-content h1 {
+            font-size: 1.6rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+
+        .ai-response-content h2 {
+            font-size: 1.4rem;
+            border-bottom: 1px solid #e9ecef;
+            padding-bottom: 6px;
+        }
+
+        .ai-response-content h3 {
+            font-size: 1.2rem;
+        }
+
+        .ai-response-content p {
+            margin-bottom: 15px;
+        }
+
+        .ai-response-content ul,
+        .ai-response-content ol {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .ai-response-content li {
+            margin-bottom: 8px;
+        }
+
+        .ai-response-content strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .ai-response-content code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #e74c3c;
+        }
+
+        .ai-response-content pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 15px;
+        }
+
+        .ai-response-content blockquote {
+            border-left: 4px solid #667eea;
+            margin: 15px 0;
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .analysis-timestamp {
+            text-align: right;
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+
+        .analysis-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 50px;
+            gap: 20px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e9ecef;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-message {
+            font-size: 1.1rem;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading-tips {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            text-align: center;
+        }
+
+        /* 响应式设计 - 持仓分析 */
+        @media (max-width: 768px) {
+            .analysis-hint {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .hint-icon {
+                font-size: 2.5rem;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .analysis-content {
+                font-size: 0.9rem;
+                padding: 20px 15px;
+            }
+        }
+
+        /* 分析报告历史记录样式 */
+        .report-history-content {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .report-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .report-list-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .report-list-item:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .report-delete-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .report-delete-btn:hover {
+            background: #cc0000;
+            transform: scale(1.1);
+        }
+
+        .report-delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .report-item-info {
+            flex: 1;
+        }
+
+        .report-item-date {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .report-item-type {
+            font-size: 0.9rem;
+            padding: 3px 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .report-type-manual {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .report-type-scheduled {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .report-item-action {
+            color: #667eea;
+            font-size: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+

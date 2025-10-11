@@ -1,0 +1,261 @@
+        /* ==================== 行业分布样式 ==================== */
+        .industry-distribution-content {
+            padding: 10px 0;
+        }
+
+        .industry-overview {
+            display: flex;
+            justify-content: space-around;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .overview-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .overview-stat .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .overview-stat .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .industry-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .industry-item {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .industry-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .industry-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border-color: #667eea;
+        }
+
+        .industry-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .industry-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .industry-rank {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #95a5a6;
+            width: 40px;
+            text-align: center;
+        }
+
+        .industry-item:nth-child(1) .industry-rank {
+            color: #f39c12;
+            font-size: 1.8rem;
+        }
+
+        .industry-item:nth-child(2) .industry-rank {
+            color: #c0392b;
+            font-size: 1.7rem;
+        }
+
+        .industry-item:nth-child(3) .industry-rank {
+            color: #e67e22;
+            font-size: 1.6rem;
+        }
+
+        .industry-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .industry-count {
+            font-size: 0.85rem;
+            color: white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .industry-stats {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .industry-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .industry-percent {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 6px 14px;
+            border-radius: 8px;
+        }
+
+        .industry-bar-container {
+            width: 100%;
+            height: 12px;
+            background: #e9ecef;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .industry-bar {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .industry-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .industry-stocks {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(102, 126, 234, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .industry-stock-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+
+        .industry-stock-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .industry-stock-item .stock-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+
+        .industry-stock-item .stock-code {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-left: 10px;
+        }
+
+        .industry-stock-item .stock-value {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 0.95rem;
+        }
+
+        /* 响应式设计 - 行业分布 */
+        @media (max-width: 768px) {
+            .industry-overview {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .overview-stat {
+                width: 100%;
+                flex-direction: row;
+                justify-content: space-between;
+            }
+
+            .overview-stat .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .industry-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .industry-info {
+                flex-wrap: wrap;
+            }
+
+            .industry-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .industry-stock-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .industry-stock-item .stock-code {
+                margin-left: 0;
+            }
+        }
+
