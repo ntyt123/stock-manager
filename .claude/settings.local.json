@@ -13,7 +13,14 @@
       "Bash(timeout:*)",
       "Bash(sqlite3:*)",
       "Bash(node check-plans.js)",
-      "Bash(node check-users.js)"
+      "Bash(node check-users.js)",
+      "Bash(node -e \"const db = require(''better-sqlite3'')(''stock_manager.db''); const result = db.pragma(''table_info(users)''); console.log(JSON.stringify(result, null, 2));\")",
+      "Bash(node:*)",
+      "Bash(tasklist)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Read(//h/**)"
     ],
     "deny": [],
     "ask": []

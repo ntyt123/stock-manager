@@ -61,6 +61,13 @@ async function loadMarketIndices() {
 
         const quotes = quotesResult.data;
 
+        // 获取默认K线周期设置
+        const settings = window.SettingsManager ? window.SettingsManager.getSettings() : {};
+        const defaultPeriod = settings.chartPeriod || 'day';
+        console.log(`📊 [市场指数] 完整设置:`, settings);
+        console.log(`📊 [市场指数] chartPeriod值: "${settings.chartPeriod}"`);
+        console.log(`📊 [市场指数] 最终使用周期: "${defaultPeriod}"`);
+
         // 渲染指数数据（带K线图）
         let html = '';
         indices.forEach((index, i) => {
@@ -83,10 +90,10 @@ async function loadMarketIndices() {
                             </div>
                         </div>
                         <div class="chart-period-selector">
-                            <button class="period-btn active" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
-                            <button class="period-btn" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
-                            <button class="period-btn" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
-                            <button class="period-btn" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
+                            <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                            <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                            <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
+                            <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
                         </div>
                         <div class="quote-chart-container">
                             <canvas id="${chartId}" class="quote-chart"></canvas>
@@ -99,10 +106,13 @@ async function loadMarketIndices() {
         if (html) {
             container.innerHTML = html;
 
-            // 渲染图表（默认显示分时图）
+            // 渲染图表（使用设置中的默认周期）
+            const defaultPeriod = window.SettingsManager ? window.SettingsManager.getSettings().chartPeriod : 'day';
+            console.log(`📊 使用默认K线周期: ${defaultPeriod}`);
+
             quotes.forEach((quote, i) => {
                 const chartId = `market-index-chart-${quote.stockCode}-${i}`;
-                renderStockChart(chartId, quote.stockCode, 'intraday');
+                renderStockChart(chartId, quote.stockCode, defaultPeriod);
             });
 
             // 绑定周期切换按钮事件
@@ -644,6 +654,28 @@ async function loadPortfolioStats() {
         const positions = result.data.positions;
         const summary = result.data.summary;
 
+        // 等待 CapitalManager 初始化完成（最多等待3秒）
+        console.log('📊 [loadPortfolioStats] 开始等待 CapitalManager 初始化...');
+        let totalCapital = 0;
+        if (window.CapitalManager) {
+            let waitCount = 0;
+            console.log(`📊 [loadPortfolioStats] CapitalManager.initialized = ${window.CapitalManager.initialized}`);
+            while (!window.CapitalManager.initialized && waitCount < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                waitCount++;
+                if (waitCount % 5 === 0) {
+                    console.log(`📊 [loadPortfolioStats] 等待中... ${waitCount * 100}ms`);
+                }
+            }
+            console.log(`📊 [loadPortfolioStats] 等待结束，waitCount = ${waitCount}`);
+            totalCapital = window.CapitalManager.getTotalCapital();
+            console.log(`📊 [loadPortfolioStats] 获取到总资金: ¥${totalCapital}`);
+        } else {
+            console.warn('⚠️ [loadPortfolioStats] window.CapitalManager 不存在！');
+        }
+
+        const positionRatio = totalCapital > 0 ? (summary.totalMarketValue / totalCapital * 100).toFixed(2) : 0;
+
         // 找出最佳和最差表现的股票
         let bestStock = positions[0];
         let worstStock = positions[0];
@@ -661,18 +693,27 @@ async function loadPortfolioStats() {
         const html = `
             <div class="stats-grid">
                 <div class="stat-box">
-                    <div class="stat-icon">📦</div>
+                    <div class="stat-icon">💼</div>
                     <div class="stat-content">
-                        <div class="stat-label">持仓股票</div>
-                        <div class="stat-value">${summary.positionCount}只</div>
+                        <div class="stat-label">总资金</div>
+                        <div class="stat-value">¥${totalCapital.toLocaleString('zh-CN', { minimumFractionDigits: 2 })}</div>
                     </div>
                 </div>
 
                 <div class="stat-box">
                     <div class="stat-icon">💰</div>
                     <div class="stat-content">
-                        <div class="stat-label">总市值</div>
+                        <div class="stat-label">持仓市值</div>
                         <div class="stat-value">¥${summary.totalMarketValue.toFixed(2)}</div>
+                    </div>
+                </div>
+
+                <div class="stat-box">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-label">仓位占比</div>
+                        <div class="stat-value">${positionRatio}%</div>
+                        <div class="stat-sub">${summary.positionCount}只股票</div>
                     </div>
                 </div>
 
@@ -1046,24 +1087,112 @@ async function loadIndustryDistribution() {
     }
 }
 
-// updateStockData
+// ==================== 自动刷新行情功能 ====================
+let autoRefreshTimer = null;
+
+// 启动自动刷新
+function startAutoRefresh() {
+    // 先停止旧的定时器
+    stopAutoRefresh();
+
+    // 获取设置
+    const settings = window.SettingsManager ? window.SettingsManager.getSettings() : {};
+    const autoRefresh = settings.autoRefresh || false;
+    const refreshInterval = settings.refreshInterval || 0; // 秒
+
+    if (!autoRefresh || refreshInterval <= 0) {
+        console.log('⏸️ 自动刷新行情已禁用');
+        return;
+    }
+
+    console.log(`🔄 启动自动刷新行情，间隔: ${refreshInterval}秒`);
+
+    // 设置定时器
+    autoRefreshTimer = setInterval(() => {
+        console.log('🔄 自动刷新行情中...');
+        refreshMarketData();
+    }, refreshInterval * 1000);
+}
+
+// 停止自动刷新
+function stopAutoRefresh() {
+    if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+        console.log('⏹️ 自动刷新行情已停止');
+    }
+}
+
+// 刷新所有行情数据
+function refreshMarketData() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('zh-CN');
+    console.log(`📊 [${timeStr}] 刷新市场行情数据...`);
+
+    // 刷新市场指数
+    const marketIndicesContainer = document.getElementById('marketIndices');
+    if (marketIndicesContainer && marketIndicesContainer.innerHTML) {
+        loadMarketIndices();
+    }
+
+    // 刷新市场概览
+    const marketOverviewContainer = document.getElementById('marketOverview');
+    if (marketOverviewContainer && marketOverviewContainer.innerHTML) {
+        loadMarketOverview();
+    }
+
+    // 刷新自选股行情
+    const watchlistQuotesContainer = document.getElementById('watchlistQuotes');
+    if (watchlistQuotesContainer && watchlistQuotesContainer.innerHTML) {
+        loadWatchlistQuotes();
+    }
+
+    // 刷新总览自选股行情
+    const overviewWatchlistContainer = document.getElementById('overviewWatchlistQuotes');
+    if (overviewWatchlistContainer && overviewWatchlistContainer.innerHTML) {
+        loadOverviewWatchlistQuotes();
+    }
+
+    // 刷新涨跌幅榜
+    const topGainersContainer = document.getElementById('topGainers');
+    const topLosersContainer = document.getElementById('topLosers');
+    if (topGainersContainer && topLosersContainer) {
+        loadTopGainersLosers();
+    }
+
+    console.log(`✅ [${timeStr}] 市场行情数据刷新完成`);
+}
+
+// updateStockData (旧函数，保留兼容性)
 function updateStockData() {
     const stocks = ['AAPL', 'GOOGL', 'MSFT', 'TSLA', 'AMZN'];
-    
+
     stocks.forEach(stock => {
         const priceElement = document.querySelector(`[data-stock="${stock}"] .stock-price`);
         const changeElement = document.querySelector(`[data-stock="${stock}"] .stock-change`);
-        
+
         if (priceElement && changeElement) {
             const currentPrice = parseFloat(priceElement.textContent.replace('$', '')) || 100;
             const change = (Math.random() - 0.5) * 10;
             const newPrice = Math.max(1, currentPrice + change);
             const changePercent = ((change / currentPrice) * 100).toFixed(2);
-            
+
             priceElement.textContent = `$${newPrice.toFixed(2)}`;
             changeElement.textContent = `${changePercent}%`;
             changeElement.className = `stock-change ${change >= 0 ? 'positive' : 'negative'}`;
         }
     });
 }
+
+// ==================== 监听总资金更新事件 ====================
+document.addEventListener('capitalUpdated', (event) => {
+    console.log('💰 检测到总资金更新，刷新持仓概览...', event.detail);
+
+    // 重新加载持仓概览统计
+    const portfolioStatsContainer = document.getElementById('portfolioStats');
+    if (portfolioStatsContainer && portfolioStatsContainer.querySelector('.stats-grid')) {
+        // 如果已经有统计数据，重新加载
+        loadPortfolioStats();
+    }
+});
 

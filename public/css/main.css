@@ -14,13 +14,14 @@
  * - /css/modules/risk.css - 风险预警样式
  * - /css/modules/tooltips.css - 股票详情悬浮框样式
  * - /css/modules/quick-actions.css - 快捷操作卡片样式
+ * - /css/modules/settings.css - 系统设置样式
  * - /css/modules/trade-history.css - 交易历史样式
  * - /css/modules/industry.css - 行业分布样式
  * - /css/modules/trading-plans.css - 交易计划模块样式
  *
  * 重构完成时间: 2025-10-11
  * 原文件已备份至: main.css.original
- * 总模块数: 15个
+ * 总模块数: 16个
  * ========================================
  */
 
@@ -35,6 +36,7 @@
 @import url('./modules/forms.css');
 @import url('./modules/tooltips.css');
 @import url('./modules/quick-actions.css');
+@import url('./modules/settings.css');
 
 /* 功能模块 */
 @import url('./modules/watchlist.css');

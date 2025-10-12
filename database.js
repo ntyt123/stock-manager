@@ -28,6 +28,7 @@ function initDatabase() {
                 email TEXT UNIQUE NOT NULL,
                 avatar TEXT,
                 role TEXT NOT NULL DEFAULT 'user',
+                total_capital REAL DEFAULT 0,
                 registerTime TEXT NOT NULL,
                 lastLogin TEXT NOT NULL
             )`).run();
@@ -326,6 +327,34 @@ const userModel = {
             try {
                 const info = db.prepare(`UPDATE users SET lastLogin = ? WHERE id = ?`)
                     .run(new Date().toISOString(), id);
+
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 更新用户总资金
+    updateTotalCapital: (id, totalCapital) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`UPDATE users SET total_capital = ? WHERE id = ?`)
+                    .run(totalCapital, id);
+
+                resolve({ changes: info.changes });
+            } catch (err) {
+                reject(err);
+            }
+        });
+    },
+
+    // 更新用户密码
+    updatePassword: (id, hashedPassword) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const info = db.prepare(`UPDATE users SET password = ? WHERE id = ?`)
+                    .run(hashedPassword, id);
 
                 resolve({ changes: info.changes });
             } catch (err) {

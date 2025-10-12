@@ -25,10 +25,16 @@ async function generateRecommendation() {
     `;
 
     try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('请先登录后再使用股票推荐功能');
+        }
+
         const response = await fetch('/api/recommendations/generate', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
             }
         });
 

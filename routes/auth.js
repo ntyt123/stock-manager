@@ -152,12 +152,100 @@ module.exports = (JWT_SECRET) => {
                 email: user.email,
                 avatar: user.avatar,
                 role: user.role,
+                total_capital: user.total_capital || 0,
                 registerTime: user.registerTime,
                 lastLogin: user.lastLogin
             });
         } catch (error) {
             console.error('获取用户信息错误:', error);
             return res.status(500).json({ error: '获取用户信息失败' });
+        }
+    });
+
+    // 获取用户总资金API
+    router.get('/capital', authenticateToken, async (req, res) => {
+        try {
+            const user = await userModel.findById(req.user.id);
+            if (!user) {
+                return res.status(404).json({ error: '用户不存在' });
+            }
+
+            res.json({
+                success: true,
+                total_capital: user.total_capital || 0
+            });
+        } catch (error) {
+            console.error('获取总资金错误:', error);
+            return res.status(500).json({ error: '获取总资金失败' });
+        }
+    });
+
+    // 更新用户总资金API
+    router.put('/capital', authenticateToken, async (req, res) => {
+        const { total_capital } = req.body;
+
+        if (total_capital === undefined || total_capital === null) {
+            return res.status(400).json({ error: '总资金是必填的' });
+        }
+
+        if (isNaN(total_capital) || total_capital < 0) {
+            return res.status(400).json({ error: '总资金必须是非负数' });
+        }
+
+        try {
+            await userModel.updateTotalCapital(req.user.id, parseFloat(total_capital));
+
+            res.json({
+                success: true,
+                message: '总资金更新成功',
+                total_capital: parseFloat(total_capital)
+            });
+        } catch (error) {
+            console.error('更新总资金错误:', error);
+            return res.status(500).json({ error: '更新总资金失败' });
+        }
+    });
+
+    // 修改密码API
+    router.put('/change-password', authenticateToken, async (req, res) => {
+        console.log('📝 收到修改密码请求, 用户ID:', req.user.id);
+        const { oldPassword, newPassword } = req.body;
+
+        if (!oldPassword || !newPassword) {
+            console.log('❌ 参数缺失: oldPassword=', !!oldPassword, 'newPassword=', !!newPassword);
+            return res.status(400).json({ error: '旧密码和新密码都是必填的' });
+        }
+
+        if (!newPassword.trim()) {
+            return res.status(400).json({ error: '新密码不能为空' });
+        }
+
+        try {
+            // 获取当前用户信息
+            const user = await userModel.findById(req.user.id);
+            if (!user) {
+                return res.status(404).json({ error: '用户不存在' });
+            }
+
+            // 验证旧密码
+            const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: '当前密码错误' });
+            }
+
+            // 加密新密码
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+            // 更新密码
+            await userModel.updatePassword(req.user.id, hashedPassword);
+
+            res.json({
+                success: true,
+                message: '密码修改成功'
+            });
+        } catch (error) {
+            console.error('修改密码错误:', error);
+            return res.status(500).json({ error: '修改密码失败，请稍后重试' });
         }
     });
 

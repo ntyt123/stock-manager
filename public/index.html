@@ -20,6 +20,7 @@
                     <span id="userName">游客</span>
                     <span class="user-badge badge-user" id="userBadge">游客</span>
                 </span>
+                <button class="nav-btn" onclick="SettingsManager.openSettings()">⚙️ 设置</button>
                 <button class="nav-btn" id="loginBtn" onclick="goToLogin()">登录</button>
                 <button class="nav-btn" id="logoutBtn" onclick="logout()" style="display: none;">退出</button>
                 <button class="nav-btn" id="adminBtn" onclick="goToAdmin()" style="display: none;">管理</button>
@@ -31,6 +32,11 @@
             <div class="status-item">
                 <span class="status-label">系统状态:</span>
                 <span class="status-value online">在线</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">总资金:</span>
+                <span class="status-value" id="totalCapitalDisplay">¥0.00</span>
+                <button class="status-edit-btn" id="editCapitalBtn" onclick="openCapitalModal()" title="设置总资金">⚙️</button>
             </div>
             <div class="status-item">
                 <span class="status-label">当前时间:</span>
@@ -153,8 +159,24 @@
                                 </div>
                             </div>
 
-                            <div class="portfolio-value" id="uploadedTotalValue">¥0.00</div>
-                            <div class="portfolio-change" id="uploadedProfitLoss">总盈亏: ¥0.00 (0.00%)</div>
+                            <div class="portfolio-summary-grid">
+                                <div class="summary-item">
+                                    <div class="summary-label">总资金</div>
+                                    <div class="summary-value" id="positionTotalCapital">¥0.00</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-label">持仓市值</div>
+                                    <div class="summary-value" id="uploadedTotalValue">¥0.00</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-label">仓位占比</div>
+                                    <div class="summary-value" id="positionRatio">0%</div>
+                                </div>
+                                <div class="summary-item">
+                                    <div class="summary-label">总盈亏</div>
+                                    <div class="summary-value" id="uploadedProfitLoss">¥0.00 (0.00%)</div>
+                                </div>
+                            </div>
                             <div class="positions-container" id="uploadedPositions">
                                 <div class="loading-text">请导入Excel文件查看持仓数据</div>
                             </div>
@@ -869,6 +891,24 @@
                 </div>
 
                 <div class="form-container">
+                    <!-- 总资金信息 -->
+                    <div class="capital-info-banner" id="capitalInfoBanner" style="display: none;">
+                        <div class="capital-info-content">
+                            <div class="capital-info-item">
+                                <span class="capital-label">💰 总资金:</span>
+                                <span class="capital-value" id="modalTotalCapital">¥0.00</span>
+                            </div>
+                            <div class="capital-info-item">
+                                <span class="capital-label">📊 预计金额:</span>
+                                <span class="capital-value" id="modalEstimatedAmount">¥0.00</span>
+                            </div>
+                            <div class="capital-info-item">
+                                <span class="capital-label">📈 预计仓位:</span>
+                                <span class="capital-value" id="modalPositionRatio">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
                     <form id="tradingPlanForm">
                         <!-- 基本信息 -->
                         <div class="form-row">
@@ -944,8 +984,17 @@
                         <!-- 数量信息 -->
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="planQuantity">计划数量（股）</label>
+                                <label for="planQuantity">
+                                    计划数量（股）
+                                    <span class="quantity-percentage" id="quantityPercentage">0%</span>
+                                </label>
                                 <input type="number" id="planQuantity" class="form-input" placeholder="例如: 100" min="0">
+                                <input type="range" id="quantitySlider" class="price-slider" min="0" max="100" value="0" step="1">
+                                <div class="slider-labels">
+                                    <span>0%</span>
+                                    <span>50%</span>
+                                    <span>100%</span>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="planPriority">优先级</label>
@@ -1045,6 +1094,492 @@
             </div>
         </div>
 
+        <!-- 总资金设置模态框 -->
+        <div id="capitalModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2>💰 设置总资金</h2>
+                    <button class="modal-close" onclick="closeCapitalModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="totalCapitalInput">总资金金额（元）</label>
+                        <input type="number" id="totalCapitalInput" class="form-input" placeholder="请输入总资金金额" min="0" step="0.01">
+                        <p class="form-hint">💡 总资金用于计算仓位比例和制定交易策略</p>
+                    </div>
+                    <div id="capitalFormStatus" class="form-status"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeCapitalModal()">取消</button>
+                    <button class="btn btn-primary" onclick="saveTotalCapital()">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系统设置模态框 -->
+        <div id="settingsModal" class="modal" style="display: none;">
+            <div class="modal-content settings-modal-content">
+                <div class="modal-header">
+                    <h2>⚙️ 系统设置</h2>
+                    <button class="modal-close" onclick="SettingsManager.closeSettings()">&times;</button>
+                </div>
+
+                <div class="settings-container">
+                    <!-- 左侧导航栏 -->
+                    <div class="settings-sidebar">
+                        <div class="settings-nav-item active" data-section="account">
+                            <span class="settings-nav-icon">👤</span>
+                            <span class="settings-nav-text">账户设置</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="capital">
+                            <span class="settings-nav-icon">💰</span>
+                            <span class="settings-nav-text">资金设置</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="trading">
+                            <span class="settings-nav-icon">📈</span>
+                            <span class="settings-nav-text">交易设置</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="display">
+                            <span class="settings-nav-icon">🎨</span>
+                            <span class="settings-nav-text">显示设置</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="notification">
+                            <span class="settings-nav-icon">🔔</span>
+                            <span class="settings-nav-text">通知设置</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="data">
+                            <span class="settings-nav-icon">💾</span>
+                            <span class="settings-nav-text">数据管理</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="risk">
+                            <span class="settings-nav-icon">⚠️</span>
+                            <span class="settings-nav-text">风险管理</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="system">
+                            <span class="settings-nav-icon">ℹ️</span>
+                            <span class="settings-nav-text">系统信息</span>
+                        </div>
+                    </div>
+
+                    <!-- 右侧内容区域 -->
+                    <div class="settings-content">
+                        <!-- 账户设置 -->
+                        <div class="settings-section active" id="settings-account">
+                            <div class="settings-section-header">
+                                <h3>👤 账户设置</h3>
+                                <p class="settings-section-desc">管理您的账户信息</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">用户名</span>
+                                        <span class="setting-desc">当前登录用户名</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="text" class="setting-input" id="setting-username" readonly>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">修改密码</span>
+                                        <span class="setting-desc">更改您的登录密码</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.changePassword()">修改密码</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">用户角色</span>
+                                        <span class="setting-desc">当前账户权限级别</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <span class="setting-badge" id="setting-user-role">普通用户</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 资金设置 -->
+                        <div class="settings-section" id="settings-capital">
+                            <div class="settings-section-header">
+                                <h3>💰 资金设置</h3>
+                                <p class="settings-section-desc">配置您的资金管理参数</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">总资金</span>
+                                        <span class="setting-desc">设置您的总投资资金</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-total-capital" placeholder="输入总资金金额" min="0" step="0.01">
+                                        <span class="setting-unit">元</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">自动刷新间隔</span>
+                                        <span class="setting-desc">持仓数据自动刷新的时间间隔</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="setting-select" id="setting-refresh-interval">
+                                            <option value="0">不自动刷新</option>
+                                            <option value="30">30秒</option>
+                                            <option value="60">1分钟</option>
+                                            <option value="300">5分钟</option>
+                                            <option value="600">10分钟</option>
+                                            <option value="1800">30分钟</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 交易设置 -->
+                        <div class="settings-section" id="settings-trading">
+                            <div class="settings-section-header">
+                                <h3>📈 交易设置</h3>
+                                <p class="settings-section-desc">配置交易相关参数</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">默认手续费率</span>
+                                        <span class="setting-desc">交易时默认的手续费比例</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-fee-rate" placeholder="0.0003" min="0" max="1" step="0.0001">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">默认止盈比例</span>
+                                        <span class="setting-desc">制定计划时的默认止盈百分比</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-stop-profit" placeholder="10" min="0" max="100" step="1">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">默认止损比例</span>
+                                        <span class="setting-desc">制定计划时的默认止损百分比</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-stop-loss" placeholder="5" min="0" max="100" step="1">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">默认买入仓位</span>
+                                        <span class="setting-desc">每次买入时默认使用的资金比例</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-default-position" placeholder="30" min="0" max="100" step="5">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 显示设置 -->
+                        <div class="settings-section" id="settings-display">
+                            <div class="settings-section-header">
+                                <h3>🎨 显示设置</h3>
+                                <p class="settings-section-desc">个性化您的界面显示</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">主题模式</span>
+                                        <span class="setting-desc">选择界面的配色方案</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="setting-select" id="setting-theme">
+                                            <option value="light">浅色模式</option>
+                                            <option value="dark">深色模式</option>
+                                            <option value="auto">跟随系统</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">自动刷新行情</span>
+                                        <span class="setting-desc">是否自动刷新股票行情数据</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="setting-switch">
+                                            <input type="checkbox" id="setting-auto-refresh">
+                                            <span class="setting-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">K线图默认周期</span>
+                                        <span class="setting-desc">查看股票详情时的默认K线周期</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="setting-select" id="setting-chart-period">
+                                            <option value="intraday">分时</option>
+                                            <option value="day">日线</option>
+                                            <option value="week">周线</option>
+                                            <option value="month">月线</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">涨跌颜色</span>
+                                        <span class="setting-desc">选择涨跌的颜色显示方式</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="setting-select" id="setting-color-scheme">
+                                            <option value="red-green">涨红跌绿</option>
+                                            <option value="green-red">涨绿跌红</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 通知设置 -->
+                        <div class="settings-section" id="settings-notification">
+                            <div class="settings-section-header">
+                                <h3>🔔 通知设置</h3>
+                                <p class="settings-section-desc">管理系统提醒和通知</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">启用通知</span>
+                                        <span class="setting-desc">是否启用系统通知功能</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="setting-switch">
+                                            <input type="checkbox" id="setting-enable-notification">
+                                            <span class="setting-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">价格预警</span>
+                                        <span class="setting-desc">股价触及目标价时提醒</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="setting-switch">
+                                            <input type="checkbox" id="setting-price-alert">
+                                            <span class="setting-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">计划提醒</span>
+                                        <span class="setting-desc">交易计划到期时提醒</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="setting-switch">
+                                            <input type="checkbox" id="setting-plan-reminder">
+                                            <span class="setting-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">风险提醒</span>
+                                        <span class="setting-desc">出现风险信号时提醒</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <label class="setting-switch">
+                                            <input type="checkbox" id="setting-risk-alert">
+                                            <span class="setting-switch-slider"></span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 数据管理 -->
+                        <div class="settings-section" id="settings-data">
+                            <div class="settings-section-header">
+                                <h3>💾 数据管理</h3>
+                                <p class="settings-section-desc">管理您的数据和缓存</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">导出数据</span>
+                                        <span class="setting-desc">导出持仓、交易记录、计划等所有数据</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.exportData()">💾 导出数据</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">导入数据</span>
+                                        <span class="setting-desc">从导出的文件中还原数据</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.importData()">📥 导入数据</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">数据备份</span>
+                                        <span class="setting-desc">备份所有系统数据（同导出数据）</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.backupData()">📦 立即备份</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">还原备份</span>
+                                        <span class="setting-desc">从备份文件还原数据（同导入数据）</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.restoreBackup()">📂 还原备份</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">清除缓存</span>
+                                        <span class="setting-desc">清除本地行情缓存（不影响数据）</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn warning" onclick="SettingsManager.clearCache()">🗑️ 清除缓存</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 风险管理 -->
+                        <div class="settings-section" id="settings-risk">
+                            <div class="settings-section-header">
+                                <h3>⚠️ 风险管理</h3>
+                                <p class="settings-section-desc">配置风险控制参数</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">风险偏好</span>
+                                        <span class="setting-desc">您的投资风险承受能力</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="setting-select" id="setting-risk-preference">
+                                            <option value="conservative">保守型</option>
+                                            <option value="balanced">平衡型</option>
+                                            <option value="aggressive">激进型</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">单日最大亏损预警</span>
+                                        <span class="setting-desc">单日亏损超过此比例时预警</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-daily-loss-limit" placeholder="5" min="0" max="100" step="1">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">最大持仓比例</span>
+                                        <span class="setting-desc">总仓位不超过总资金的此比例</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-max-position" placeholder="80" min="0" max="100" step="5">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">单股最大仓位</span>
+                                        <span class="setting-desc">单只股票不超过总资金的此比例</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <input type="number" class="setting-input" id="setting-single-stock-limit" placeholder="20" min="0" max="100" step="5">
+                                        <span class="setting-unit">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 系统信息 -->
+                        <div class="settings-section" id="settings-system">
+                            <div class="settings-section-header">
+                                <h3>ℹ️ 系统信息</h3>
+                                <p class="settings-section-desc">查看系统版本和统计信息</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">系统版本</span>
+                                        <span class="setting-desc">当前系统版本号</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <span class="setting-value">v0.1.0</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">持仓股票数</span>
+                                        <span class="setting-desc">当前持有的股票数量</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <span class="setting-value" id="setting-stock-count">--</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">交易记录数</span>
+                                        <span class="setting-desc">历史交易记录总数</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <span class="setting-value" id="setting-trade-count">--</span>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">使用帮助</span>
+                                        <span class="setting-desc">查看系统使用文档</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.showHelp()">查看帮助</button>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">关于</span>
+                                        <span class="setting-desc">关于本系统</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <button class="setting-btn" onclick="SettingsManager.showAbout()">关于</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer settings-footer">
+                    <button class="btn btn-outline" onclick="SettingsManager.resetSettings()">恢复默认</button>
+                    <div class="footer-actions">
+                        <button class="btn btn-outline" onclick="SettingsManager.closeSettings()">关闭</button>
+                        <button class="btn btn-primary" onclick="SettingsManager.saveSettings()">保存设置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>© 2024 个人股票信息系统 | 版本 0.1</p>
             <p>系统状态: 正常运行 | 最后更新: <span id="update-time"></span></p>
@@ -1057,6 +1592,10 @@
     <!--  ==================== 功能模块 ====================  -->
     <!-- UI工具模块 -->
     <script src="/js/modules/ui-utils.js"></script>
+    <!-- 总资金管理模块（需要最先加载，其他模块依赖它） -->
+    <script src="/js/modules/capital-manager.js"></script>
+    <!-- 设置管理模块 -->
+    <script src="/js/modules/settings-manager.js"></script>
     <!-- 持仓管理模块 -->
     <script src="/js/modules/position-manager.js"></script>
     <!-- 自选股管理模块 -->

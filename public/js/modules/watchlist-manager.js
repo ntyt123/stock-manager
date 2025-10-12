@@ -210,6 +210,13 @@ async function loadWatchlistQuotes() {
 
         const quotes = quotesResult.data || [];
 
+        // 获取默认K线周期设置
+        const settings = window.SettingsManager ? window.SettingsManager.getSettings() : {};
+        const defaultPeriod = settings.chartPeriod || 'day';
+        console.log(`📊 [自选股行情] 完整设置:`, settings);
+        console.log(`📊 [自选股行情] chartPeriod值: "${settings.chartPeriod}"`);
+        console.log(`📊 [自选股行情] 最终使用周期: "${defaultPeriod}"`);
+
         // 渲染行情数据
         let html = '';
         quotes.forEach((quote, index) => {
@@ -230,10 +237,10 @@ async function loadWatchlistQuotes() {
                         </div>
                     </div>
                     <div class="chart-period-selector">
-                        <button class="period-btn active" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
-                        <button class="period-btn" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
-                        <button class="period-btn" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
-                        <button class="period-btn" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
+                        <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                        <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                        <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
+                        <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
                         <button class="create-plan-btn" onclick="createTradingPlanFromStock('${quote.stockCode}', '${quote.stockName || ''}', ${quote.currentPrice}, 'buy')">📋 制定买入计划</button>
                     </div>
                     <div class="quote-chart-container">
@@ -245,10 +252,10 @@ async function loadWatchlistQuotes() {
 
         container.innerHTML = html;
 
-        // 渲染图表（默认显示分时图）
+        // 渲染图表（使用设置中的默认周期）
         quotes.forEach((quote, index) => {
             const chartId = `chart-${quote.stockCode}-${index}`;
-            renderStockChart(chartId, quote.stockCode, 'intraday');
+            renderStockChart(chartId, quote.stockCode, defaultPeriod);
         });
 
         // 绑定周期切换按钮事件
@@ -416,6 +423,10 @@ async function loadOverviewWatchlistQuotes() {
             return;
         }
 
+        // 获取默认K线周期设置
+        const defaultPeriod = window.SettingsManager ? window.SettingsManager.getSettings().chartPeriod : 'day';
+        console.log(`📊 [总览自选股] 使用默认K线周期: ${defaultPeriod}`);
+
         // 渲染行情数据（只显示前6个，带K线图）
         let html = '';
         quotes.slice(0, 6).forEach((quote, index) => {
@@ -436,10 +447,10 @@ async function loadOverviewWatchlistQuotes() {
                         </div>
                     </div>
                     <div class="chart-period-selector">
-                        <button class="period-btn active" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
-                        <button class="period-btn" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
-                        <button class="period-btn" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
-                        <button class="period-btn" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
+                        <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                        <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                        <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
+                        <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
                         <button class="create-plan-btn" onclick="createTradingPlanFromStock('${quote.stockCode}', '${quote.stockName || ''}', ${quote.currentPrice}, 'buy')">📋 制定买入计划</button>
                     </div>
                     <div class="quote-chart-container">
@@ -451,10 +462,10 @@ async function loadOverviewWatchlistQuotes() {
 
         container.innerHTML = html;
 
-        // 渲染图表（默认显示分时图）
+        // 渲染图表（使用设置中的默认周期）
         quotes.slice(0, 6).forEach((quote, index) => {
             const chartId = `overview-chart-${quote.stockCode}-${index}`;
-            renderStockChart(chartId, quote.stockCode, 'intraday');
+            renderStockChart(chartId, quote.stockCode, defaultPeriod);
         });
 
         // 绑定周期切换按钮事件

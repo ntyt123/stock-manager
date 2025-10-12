@@ -2,7 +2,31 @@
 // 包含：通知、导航栏、页签切换、模态框等基础UI功能
 
 // 显示通知
-function showNotification(message, type = 'info') {
+// category 参数：'general'（通用）、'price'（价格预警）、'plan'（计划提醒）、'risk'（风险预警）
+function showNotification(message, type = 'info', category = 'general') {
+    // 获取通知设置
+    const settings = window.SettingsManager ? window.SettingsManager.getSettings() : {};
+
+    // 检查总开关
+    if (settings.enableNotification === false) {
+        console.log('🔕 通知已禁用，跳过显示:', message);
+        return;
+    }
+
+    // 根据分类检查具体设置
+    if (category === 'price' && settings.priceAlert === false) {
+        console.log('🔕 价格预警通知已禁用，跳过显示:', message);
+        return;
+    }
+    if (category === 'plan' && settings.planReminder === false) {
+        console.log('🔕 计划提醒通知已禁用，跳过显示:', message);
+        return;
+    }
+    if (category === 'risk' && settings.riskAlert === false) {
+        console.log('🔕 风险预警通知已禁用，跳过显示:', message);
+        return;
+    }
+
     // 创建通知元素
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;

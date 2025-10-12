@@ -17,12 +17,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     // 初始化模态框点击背景关闭功能
     initModalCloseOnBackgroundClick();
 
+    // 监听 CapitalManager 初始化完成事件
+    document.addEventListener('capitalLoaded', () => {
+        console.log('💰 CapitalManager 已初始化，开始加载持仓数据...');
+        loadUserPositions();
+        loadPortfolioStats();
+    });
+
     // 页面加载完成后，延迟加载用户持仓数据和自选股行情
     setTimeout(() => {
-        loadUserPositions();
+        // 如果 CapitalManager 还未初始化（未登录情况），直接加载
+        if (!window.CapitalManager || !window.CapitalManager.initialized) {
+            console.log('⚠️ CapitalManager 未初始化，直接加载持仓数据...');
+            loadUserPositions();
+            loadPortfolioStats();
+        }
+
+        // 其他不依赖总资金的模块正常加载
         loadOverviewWatchlistQuotes();
         loadMarketIndices();
-        loadPortfolioStats();
         loadChangeDistribution();
         loadSystemStats();
 
@@ -35,12 +48,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }, 500);
 
-    // 定期更新自选股行情（每30秒）
-    setInterval(() => {
-        loadOverviewWatchlistQuotes();
-        loadMarketIndices();
-        loadChangeDistribution();
-    }, 30000);
+    // 启动自动刷新行情（使用设置中的配置）
+    // 延迟启动，确保设置已加载
+    setTimeout(() => {
+        if (typeof startAutoRefresh === 'function') {
+            startAutoRefresh();
+        }
+    }, 1000);
 
     // 初始化股票代码悬停功能
     setTimeout(() => {
@@ -89,6 +103,12 @@ async function checkAuth() {
             if (response.ok) {
                 const userData = await response.json();
                 updateNavbar(userData);
+
+                // 触发登录成功事件，让 CapitalManager 初始化
+                document.dispatchEvent(new CustomEvent('loginSuccess', {
+                    detail: { user: userData }
+                }));
+
                 return;
             }
         } catch (error) {

@@ -8,12 +8,35 @@ module.exports = (authenticateToken) => {
     const router = express.Router();
 
     // 股票推荐API - 手动触发生成推荐
-    router.post('/generate', async (req, res) => {
+    router.post('/generate', authenticateToken, async (req, res) => {
         try {
             console.log('📊 开始生成股票推荐...');
 
+            const userId = req.user.id;
             const today = new Date().toISOString().split('T')[0];
             const nextTradingDay = getNextTradingDay();
+
+            // 获取用户总资金和持仓信息
+            const { userModel, userPositionModel } = require('../database');
+            const user = await userModel.findById(userId);
+            const totalCapital = user?.total_capital || 0;
+
+            let positions = [];
+            let positionSummary = '';
+            try {
+                const positionsData = await userPositionModel.getUserPositions(userId);
+                if (positionsData && positionsData.length > 0) {
+                    positions = positionsData;
+                    const totalMarketValue = positions.reduce((sum, p) => sum + (parseFloat(p.marketValue) || 0), 0);
+                    const positionRatio = totalCapital > 0 ? (totalMarketValue / totalCapital * 100).toFixed(2) : 0;
+                    positionSummary = `\n【投资者资金情况】\n- 总资金: ¥${totalCapital.toLocaleString('zh-CN')}\n- 持仓市值: ¥${totalMarketValue.toFixed(2)}\n- 仓位占比: ${positionRatio}%\n- 持仓股票: ${positions.map(p => `${p.stockName}(${p.stockCode})`).join('、')}\n`;
+                } else {
+                    positionSummary = `\n【投资者资金情况】\n- 总资金: ¥${totalCapital.toLocaleString('zh-CN')}\n- 当前持仓: 空仓\n`;
+                }
+            } catch (err) {
+                console.log('获取持仓信息失败，使用默认值');
+                positionSummary = `\n【投资者资金情况】\n- 总资金: ¥${totalCapital.toLocaleString('zh-CN')}\n- 当前持仓: 暂无数据\n`;
+            }
 
             // 1. 获取主要市场指数数据
             const indexCodes = ['000001', '399001', '399006'];
@@ -80,7 +103,7 @@ module.exports = (authenticateToken) => {
             };
 
             // 3. 构建AI推荐提示词
-            const recommendationPrompt = `请作为专业的股票投资顾问，基于当前市场数据，为投资者推荐${nextTradingDay}（下一个交易日）值得关注和买入的股票：
+            const recommendationPrompt = `请作为专业的股票投资顾问，基于当前市场数据和投资者资金情况，为投资者推荐${nextTradingDay}（下一个交易日）值得关注和买入的股票：
 
 【市场概况 - ${today}】
 ${indexQuotes.map(idx =>
@@ -89,8 +112,9 @@ ${indexQuotes.map(idx =>
    涨跌: ${idx.change >= 0 ? '+' : ''}${idx.change} (${idx.changePercent >= 0 ? '+' : ''}${idx.changePercent}%)
    成交量: ${(idx.volume / 100000000).toFixed(2)}亿股 | 成交额: ${(idx.amount / 100000000).toFixed(2)}亿元`
 ).join('\n\n')}
+${positionSummary}
 
-请从以下几个方面进行专业推荐：
+请结合投资者的资金规模和持仓情况，从以下几个方面进行专业推荐：
 
 1. **市场趋势分析**
    - 分析当前市场整体走势和情绪
@@ -124,6 +148,11 @@ ${indexQuotes.map(idx =>
    以上推荐仅供参考，不构成具体投资建议。投资有风险，入市需谨慎。
 
 请提供详细、专业、可执行的股票推荐和交易建议。`;
+
+            // 打印提示词
+            console.log('📝 ==================== AI股票推荐提示词 ====================');
+            console.log(recommendationPrompt);
+            console.log('📝 ============================================================');
 
             // 4. 调用DeepSeek AI生成推荐
             const aiRecommendation = await callDeepSeekAPI(recommendationPrompt, '你是一位专业的A股投资顾问，擅长分析市场趋势和推荐优质股票。');

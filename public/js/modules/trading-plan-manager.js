@@ -99,12 +99,20 @@ const TradingPlanManager = {
             if (e.target.id === 'stopLossSlider') {
                 this.updatePriceFromSlider('stopLoss', e.target.value);
             }
+            // 数量滑块监听器
+            if (e.target.id === 'quantitySlider') {
+                this.updateQuantityFromSlider(e.target.value);
+            }
         });
 
         // 目标价格变化监听器 - 重新计算滑块价格
         document.addEventListener('input', (e) => {
             if (e.target.id === 'planTargetPrice') {
                 this.recalculateSliderPrices();
+            }
+            // 数量输入框监听器 - 同步滑块
+            if (e.target.id === 'planQuantity') {
+                this.updateSliderFromQuantity(e.target.value);
             }
         });
     },
@@ -384,13 +392,17 @@ const TradingPlanManager = {
         // 重置滑块和百分比显示
         const stopProfitSlider = document.getElementById('stopProfitSlider');
         const stopLossSlider = document.getElementById('stopLossSlider');
+        const quantitySlider = document.getElementById('quantitySlider');
         const stopProfitPercentage = document.getElementById('stopProfitPercentage');
         const stopLossPercentage = document.getElementById('stopLossPercentage');
+        const quantityPercentage = document.getElementById('quantityPercentage');
 
         if (stopProfitSlider) stopProfitSlider.value = 0;
         if (stopLossSlider) stopLossSlider.value = 0;
+        if (quantitySlider) quantitySlider.value = 0;
         if (stopProfitPercentage) stopProfitPercentage.textContent = '+0%';
         if (stopLossPercentage) stopLossPercentage.textContent = '-0%';
+        if (quantityPercentage) quantityPercentage.textContent = '0%';
 
         // 判断是新建还是编辑
         const isEdit = prefilledData.id ? true : false;
@@ -455,6 +467,12 @@ const TradingPlanManager = {
         // 显示模态框
         modal.style.display = 'block';
 
+        // 显示总资金信息
+        this.showCapitalInfo();
+
+        // 监听价格和数量变化，实时更新资金信息
+        this.setupCapitalCalculation();
+
         // 如果是卖出或减仓计划，且有股票代码，自动设置卖出计划
         const planType = prefilledData.planType || prefilledData.plan_type;
         if ((planType === 'sell' || planType === 'reduce') && stockCode) {
@@ -499,13 +517,17 @@ const TradingPlanManager = {
         // 重置滑块和百分比显示
         const stopProfitSlider = document.getElementById('stopProfitSlider');
         const stopLossSlider = document.getElementById('stopLossSlider');
+        const quantitySlider = document.getElementById('quantitySlider');
         const stopProfitPercentage = document.getElementById('stopProfitPercentage');
         const stopLossPercentage = document.getElementById('stopLossPercentage');
+        const quantityPercentage = document.getElementById('quantityPercentage');
 
         if (stopProfitSlider) stopProfitSlider.value = 0;
         if (stopLossSlider) stopLossSlider.value = 0;
+        if (quantitySlider) quantitySlider.value = 0;
         if (stopProfitPercentage) stopProfitPercentage.textContent = '+0%';
         if (stopLossPercentage) stopLossPercentage.textContent = '-0%';
+        if (quantityPercentage) quantityPercentage.textContent = '0%';
     },
 
     // 获取股票信息（名称和当前价格）
@@ -619,6 +641,57 @@ const TradingPlanManager = {
         if (stopLossSlider && stopLossSlider.value != 0) {
             this.updatePriceFromSlider('stopLoss', stopLossSlider.value);
         }
+    },
+
+    // 根据滑块值更新数量
+    updateQuantityFromSlider(percentage) {
+        const quantityInput = document.getElementById('planQuantity');
+        const quantityPercentage = document.getElementById('quantityPercentage');
+
+        if (!quantityInput) return;
+
+        const maxQuantity = parseInt(quantityInput.max) || 10000; // 从input的max属性获取，默认10000
+
+        // 计算实际数量
+        const quantity = Math.floor(maxQuantity * parseFloat(percentage) / 100);
+
+        // 更新数量输入框和百分比显示
+        quantityInput.value = quantity;
+        if (quantityPercentage) {
+            quantityPercentage.textContent = `${percentage}%`;
+        }
+
+        console.log(`📊 数量更新: ${quantity}股 (${percentage}%, 最大${maxQuantity}股)`);
+    },
+
+    // 根据数量输入框值更新滑块
+    updateSliderFromQuantity(quantity) {
+        const quantitySlider = document.getElementById('quantitySlider');
+        const quantityPercentage = document.getElementById('quantityPercentage');
+        const quantityInput = document.getElementById('planQuantity');
+
+        if (!quantityInput) return;
+
+        const maxQuantity = parseInt(quantityInput.max) || 10000; // 从input的max属性获取，默认10000
+
+        if (!quantity || quantity <= 0) {
+            if (quantitySlider) quantitySlider.value = 0;
+            if (quantityPercentage) quantityPercentage.textContent = '0%';
+            return;
+        }
+
+        // 计算百分比
+        const percentage = Math.min(100, Math.floor((parseInt(quantity) / maxQuantity) * 100));
+
+        // 更新滑块和百分比显示
+        if (quantitySlider) {
+            quantitySlider.value = percentage;
+        }
+        if (quantityPercentage) {
+            quantityPercentage.textContent = `${percentage}%`;
+        }
+
+        console.log(`📊 滑块更新: ${percentage}% (${quantity}股, 最大${maxQuantity}股)`);
     },
 
     // ==================== 处理计划类型变化 ====================
@@ -774,63 +847,58 @@ const TradingPlanManager = {
         }
     },
 
-    // ==================== 显示数量滑块 ====================
+    // ==================== 设置卖出计划的数量滑块最大值 ====================
     showQuantitySlider(maxQuantity) {
-        // 隐藏原来的数量输入框
         const quantityInput = document.getElementById('planQuantity');
-        if (quantityInput) {
-            quantityInput.style.display = 'none';
+        const quantitySlider = document.getElementById('quantitySlider');
+        const quantityPercentage = document.getElementById('quantityPercentage');
+
+        if (!quantityInput || !quantitySlider) {
+            console.warn('⚠️ 未找到数量输入框或滑块');
+            return;
         }
 
-        // 显示或创建数量滑块
-        let sliderContainer = document.getElementById('quantitySliderContainer');
-        if (!sliderContainer) {
-            sliderContainer = document.createElement('div');
-            sliderContainer.id = 'quantitySliderContainer';
-            sliderContainer.className = 'quantity-slider-container';
+        // 设置输入框和滑块的最大值
+        quantityInput.max = maxQuantity;
+        quantityInput.placeholder = `最多 ${maxQuantity} 股`;
 
-            const quantityGroup = quantityInput.closest('.form-group');
-            quantityGroup.appendChild(sliderContainer);
+        // 设置初始值为最大值的50%
+        const initialValue = Math.floor(maxQuantity / 2);
+        quantityInput.value = initialValue;
+
+        // 计算初始百分比
+        const initialPercentage = Math.floor((initialValue / maxQuantity) * 100);
+        quantitySlider.value = initialPercentage;
+
+        if (quantityPercentage) {
+            quantityPercentage.textContent = `${initialPercentage}%`;
         }
 
-        sliderContainer.style.display = 'block';
-        sliderContainer.innerHTML = `
-            <input type="range" id="quantitySlider" class="quantity-slider"
-                   min="0" max="${maxQuantity}" value="${Math.floor(maxQuantity / 2)}" step="1">
-            <div class="slider-labels">
-                <span>0股</span>
-                <span id="currentQuantity">${Math.floor(maxQuantity / 2)}股</span>
-                <span>${maxQuantity}股 (全部)</span>
-            </div>
-        `;
-
-        // 监听滑块变化
-        const slider = document.getElementById('quantitySlider');
-        if (slider) {
-            slider.addEventListener('input', (e) => {
-                const quantity = parseInt(e.target.value);
-                document.getElementById('currentQuantity').textContent = `${quantity}股`;
-                // 同步更新隐藏的输入框值
-                if (quantityInput) {
-                    quantityInput.value = quantity;
-                }
-            });
-        }
+        console.log(`📊 设置卖出数量: 最大 ${maxQuantity} 股, 初始 ${initialValue} 股 (${initialPercentage}%)`);
     },
 
-    // ==================== 隐藏数量滑块 ====================
+    // ==================== 重置数量滑块 ====================
     hideQuantitySlider() {
-        // 显示原来的数量输入框
+        // 重置数量输入框和滑块的值
         const quantityInput = document.getElementById('planQuantity');
+        const quantitySlider = document.getElementById('quantitySlider');
+        const quantityPercentage = document.getElementById('quantityPercentage');
+
         if (quantityInput) {
-            quantityInput.style.display = 'block';
+            quantityInput.value = '';
+            quantityInput.max = 10000; // 重置为默认最大值
+            quantityInput.placeholder = '例如: 100';
         }
 
-        // 隐藏数量滑块
-        const sliderContainer = document.getElementById('quantitySliderContainer');
-        if (sliderContainer) {
-            sliderContainer.style.display = 'none';
+        if (quantitySlider) {
+            quantitySlider.value = 0;
         }
+
+        if (quantityPercentage) {
+            quantityPercentage.textContent = '0%';
+        }
+
+        console.log('📊 重置数量滑块');
     },
 
     // 提交交易计划
@@ -1470,7 +1538,7 @@ const TradingPlanManager = {
 
     showInfo(message) {
         if (window.showNotification) {
-            window.showNotification(message, 'info');
+            window.showNotification(message, 'info', 'plan');
         } else {
             alert(message);
         }
@@ -1515,4 +1583,89 @@ window.createTradingPlanFromStock = function(stockCode, stockName, currentPrice,
 
     // 调用交易计划管理器的创建模态框
     TradingPlanManager.openCreatePlanModal(prefilledData);
+};
+
+// ==================== 总资金相关方法 ====================
+
+// 显示总资金信息横幅
+TradingPlanManager.showCapitalInfo = function() {
+    const banner = document.getElementById('capitalInfoBanner');
+    if (!banner) return;
+
+    // 获取总资金（从CapitalManager）
+    const totalCapital = window.CapitalManager ? window.CapitalManager.getTotalCapital() : 0;
+
+    if (totalCapital > 0) {
+        // 显示横幅
+        banner.style.display = 'block';
+
+        // 更新总资金显示
+        const totalCapitalElement = document.getElementById('modalTotalCapital');
+        if (totalCapitalElement) {
+            totalCapitalElement.textContent = `¥${totalCapital.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        // 初始化预计金额和仓位
+        this.updateCapitalCalculation();
+    } else {
+        // 隐藏横幅
+        banner.style.display = 'none';
+    }
+};
+
+// 设置资金计算的实时监听
+TradingPlanManager.setupCapitalCalculation = function() {
+    // 移除旧的监听器
+    const targetPriceInput = document.getElementById('planTargetPrice');
+    const quantityInput = document.getElementById('planQuantity');
+
+    if (targetPriceInput && quantityInput) {
+        // 创建新的监听器
+        const updateCalculation = () => this.updateCapitalCalculation();
+
+        // 移除旧的监听器（如果存在）
+        targetPriceInput.removeEventListener('input', updateCalculation);
+        quantityInput.removeEventListener('input', updateCalculation);
+
+        // 添加新的监听器
+        targetPriceInput.addEventListener('input', updateCalculation);
+        quantityInput.addEventListener('input', updateCalculation);
+    }
+};
+
+// 更新资金计算
+TradingPlanManager.updateCapitalCalculation = function() {
+    const totalCapital = window.CapitalManager ? window.CapitalManager.getTotalCapital() : 0;
+    if (totalCapital === 0) return;
+
+    // 获取目标价格和数量
+    const targetPrice = parseFloat(document.getElementById('planTargetPrice')?.value || 0);
+    const quantity = parseFloat(document.getElementById('planQuantity')?.value || 0);
+
+    // 计算预计金额
+    const estimatedAmount = targetPrice * quantity;
+
+    // 计算仓位比例
+    const positionRatio = totalCapital > 0 ? (estimatedAmount / totalCapital * 100) : 0;
+
+    // 更新显示
+    const estimatedAmountElement = document.getElementById('modalEstimatedAmount');
+    const positionRatioElement = document.getElementById('modalPositionRatio');
+
+    if (estimatedAmountElement) {
+        estimatedAmountElement.textContent = `¥${estimatedAmount.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    if (positionRatioElement) {
+        positionRatioElement.textContent = `${positionRatio.toFixed(2)}%`;
+
+        // 根据仓位比例设置颜色
+        if (positionRatio > 80) {
+            positionRatioElement.style.color = '#ef4444'; // 红色 - 仓位过高
+        } else if (positionRatio > 50) {
+            positionRatioElement.style.color = '#f59e0b'; // 橙色 - 中等仓位
+        } else {
+            positionRatioElement.style.color = '#10b981'; // 绿色 - 安全仓位
+        }
+    }
 };

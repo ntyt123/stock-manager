@@ -484,7 +484,8 @@
 }
 
 /* ==================== 交易计划 - 止盈止损滑块样式 ==================== */
-.price-percentage {
+.price-percentage,
+.quantity-percentage {
     float: right;
     font-size: 0.85rem;
     font-weight: 700;
