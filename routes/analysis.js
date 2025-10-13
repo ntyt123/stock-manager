@@ -85,6 +85,11 @@ ${portfolioSummary.detailedPositions}
 
 请提供详细、专业、可执行的分析建议。注意：以上建议仅供参考，不构成具体投资建议。`;
 
+            // 打印提示词
+            console.log('📝 ==================== AI持仓分析提示词 ====================');
+            console.log(analysisPrompt);
+            console.log('📝 ============================================================');
+
             const aiResponse = await callDeepSeekAPI(analysisPrompt);
 
             console.log('✅ 持仓分析完成');
@@ -232,11 +237,32 @@ ${portfolioSummary.detailedPositions}
     });
 
     // 集合竞价分析API - 手动触发分析
-    router.post('/call-auction', async (req, res) => {
+    router.post('/call-auction', authenticateToken, async (req, res) => {
         try {
             console.log('📊 开始集合竞价分析...');
 
+            const userId = req.user.id;
             const today = new Date().toISOString().split('T')[0];
+
+            // 获取用户总资金和持仓信息
+            const { userModel } = require('../database');
+            const user = await userModel.findById(userId);
+            const totalCapital = user?.total_capital || 0;
+
+            let positionSummary = '';
+            try {
+                const positions = await positionModel.findByUserId(userId);
+                if (positions && positions.length > 0) {
+                    const totalMarketValue = positions.reduce((sum, p) => sum + (parseFloat(p.marketValue) || 0), 0);
+                    const positionRatio = totalCapital > 0 ? (totalMarketValue / totalCapital * 100).toFixed(2) : 0;
+                    positionSummary = `\n【投资者情况】\n- 总资金: ¥${totalCapital.toLocaleString('zh-CN')}\n- 持仓市值: ¥${totalMarketValue.toFixed(2)}\n- 仓位占比: ${positionRatio}%\n- 持仓股票: ${positions.map(p => `${p.stockName}(${p.stockCode})`).join('、')}\n`;
+                } else {
+                    positionSummary = `\n【投资者情况】\n- 总资金: ¥${totalCapital.toLocaleString('zh-CN')}\n- 当前持仓: 空仓\n`;
+                }
+            } catch (err) {
+                console.log('获取持仓信息失败，使用默认值');
+                positionSummary = `\n【投资者情况】\n- 总资金: ¥${totalCapital.toLocaleString('zh-CN')}\n- 当前持仓: 暂无数据\n`;
+            }
 
             // 1. 获取主要市场指数数据
             const indexCodes = ['000001', '399001', '399006'];
@@ -302,7 +328,7 @@ ${portfolioSummary.detailedPositions}
             };
 
             // 3. 构建AI分析提示词
-            const analysisPrompt = `请作为专业的股票分析师，对今日（${today}）的A股市场集合竞价情况进行分析：
+            const analysisPrompt = `请作为专业的股票分析师，结合投资者的资金和持仓情况，对今日（${today}）的A股市场集合竞价情况进行分析：
 
 【市场指数概况】
 ${indexQuotes.map(idx =>
@@ -312,8 +338,9 @@ ${indexQuotes.map(idx =>
    最高: ¥${idx.todayHigh} | 最低: ¥${idx.todayLow}
    成交量: ${(idx.volume / 100000000).toFixed(2)}亿股 | 成交额: ${(idx.amount / 100000000).toFixed(2)}亿元`
 ).join('\n\n')}
+${positionSummary}
 
-请从以下几个方面进行专业分析：
+请结合投资者的资金规模和持仓情况，从以下几个方面进行专业分析：
 
 1. **集合竞价特征**
    - 分析三大指数的开盘情况和市场情绪
@@ -341,6 +368,11 @@ ${indexQuotes.map(idx =>
    - 收盘预期
 
 请提供简明扼要、可执行的专业分析建议。注意：以上建议仅供参考，不构成具体投资建议。`;
+
+            // 打印提示词
+            console.log('📝 ==================== AI集合竞价分析提示词 ====================');
+            console.log(analysisPrompt);
+            console.log('📝 ================================================================');
 
             // 4. 调用DeepSeek AI进行分析
             const aiAnalysis = await callDeepSeekAPI(analysisPrompt, '你是一位专业的A股市场分析师，擅长解读集合竞价和盘前信息。');

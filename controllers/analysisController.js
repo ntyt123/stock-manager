@@ -255,22 +255,31 @@ async function runScheduledPortfolioAnalysis() {
                     // 构建持仓摘要
                     const portfolioSummary = buildPortfolioSummary(positions);
 
+                    // 获取用户总资金
+                    const totalCapital = user.total_capital || 0;
+                    const positionRatio = totalCapital > 0 ? (portfolioSummary.totalMarketValue / totalCapital * 100).toFixed(2) : 0;
+
                     // 调用AI分析
                     const analysisPrompt = `请对以下持仓进行每日例行分析：
 
+【资金情况】
+- 总资金：¥${totalCapital.toLocaleString('zh-CN')}
+- 持仓市值：¥${portfolioSummary.totalMarketValue.toFixed(2)}
+- 仓位占比：${positionRatio}%
+- 可用资金：¥${(totalCapital - portfolioSummary.totalMarketValue).toFixed(2)}
+
 【持仓概况】
 - 持仓股票：${portfolioSummary.totalStocks} 只
-- 总市值：¥${portfolioSummary.totalMarketValue.toFixed(2)}
 - 总盈亏：¥${portfolioSummary.totalProfitLoss.toFixed(2)} (${portfolioSummary.totalProfitLossRate}%)
 
 【详细持仓】
 ${portfolioSummary.detailedPositions}
 
-请提供：
+请结合投资者的资金规模和仓位情况，提供：
 1. 今日持仓表现评估
-2. 明日需要关注的股票
-3. 风险提示
-4. 操作建议
+2. 仓位管理建议（基于当前仓位占比）
+3. 明日需要关注的股票
+4. 风险提示和操作建议
 
 请简明扼要，突出重点。`;
 

@@ -226,12 +226,34 @@ async function clearUploadedData() {
 }
 
 // displayUploadedPositions
-function displayUploadedPositions(positions, summary = null) {
+async function displayUploadedPositions(positions, summary = null) {
     const container = document.getElementById('uploadedPositions');
     const totalValueEl = document.getElementById('uploadedTotalValue');
     const profitLossEl = document.getElementById('uploadedProfitLoss');
-    
+    const totalCapitalEl = document.getElementById('positionTotalCapital');
+    const positionRatioEl = document.getElementById('positionRatio');
+
     if (!container || !totalValueEl || !profitLossEl) return;
+
+    // 等待 CapitalManager 初始化完成（最多等待3秒）
+    console.log('📊 [displayUploadedPositions] 开始等待 CapitalManager 初始化...');
+    let totalCapital = 0;
+    if (window.CapitalManager) {
+        let waitCount = 0;
+        console.log(`📊 [displayUploadedPositions] CapitalManager.initialized = ${window.CapitalManager.initialized}`);
+        while (!window.CapitalManager.initialized && waitCount < 30) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            waitCount++;
+            if (waitCount % 5 === 0) {
+                console.log(`📊 [displayUploadedPositions] 等待中... ${waitCount * 100}ms`);
+            }
+        }
+        console.log(`📊 [displayUploadedPositions] 等待结束，waitCount = ${waitCount}`);
+        totalCapital = window.CapitalManager.getTotalCapital();
+        console.log(`📊 [displayUploadedPositions] 获取到总资金: ¥${totalCapital}`);
+    } else {
+        console.warn('⚠️ [displayUploadedPositions] window.CapitalManager 不存在！');
+    }
     
     if (!positions || positions.length === 0) {
         container.innerHTML = '<div class="loading-text">未找到持仓数据</div>';
@@ -300,9 +322,33 @@ function displayUploadedPositions(positions, summary = null) {
     }
     
     // 更新总市值和盈亏显示
-    totalValueEl.textContent = `¥${totalMarketValue.toFixed(2)}`;
-    profitLossEl.textContent = `总盈亏: ¥${totalProfitLoss.toFixed(2)} (${profitLossRate}%)`;
-    
+    totalValueEl.textContent = `¥${totalMarketValue.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    profitLossEl.textContent = `¥${totalProfitLoss.toFixed(2)} (${profitLossRate}%)`;
+
+    // 更新总资金和仓位占比
+    if (totalCapitalEl) {
+        totalCapitalEl.textContent = `¥${totalCapital.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    if (positionRatioEl && totalCapital > 0) {
+        const ratio = (totalMarketValue / totalCapital * 100).toFixed(2);
+        positionRatioEl.textContent = `${ratio}%`;
+
+        // 根据仓位比例设置颜色
+        if (ratio > 90) {
+            positionRatioEl.style.color = '#ef4444'; // 红色 - 满仓
+        } else if (ratio > 70) {
+            positionRatioEl.style.color = '#f59e0b'; // 橙色 - 重仓
+        } else if (ratio > 50) {
+            positionRatioEl.style.color = '#10b981'; // 绿色 - 半仓
+        } else {
+            positionRatioEl.style.color = '#3b82f6'; // 蓝色 - 轻仓
+        }
+    } else if (positionRatioEl) {
+        positionRatioEl.textContent = '0%';
+        positionRatioEl.style.color = 'white';
+    }
+
     // 生成持仓列表HTML
     let html = '<div class="positions-list">';
     
@@ -617,4 +663,41 @@ async function submitManualPosition() {
         statusDiv.className = 'form-status error';
     }
 }
+
+// ==================== 刷新持仓显示（用于总资金更新后） ====================
+async function refreshPositionsDisplay() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+        const response = await fetch('/api/positions', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data.positions && result.data.positions.length > 0) {
+                // 重新显示持仓数据（会自动使用最新的总资金计算仓位）
+                displayUploadedPositions(result.data.positions, result.data.summary);
+                console.log('✅ 持仓显示已刷新');
+            }
+        }
+    } catch (error) {
+        console.error('刷新持仓显示失败:', error);
+    }
+}
+
+// ==================== 监听总资金更新事件 ====================
+document.addEventListener('capitalUpdated', (event) => {
+    console.log('💰 检测到总资金更新，刷新持仓数据...', event.detail);
+
+    // 重新加载持仓数据以更新仓位占比
+    const uploadedPositionsContainer = document.getElementById('uploadedPositions');
+    if (uploadedPositionsContainer && uploadedPositionsContainer.querySelector('.positions-list')) {
+        // 如果已经有持仓数据，重新刷新显示
+        refreshPositionsDisplay();
+    }
+});
 

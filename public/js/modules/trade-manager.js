@@ -46,6 +46,28 @@ function bindTradeAmountCalculation() {
     const fee = document.getElementById('tradeFee');
     const amount = document.getElementById('tradeAmount');
 
+    // 获取默认手续费率
+    const getDefaultFeeRate = () => {
+        if (window.SettingsManager) {
+            const settings = window.SettingsManager.getSettings();
+            return settings.feeRate || 0.0003;
+        }
+        return 0.0003; // 默认万三
+    };
+
+    // 计算手续费函数
+    const calculateFee = () => {
+        const qty = parseFloat(quantity.value) || 0;
+        const prc = parseFloat(price.value) || 0;
+
+        if (qty > 0 && prc > 0) {
+            const feeRate = getDefaultFeeRate();
+            const calculatedFee = (qty * prc * feeRate).toFixed(2);
+            fee.value = calculatedFee;
+            console.log(`💰 自动计算手续费: ${calculatedFee} (费率: ${(feeRate * 100).toFixed(2)}%)`);
+        }
+    };
+
     // 计算金额函数
     const calculateAmount = () => {
         const type = tradeType.value;
@@ -86,11 +108,17 @@ function bindTradeAmountCalculation() {
 
     // 重新获取元素并绑定事件
     document.getElementById('tradeType').addEventListener('change', calculateAmount);
-    document.getElementById('tradeQuantity').addEventListener('input', calculateAmount);
-    document.getElementById('tradePrice').addEventListener('input', calculateAmount);
+    document.getElementById('tradeQuantity').addEventListener('input', () => {
+        calculateFee();  // 先计算手续费
+        calculateAmount(); // 再计算总金额
+    });
+    document.getElementById('tradePrice').addEventListener('input', () => {
+        calculateFee();  // 先计算手续费
+        calculateAmount(); // 再计算总金额
+    });
     document.getElementById('tradeFee').addEventListener('input', calculateAmount);
 
-    console.log('🔢 交易金额自动计算已绑定');
+    console.log('🔢 交易金额和手续费自动计算已绑定');
 }
 
 // submitTradeRecord

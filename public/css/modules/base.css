@@ -103,3 +103,216 @@
             padding: 20px;
         }
 
+        /* ==================== 深色主题 ==================== */
+        body.dark-theme {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+        }
+
+        body.dark-theme .container {
+            color: #e0e0e0;
+        }
+
+        body.dark-theme .header {
+            background: rgba(30, 30, 50, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .header p {
+            color: #b0b0b0;
+        }
+
+        body.dark-theme .card {
+            background: rgba(30, 30, 50, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-theme .card:hover {
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        body.dark-theme .card-title {
+            color: #e0e0e0;
+        }
+
+        body.dark-theme .card-header {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .loading-text {
+            color: #888;
+        }
+
+        /* 深色主题下的导航栏 */
+        body.dark-theme .navbar {
+            background: rgba(30, 30, 50, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .nav-brand h1 {
+            color: #e0e0e0;
+        }
+
+        body.dark-theme .nav-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        body.dark-theme .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 深色主题下的状态栏 */
+        body.dark-theme .status-bar {
+            background: rgba(30, 30, 50, 0.8);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .status-label {
+            color: #888;
+        }
+
+        body.dark-theme .status-value {
+            color: #e0e0e0;
+        }
+
+        /* 深色主题下的页签 */
+        body.dark-theme .tab-btn {
+            background: rgba(30, 30, 50, 0.6);
+            color: #b0b0b0;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .tab-btn.active {
+            background: rgba(100, 100, 150, 0.8);
+            color: #fff;
+            border-color: rgba(100, 100, 150, 1);
+        }
+
+        body.dark-theme .tab-btn:hover {
+            background: rgba(50, 50, 80, 0.8);
+            color: #fff;
+        }
+
+        /* 深色主题下的模态框 */
+        body.dark-theme .modal-content {
+            background: rgba(30, 30, 50, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme .modal-header h2,
+        body.dark-theme .modal-header h3 {
+            color: #e0e0e0;
+        }
+
+        /* 深色主题下的输入框 */
+        body.dark-theme .form-input,
+        body.dark-theme .form-textarea,
+        body.dark-theme .setting-input,
+        body.dark-theme .setting-select {
+            background: rgba(50, 50, 80, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #e0e0e0;
+        }
+
+        body.dark-theme .form-input::placeholder,
+        body.dark-theme .form-textarea::placeholder {
+            color: #666;
+        }
+
+        /* 深色主题下的按钮 */
+        body.dark-theme .action-btn,
+        body.dark-theme .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        body.dark-theme .action-btn.secondary,
+        body.dark-theme .btn-outline {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* 深色主题下的表格 */
+        body.dark-theme table {
+            background: rgba(30, 30, 50, 0.6);
+        }
+
+        body.dark-theme th {
+            background: rgba(50, 50, 80, 0.8);
+            color: #e0e0e0;
+        }
+
+        body.dark-theme td {
+            color: #d0d0d0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        body.dark-theme tr:hover {
+            background: rgba(50, 50, 80, 0.6);
+        }
+
+        /* ==================== 涨跌颜色方案 ==================== */
+        /* 默认：涨红跌绿（中国大陆习惯） */
+        .positive {
+            color: #e74c3c !important;
+        }
+
+        .negative {
+            color: #27ae60 !important;
+        }
+
+        /* 涨绿跌红（国际习惯） */
+        body.green-red-scheme .positive {
+            color: #27ae60 !important;
+        }
+
+        body.green-red-scheme .negative {
+            color: #e74c3c !important;
+        }
+
+        /* 应用到所有涨跌相关的类 */
+        body.green-red-scheme .quote-change.positive,
+        body.green-red-scheme .stat-box.positive,
+        body.green-red-scheme .stat-sub.positive,
+        body.green-red-scheme .profit-positive,
+        body.green-red-scheme .ranking-change.up,
+        body.green-red-scheme .trade-buy,
+        body.green-red-scheme .trade-add {
+            color: #27ae60 !important;
+            border-color: #27ae60 !important;
+        }
+
+        body.green-red-scheme .quote-change.negative,
+        body.green-red-scheme .stat-box.negative,
+        body.green-red-scheme .stat-sub.negative,
+        body.green-red-scheme .profit-negative,
+        body.green-red-scheme .ranking-change.down,
+        body.green-red-scheme .trade-sell,
+        body.green-red-scheme .trade-reduce {
+            color: #e74c3c !important;
+            border-color: #e74c3c !important;
+        }
+
+        /* 涨跌榜和市场指数 */
+        body.green-red-scheme .market-index-item.up {
+            background: rgba(39, 174, 96, 0.1) !important;
+            border-left-color: #27ae60 !important;
+        }
+
+        body.green-red-scheme .market-index-item.down {
+            background: rgba(231, 76, 60, 0.1) !important;
+            border-left-color: #e74c3c !important;
+        }
+
+        body.green-red-scheme .overview-item.up {
+            color: #27ae60 !important;
+        }
+
+        body.green-red-scheme .overview-item.down {
+            color: #e74c3c !important;
+        }
+

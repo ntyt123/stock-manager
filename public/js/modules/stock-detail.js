@@ -263,10 +263,16 @@ async function fetchStockDetail(stockCode, stockName) {
 }
 
 // renderTooltipChart
-async function renderTooltipChart(stockCode, period = 'intraday') {
+async function renderTooltipChart(stockCode, period) {
     const canvasId = 'tooltipChart';
 
     try {
+        // 如果没有指定周期，使用设置中的默认周期
+        if (!period) {
+            period = window.SettingsManager ? window.SettingsManager.getSettings().chartPeriod : 'day';
+            console.log(`📊 [股票详情] 使用默认K线周期: ${period}`);
+        }
+
         // 销毁旧图表
         if (currentTooltipChart) {
             stockChartManager.destroyChart(canvasId);
@@ -333,8 +339,6 @@ async function switchTooltipChartPeriod(period) {
 
 // initStockCodeHover
 function initStockCodeHover() {
-    console.log('🔍 初始化股票代码悬停功能...');
-
     // 为所有包含股票代码的元素添加悬停事件
     // 策略：查找所有显示股票代码的元素，为其添加 .stock-hoverable 类和事件
 
@@ -416,7 +420,5 @@ function initStockCodeHover() {
             closeStockTooltip();
         });
     }
-
-    console.log('✅ 股票代码悬停功能初始化完成');
 }
 
