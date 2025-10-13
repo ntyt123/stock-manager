@@ -46,6 +46,8 @@
 @import url('./modules/trade-history.css');
 @import url('./modules/industry.css');
 @import url('./modules/trading-plans.css');
+@import url('./modules/cost-management.css');
+@import url('./modules/feature-placeholder.css');
 
 /* ==================== 模块化重构说明 ====================
  *

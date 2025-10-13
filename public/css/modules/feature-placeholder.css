@@ -1,0 +1,229 @@
+/* ==================== 功能占位界面样式 ====================
+ * 用于显示待开发功能的提示界面
+ * ========================================================== */
+
+/* 待开发标记徽章 */
+.dev-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    margin-left: 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 11px;
+    border-radius: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+/* 功能占位容器 */
+.feature-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    min-height: 400px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-placeholder::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 255, 255, 0.1) 10px,
+        rgba(255, 255, 255, 0.1) 20px
+    );
+    animation: moveStripes 20s linear infinite;
+}
+
+@keyframes moveStripes {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(50px, 50px);
+    }
+}
+
+/* 占位图标 */
+.placeholder-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    animation: bounce 2s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* 占位标题 */
+.placeholder-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
+}
+
+/* 占位描述 */
+.placeholder-desc {
+    max-width: 700px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.placeholder-desc p {
+    font-size: 16px;
+    color: #4a5568;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.feature-intro {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c5282;
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+/* 功能列表 */
+.feature-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    text-align: left;
+    display: inline-block;
+}
+
+.feature-list li {
+    font-size: 15px;
+    color: #2d3748;
+    line-height: 2;
+    padding: 8px 0;
+    position: relative;
+    padding-left: 30px;
+}
+
+.feature-list li::before {
+    content: '✅';
+    position: absolute;
+    left: 0;
+    font-size: 16px;
+}
+
+/* 待开发状态的子页签按钮样式 */
+.sub-tab-btn[data-subtab*="待开发"] {
+    position: relative;
+    overflow: hidden;
+}
+
+.sub-tab-btn[data-subtab*="待开发"]::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .feature-placeholder {
+        padding: 40px 20px;
+        min-height: 300px;
+    }
+
+    .placeholder-icon {
+        font-size: 60px;
+    }
+
+    .placeholder-title {
+        font-size: 22px;
+    }
+
+    .placeholder-desc p {
+        font-size: 14px;
+    }
+
+    .feature-intro {
+        font-size: 16px;
+    }
+
+    .feature-list li {
+        font-size: 14px;
+    }
+}
+
+/* 卡片内的占位界面特殊样式 */
+.card .feature-placeholder {
+    margin: 0;
+    border-radius: 8px;
+}
+
+/* 功能开发中的交互提示 */
+.feature-coming-soon {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-top: 20px;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: default;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.feature-coming-soon:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}

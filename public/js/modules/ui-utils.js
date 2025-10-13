@@ -205,6 +205,12 @@ function loadSubTabData(subtabId) {
                 TradingPlanManager.loadAllTradingPlans();
             }
             break;
+        case 'overview-cost-management':
+            // 加载持仓成本管理数据
+            if (typeof loadCostManagement === 'function') {
+                loadCostManagement();
+            }
+            break;
         // 可以在这里添加其他子页签的数据加载逻辑
         default:
             break;

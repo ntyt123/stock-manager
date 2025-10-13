@@ -61,6 +61,14 @@
                 <span class="tab-icon">📈</span>
                 <span class="tab-text">分析</span>
             </button>
+            <button class="tab-btn" data-tab="tools">
+                <span class="tab-icon">🛠️</span>
+                <span class="tab-text">工具</span>
+            </button>
+            <button class="tab-btn" data-tab="reports">
+                <span class="tab-icon">📑</span>
+                <span class="tab-text">报表</span>
+            </button>
         </div>
 
         <!-- 总览页签内容 -->
@@ -95,6 +103,22 @@
                     <button class="sub-tab-btn" data-subtab="overview-trading-plans">
                         <span class="sub-tab-icon">📋</span>
                         <span class="sub-tab-text">交易计划</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-cost-management">
+                        <span class="sub-tab-icon">💰</span>
+                        <span class="sub-tab-text">持仓成本</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-profit-analysis">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">盈亏分析（待开发）</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-fund-management">
+                        <span class="sub-tab-icon">💵</span>
+                        <span class="sub-tab-text">资金管理（待开发）</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="overview-trade-log">
+                        <span class="sub-tab-icon">📝</span>
+                        <span class="sub-tab-text">交易日志（待开发）</span>
                     </button>
                 </div>
 
@@ -230,6 +254,105 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 持仓成本管理 -->
+                    <div class="sub-tab-content" id="overview-cost-management">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">💰</div>
+                                <div class="card-title">持仓成本管理</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="openCostAdjustmentModal()">
+                                        <span>📋 成本调整</span>
+                                    </button>
+                                    <button class="refresh-btn" onclick="openAddCostRecordModal()">
+                                        <span>➕ 添加记录</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="costManagementContent">
+                                <div class="loading-text">正在加载持仓成本数据...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 盈亏分析（待开发） -->
+                    <div class="sub-tab-content" id="overview-profit-analysis">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">盈亏分析 <span class="dev-badge">待开发</span></div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 日收益、周收益、月收益、年收益统计</li>
+                                        <li>✅ 收益率曲线图（对比大盘）</li>
+                                        <li>✅ 分股票盈亏明细</li>
+                                        <li>✅ 已实现盈亏 vs 浮动盈亏</li>
+                                        <li>✅ 最大回撤分析</li>
+                                        <li>✅ 夏普比率、收益波动率等指标</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 资金管理（待开发） -->
+                    <div class="sub-tab-content" id="overview-fund-management">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">💵</div>
+                                <div class="card-title">资金管理 <span class="dev-badge">待开发</span></div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 账户总资产追踪（现金 + 持仓市值）</li>
+                                        <li>✅ 资金流水记录（入金、出金、分红）</li>
+                                        <li>✅ 可用资金实时计算</li>
+                                        <li>✅ 资产配置比例分析</li>
+                                        <li>✅ 仓位控制提醒</li>
+                                        <li>✅ 资产变化趋势图</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 交易日志（待开发） -->
+                    <div class="sub-tab-content" id="overview-trade-log">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📝</div>
+                                <div class="card-title">交易日志 <span class="dev-badge">待开发</span></div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 每日交易复盘记录</li>
+                                        <li>✅ 交易决策理由记录</li>
+                                        <li>✅ 交易心得笔记</li>
+                                        <li>✅ 错误交易分析</li>
+                                        <li>✅ 成功案例总结</li>
+                                        <li>✅ 日志搜索和标签</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -270,6 +393,18 @@
                     <button class="sub-tab-btn" data-subtab="market-industry">
                         <span class="sub-tab-icon">🏢</span>
                         <span class="sub-tab-text">行业分布</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-stock-pool">
+                        <span class="sub-tab-icon">🎯</span>
+                        <span class="sub-tab-text">股票池管理（待开发）</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-alert">
+                        <span class="sub-tab-icon">🔔</span>
+                        <span class="sub-tab-text">预警提醒（待开发）</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="market-sentiment">
+                        <span class="sub-tab-icon">📈</span>
+                        <span class="sub-tab-text">市场情绪（待开发）</span>
                     </button>
                 </div>
 
@@ -392,6 +527,83 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- 股票池管理（待开发） -->
+                    <div class="sub-tab-content" id="market-stock-pool">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🎯</div>
+                                <div class="card-title">股票池管理 <span class="dev-badge">待开发</span></div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 创建多个自定义股票池（核心池、观察池、黑名单等）</li>
+                                        <li>✅ 标签分类（价值股、成长股、周期股等）</li>
+                                        <li>✅ 批量导入导出</li>
+                                        <li>✅ 股票池筛选条件保存</li>
+                                        <li>✅ 股票池业绩对比</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 预警提醒（待开发） -->
+                    <div class="sub-tab-content" id="market-alert">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🔔</div>
+                                <div class="card-title">预警提醒 <span class="dev-badge">待开发</span></div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 价格预警（涨跌幅、突破支撑/阻力位）</li>
+                                        <li>✅ 成交量异动预警</li>
+                                        <li>✅ 重要公告提醒（财报、分红、重组等）</li>
+                                        <li>✅ 止盈止损自动提醒</li>
+                                        <li>✅ 自选股异动推送</li>
+                                        <li>✅ 多渠道通知（浏览器、邮件、webhook）</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 市场情绪分析（待开发） -->
+                    <div class="sub-tab-content" id="market-sentiment">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📈</div>
+                                <div class="card-title">市场情绪分析 <span class="dev-badge">待开发</span></div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 市场恐慌指数（VIX等）</li>
+                                        <li>✅ 资金流向分析（北上资金、融资融券）</li>
+                                        <li>✅ 龙虎榜数据</li>
+                                        <li>✅ 大单追踪</li>
+                                        <li>✅ 行业资金流向</li>
+                                        <li>✅ 市场热度指标</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -420,6 +632,18 @@
                     <button class="sub-tab-btn" data-subtab="analysis-risk">
                         <span class="sub-tab-icon">⚠️</span>
                         <span class="sub-tab-text">风险预警</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-portfolio-optimize">
+                        <span class="sub-tab-icon">🎯</span>
+                        <span class="sub-tab-text">组合优化（待开发）</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-risk-control">
+                        <span class="sub-tab-icon">🛡️</span>
+                        <span class="sub-tab-text">风险控制（待开发）</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-fundamentals">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">基本面数据（待开发）</span>
                     </button>
                 </div>
 
@@ -1045,6 +1269,151 @@
             </div>
         </div>
 
+        <!-- 成本详情模态框 -->
+        <div id="costDetailModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3 id="costDetailTitle">持仓成本详情</h3>
+                    <button class="close-btn" onclick="closeCostDetailModal()">×</button>
+                </div>
+                <div id="costDetailContent">
+                    <div class="loading-text">正在加载成本详情...</div>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeCostDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加成本记录模态框 -->
+        <div id="addCostRecordModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>➕ 添加成本记录</h3>
+                    <button class="close-btn" onclick="closeAddCostRecordModal()">×</button>
+                </div>
+                <div class="form-container">
+                    <form id="addCostRecordForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="costRecordStockCode">股票代码 *</label>
+                                <input type="text" id="costRecordStockCode" class="form-input" placeholder="例如: 600519" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="costRecordStockName">股票名称 *</label>
+                                <input type="text" id="costRecordStockName" class="form-input" placeholder="例如: 贵州茅台" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="costRecordOperationType">操作类型 *</label>
+                                <select id="costRecordOperationType" class="form-input" required>
+                                    <option value="">请选择</option>
+                                    <option value="buy">买入</option>
+                                    <option value="sell">卖出</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="costRecordOperationDate">交易日期 *</label>
+                                <input type="date" id="costRecordOperationDate" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="costRecordQuantity">数量（股）*</label>
+                                <input type="number" id="costRecordQuantity" class="form-input" placeholder="例如: 1000" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="costRecordPrice">价格 *</label>
+                                <input type="number" id="costRecordPrice" class="form-input" placeholder="例如: 18.50" step="0.01" min="0" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="costRecordAmount">交易金额</label>
+                            <input type="number" id="costRecordAmount" class="form-input" placeholder="自动计算" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="costRecordNotes">备注</label>
+                            <textarea id="costRecordNotes" class="form-textarea" placeholder="记录交易理由、市场分析等信息..." rows="2"></textarea>
+                        </div>
+                        <div class="form-status" id="costRecordFormStatus"></div>
+                    </form>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeAddCostRecordModal()">取消</button>
+                    <button class="action-btn" onclick="submitCostRecord()">
+                        <span>💾 保存记录</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成本调整模态框 -->
+        <div id="costAdjustmentModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-header">
+                    <h3>📋 成本调整</h3>
+                    <button class="close-btn" onclick="closeCostAdjustmentModal()">×</button>
+                </div>
+                <div class="form-container">
+                    <form id="costAdjustmentForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="adjustmentStockCode">股票代码 *</label>
+                                <input type="text" id="adjustmentStockCode" class="form-input" placeholder="例如: 600519" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adjustmentStockName">股票名称 *</label>
+                                <input type="text" id="adjustmentStockName" class="form-input" placeholder="例如: 贵州茅台" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="adjustmentType">调整类型 *</label>
+                                <select id="adjustmentType" class="form-input" required>
+                                    <option value="">请选择</option>
+                                    <option value="dividend">分红</option>
+                                    <option value="bonus">送股</option>
+                                    <option value="rights">配股</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="adjustmentDate">调整日期 *</label>
+                                <input type="date" id="adjustmentDate" class="form-input" required>
+                            </div>
+                        </div>
+                        <div class="form-group" id="dividendField">
+                            <label for="dividendAmount">每股分红金额（元）*</label>
+                            <input type="number" id="dividendAmount" class="form-input" placeholder="例如: 0.50" step="0.01" min="0">
+                        </div>
+                        <div class="form-group" id="bonusField">
+                            <label for="bonusShares">每10股送股数 *</label>
+                            <input type="number" id="bonusShares" class="form-input" placeholder="例如: 5（表示10送5）" step="1" min="0">
+                        </div>
+                        <div id="rightsFields">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="rightsShares">每10股配股数 *</label>
+                                    <input type="number" id="rightsShares" class="form-input" placeholder="例如: 3（表示10配3）" step="1" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rightsPrice">配股价格（元）*</label>
+                                    <input type="number" id="rightsPrice" class="form-input" placeholder="例如: 15.00" step="0.01" min="0">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-status" id="adjustmentFormStatus"></div>
+                    </form>
+                </div>
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeCostAdjustmentModal()">取消</button>
+                    <button class="action-btn" onclick="submitCostAdjustment()">
+                        <span>💾 保存调整</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>© 2024 个人股票信息系统 | 版本 0.1</p>
             <p>系统状态: 正常运行 | 最后更新: <span id="update-time"></span></p>
@@ -1073,6 +1442,8 @@
     <script src="/js/modules/trade-manager.js"></script>
     <!-- 交易计划管理模块 -->
     <script src="/js/modules/trading-plan-manager.js"></script>
+    <!-- 成本管理模块 -->
+    <script src="/js/modules/cost-management.js"></script>
 
     <!-- 核心初始化模块 -->
     <script src="/js/main-core.js"></script>
