@@ -61,6 +61,7 @@ const cacheRoutes = require('./routes/cache')();
 const aiRoutes = require('./routes/ai')(authenticateToken);
 const tradingPlanRoutes = require('./routes/trading-plans')(authenticateToken);
 const costManagementRoutes = require('./routes/cost-management')(authenticateToken);
+const profitAnalysisRoutes = require('./routes/profit-analysis')(authenticateToken);
 
 // 挂载路由
 app.use('/api/auth', authRoutes);
@@ -75,6 +76,7 @@ app.use('/api/cache', cacheRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/trading-plans', tradingPlanRoutes);
 app.use('/api/cost-management', costManagementRoutes);
+app.use('/api/profit-analysis', profitAnalysisRoutes);
 
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）

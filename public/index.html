@@ -110,7 +110,7 @@
                     </button>
                     <button class="sub-tab-btn" data-subtab="overview-profit-analysis">
                         <span class="sub-tab-icon">📊</span>
-                        <span class="sub-tab-text">盈亏分析（待开发）</span>
+                        <span class="sub-tab-text">盈亏分析</span>
                     </button>
                     <button class="sub-tab-btn" data-subtab="overview-fund-management">
                         <span class="sub-tab-icon">💵</span>
@@ -276,28 +276,20 @@
                         </div>
                     </div>
 
-                    <!-- 盈亏分析（待开发） -->
+                    <!-- 盈亏分析 -->
                     <div class="sub-tab-content" id="overview-profit-analysis">
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon">📊</div>
-                                <div class="card-title">盈亏分析 <span class="dev-badge">待开发</span></div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 日收益、周收益、月收益、年收益统计</li>
-                                        <li>✅ 收益率曲线图（对比大盘）</li>
-                                        <li>✅ 分股票盈亏明细</li>
-                                        <li>✅ 已实现盈亏 vs 浮动盈亏</li>
-                                        <li>✅ 最大回撤分析</li>
-                                        <li>✅ 夏普比率、收益波动率等指标</li>
-                                    </ul>
+                                <div class="card-title">盈亏分析</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="ProfitAnalysisManager.loadProfitAnalysis()">
+                                        <span>🔄 刷新</span>
+                                    </button>
                                 </div>
+                            </div>
+                            <div id="profitAnalysisContent">
+                                <div class="loading-text">正在加载盈亏分析数据...</div>
                             </div>
                         </div>
                     </div>
@@ -1444,6 +1436,8 @@
     <script src="/js/modules/trading-plan-manager.js"></script>
     <!-- 成本管理模块 -->
     <script src="/js/modules/cost-management.js"></script>
+    <!-- 盈亏分析模块 -->
+    <script src="/js/modules/profit-analysis-manager.js"></script>
 
     <!-- 核心初始化模块 -->
     <script src="/js/main-core.js"></script>

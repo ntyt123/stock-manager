@@ -211,6 +211,12 @@ function loadSubTabData(subtabId) {
                 loadCostManagement();
             }
             break;
+        case 'overview-profit-analysis':
+            // 加载盈亏分析数据
+            if (typeof ProfitAnalysisManager !== 'undefined' && typeof ProfitAnalysisManager.loadProfitAnalysis === 'function') {
+                ProfitAnalysisManager.loadProfitAnalysis();
+            }
+            break;
         // 可以在这里添加其他子页签的数据加载逻辑
         default:
             break;
