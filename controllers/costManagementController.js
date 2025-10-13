@@ -63,119 +63,139 @@ function calculateTPlusNDate(operationDate, n = 1) {
     return date.toISOString().split('T')[0];
 }
 
-// 添加成本记录（买入/卖出）
+// 添加成本记录内部函数（供内部调用）
+async function addCostRecordInternal(userId, data) {
+    const {
+        stockCode,
+        stockName,
+        operationType,  // 'buy' or 'sell'
+        operationDate,
+        quantity,
+        price,
+        notes
+    } = data;
+
+    // 验证必填字段
+    if (!stockCode || !stockName || !operationType || !operationDate || !quantity || !price) {
+        throw new Error('缺少必填字段');
+    }
+
+    // 验证数量和价格
+    if (parseFloat(quantity) <= 0 || parseFloat(price) <= 0) {
+        throw new Error('数量和价格必须大于0');
+    }
+
+    // 计算金额
+    const amount = parseFloat(quantity) * parseFloat(price);
+
+    // 计算费用
+    const fees = calculateTradeFees(operationType, amount);
+
+    // 计算T+N日期
+    const tPlusNDate = calculateTPlusNDate(operationDate);
+    const today = new Date().toISOString().split('T')[0];
+    const isSellable = tPlusNDate <= today;
+
+    // 准备记录数据
+    const recordData = {
+        stockCode,
+        stockName,
+        operationType,
+        operationDate,
+        quantity: parseFloat(quantity),
+        price: parseFloat(price),
+        amount,
+        commissionFee: fees.commissionFee,
+        stampDuty: fees.stampDuty,
+        transferFee: fees.transferFee,
+        totalFee: fees.totalFee,
+        remainingQuantity: parseFloat(quantity),  // 初始剩余数量等于买入数量
+        tPlusNDate,
+        isSellable,
+        notes: notes || null
+    };
+
+    // 如果是卖出操作，需要更新对应的买入记录
+    if (operationType === 'sell') {
+        const buyRecords = await positionCostRecordModel.findByStockCode(userId, stockCode);
+        let sellQuantity = parseFloat(quantity);
+
+        // 按照FIFO原则（先进先出）匹配买入记录
+        for (const buyRecord of buyRecords) {
+            if (sellQuantity <= 0) break;
+            if (buyRecord.remaining_quantity <= 0) continue;
+            if (buyRecord.operation_type !== 'buy') continue;
+
+            const deductQuantity = Math.min(buyRecord.remaining_quantity, sellQuantity);
+            const newRemainingQuantity = buyRecord.remaining_quantity - deductQuantity;
+
+            await positionCostRecordModel.updateRemainingQuantity(
+                buyRecord.id,
+                newRemainingQuantity,
+                false
+            );
+
+            sellQuantity -= deductQuantity;
+        }
+
+        if (sellQuantity > 0) {
+            throw new Error(`卖出数量超过可用持仓，超出 ${sellQuantity} 股`);
+        }
+
+        // 卖出记录的剩余数量为0
+        recordData.remainingQuantity = 0;
+    }
+
+    // 保存记录
+    const result = await positionCostRecordModel.add(userId, recordData);
+
+    console.log(`✅ 成本记录添加成功: ${operationType} ${stockCode} ${quantity}股 @${price}`);
+
+    return {
+        id: result.id,
+        ...recordData,
+        created_at: result.created_at
+    };
+}
+
+// 添加成本记录（买入/卖出）- HTTP API 端点
 async function addCostRecord(req, res) {
     try {
         const userId = req.user.userId;
-        const {
-            stockCode,
-            stockName,
-            operationType,  // 'buy' or 'sell'
-            operationDate,
-            quantity,
-            price
-        } = req.body;
-
-        // 验证必填字段
-        if (!stockCode || !stockName || !operationType || !operationDate || !quantity || !price) {
-            return res.status(400).json({
-                success: false,
-                error: '缺少必填字段'
-            });
-        }
-
-        // 验证数量和价格
-        if (parseFloat(quantity) <= 0 || parseFloat(price) <= 0) {
-            return res.status(400).json({
-                success: false,
-                error: '数量和价格必须大于0'
-            });
-        }
-
-        // 计算金额
-        const amount = parseFloat(quantity) * parseFloat(price);
-
-        // 计算费用
-        const fees = calculateTradeFees(operationType, amount);
-
-        // 计算T+N日期
-        const tPlusNDate = calculateTPlusNDate(operationDate);
-        const today = new Date().toISOString().split('T')[0];
-        const isSellable = tPlusNDate <= today;
-
-        // 准备记录数据
-        const recordData = {
-            stockCode,
-            stockName,
-            operationType,
-            operationDate,
-            quantity: parseFloat(quantity),
-            price: parseFloat(price),
-            amount,
-            commissionFee: fees.commissionFee,
-            stampDuty: fees.stampDuty,
-            transferFee: fees.transferFee,
-            totalFee: fees.totalFee,
-            remainingQuantity: parseFloat(quantity),  // 初始剩余数量等于买入数量
-            tPlusNDate,
-            isSellable,
-            notes: req.body.notes || null
+        const data = {
+            stockCode: req.body.stockCode,
+            stockName: req.body.stockName,
+            operationType: req.body.operationType,
+            operationDate: req.body.operationDate,
+            quantity: req.body.quantity,
+            price: req.body.price,
+            notes: req.body.notes
         };
 
-        // 如果是卖出操作，需要更新对应的买入记录
-        if (operationType === 'sell') {
-            const buyRecords = await positionCostRecordModel.findByStockCode(userId, stockCode);
-            let sellQuantity = parseFloat(quantity);
-
-            // 按照FIFO原则（先进先出）匹配买入记录
-            for (const buyRecord of buyRecords) {
-                if (sellQuantity <= 0) break;
-                if (buyRecord.remaining_quantity <= 0) continue;
-                if (buyRecord.operation_type !== 'buy') continue;
-
-                const deductQuantity = Math.min(buyRecord.remaining_quantity, sellQuantity);
-                const newRemainingQuantity = buyRecord.remaining_quantity - deductQuantity;
-
-                await positionCostRecordModel.updateRemainingQuantity(
-                    buyRecord.id,
-                    newRemainingQuantity,
-                    false
-                );
-
-                sellQuantity -= deductQuantity;
-            }
-
-            if (sellQuantity > 0) {
-                return res.status(400).json({
-                    success: false,
-                    error: `卖出数量超过可用持仓，超出 ${sellQuantity} 股`
-                });
-            }
-
-            // 卖出记录的剩余数量为0
-            recordData.remainingQuantity = 0;
-        }
-
-        // 保存记录
-        const result = await positionCostRecordModel.add(userId, recordData);
-
-        console.log(`✅ 成本记录添加成功: ${operationType} ${stockCode} ${quantity}股 @${price}`);
+        const result = await addCostRecordInternal(userId, data);
 
         res.json({
             success: true,
-            data: {
-                id: result.id,
-                ...recordData,
-                created_at: result.created_at
-            }
+            data: result
         });
 
     } catch (error) {
         console.error('添加成本记录错误:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message || '添加成本记录失败'
-        });
+
+        // 根据错误类型返回不同的状态码
+        if (error.message.includes('缺少必填字段') ||
+            error.message.includes('数量和价格必须大于0') ||
+            error.message.includes('卖出数量超过可用持仓')) {
+            res.status(400).json({
+                success: false,
+                error: error.message
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                error: error.message || '添加成本记录失败'
+            });
+        }
     }
 }
 
@@ -554,6 +574,7 @@ async function getAllPositionsCostSummary(req, res) {
 
 module.exports = {
     addCostRecord,
+    addCostRecordInternal,  // 导出内部函数供其他模块使用
     getCostRecords,
     getCostSummary,
     addCostAdjustment,

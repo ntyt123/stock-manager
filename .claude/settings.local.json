@@ -1,19 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl -s \"http://localhost:3000/api/news/hot?category=tech\")",
-      "Bash(python:*)",
-      "Bash(npm run dev:*)",
-      "Bash(npm install)",
-      "WebSearch",
-      "Bash(curl:*)",
-      "Bash(npm start)",
-      "Bash(cd:*)",
-      "Bash(node server.js)",
-      "Bash(timeout:*)",
-      "Bash(sqlite3:*)",
-      "Bash(node check-plans.js)",
-      "Bash(node check-users.js)"
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: 实现持仓成本管理功能\n\n新增功能：\n- 持仓成本记录管理（买入/卖出操作）\n- T+1交易日计算和可卖数量跟踪\n- 自动计算交易费用（佣金、印花税、过户费）\n- 加权平均成本计算\n- 成本调整支持（分红、送股、配股）\n- FIFO成本核算\n- 持仓成本汇总和详情展示\n\n技术实现：\n- 新增数据库表：position_cost_records 和 position_cost_adjustments\n- 新增后端控制器：costManagementController.js\n- 新增API路由：/api/cost-management/*\n- 新增前端模块：cost-management.js 和 cost-management.css\n- 新增UI模态框：成本详情、添加记录、成本调整\n- 集成到总览页签的\"持仓成本\"子页签\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

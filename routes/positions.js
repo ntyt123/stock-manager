@@ -583,6 +583,26 @@ module.exports = (authenticateToken) => {
             // 自动添加到自选股
             await autoAddPositionsToWatchlist(userId, [{ stockCode, stockName }]);
 
+            // 自动创建成本记录
+            try {
+                const costManagementController = require('../controllers/costManagementController');
+                const costRecordData = {
+                    stockCode: positionData.stockCode,
+                    stockName: positionData.stockName,
+                    operationType: 'buy',
+                    operationDate: positionData.buyDate,
+                    quantity: positionData.quantity,
+                    price: positionData.costPrice,
+                    notes: positionData.notes
+                };
+
+                await costManagementController.addCostRecordInternal(userId, costRecordData);
+                console.log(`  💰 已自动创建成本记录: ${stockName} (${stockCode})`);
+            } catch (costError) {
+                console.error(`  ⚠️ 创建成本记录失败: ${costError.message}`);
+                // 创建成本记录失败不影响主流程
+            }
+
             res.json({
                 success: true,
                 message: '持仓添加成功',
