@@ -161,7 +161,7 @@ async function addCostRecordInternal(userId, data) {
 // 添加成本记录（买入/卖出）- HTTP API 端点
 async function addCostRecord(req, res) {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const data = {
             stockCode: req.body.stockCode,
             stockName: req.body.stockName,
@@ -202,7 +202,7 @@ async function addCostRecord(req, res) {
 // 获取持仓成本记录
 async function getCostRecords(req, res) {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { stockCode } = req.query;
 
         let records;
@@ -229,7 +229,7 @@ async function getCostRecords(req, res) {
 // 获取持仓成本汇总
 async function getCostSummary(req, res) {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { stockCode } = req.query;
 
         if (!stockCode) {
@@ -311,7 +311,7 @@ async function getCostSummary(req, res) {
 // 添加成本调整记录
 async function addCostAdjustment(req, res) {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const {
             stockCode,
             stockName,
@@ -424,7 +424,7 @@ async function addCostAdjustment(req, res) {
 // 获取成本调整记录
 async function getCostAdjustments(req, res) {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
         const { stockCode } = req.query;
 
         let adjustments;
@@ -497,7 +497,7 @@ async function deleteCostAdjustment(req, res) {
 // 获取所有持仓的成本汇总列表
 async function getAllPositionsCostSummary(req, res) {
     try {
-        const userId = req.user.userId;
+        const userId = req.user.id;
 
         // 获取用户所有成本记录
         const allRecords = await positionCostRecordModel.findByUserId(userId);
