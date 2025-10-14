@@ -2,6 +2,13 @@
 // 所有路由已拆分到 routes/ 目录
 // 所有业务逻辑已拆分到 controllers/ 目录
 
+// 加载环境变量配置
+require('dotenv').config({
+    path: process.env.NODE_ENV === 'production'
+        ? '.env.production'
+        : '.env.development'
+});
+
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');

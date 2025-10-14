@@ -6,13 +6,26 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "build": "npm install"
+    "build": "npm install",
+    "deploy": "node scripts/deploy/deploy.js",
+    "deploy:bat": "scripts/deploy/deploy.bat",
+    "logs": "scripts/deploy/logs.bat",
+    "status": "scripts/deploy/status.bat",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop stock-manager",
+    "pm2:restart": "pm2 restart stock-manager",
+    "pm2:reload": "pm2 reload ecosystem.config.js --update-env",
+    "pm2:delete": "pm2 delete stock-manager",
+    "pm2:logs": "pm2 logs stock-manager",
+    "pm2:status": "pm2 status",
+    "pm2:monit": "pm2 monit"
   },
   "dependencies": {
     "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^12.4.1",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "express-fileupload": "^1.5.2",

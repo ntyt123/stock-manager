@@ -91,6 +91,19 @@ Express服务器 (端口3000)
 API接口服务
 ```
 
+## 📁 项目结构
+
+详细的项目目录结构说明请查看：[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)
+
+快速预览：
+- `controllers/` - 业务逻辑控制器
+- `routes/` - API路由定义
+- `public/` - 前端静态资源
+- `scripts/` - 各类脚本（部署、测试、同步等）
+- `docs/` - 项目文档（指南、设计、报告）
+- `utils/` - 工具函数
+- `tools/` - 开发工具
+
 ## 🔧 配置文件
 
 ### 环境变量配置

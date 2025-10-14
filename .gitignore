@@ -26,6 +26,15 @@ pids
 .env.development.local
 .env.test.local
 .env.production.local
+.env.production
+
+# 部署配置文件（包含服务器信息）
+.deploy-config.json
+
+# 备份目录
+backups/
+backup/
+*.backup
 
 # 日志文件
 logs
