@@ -383,11 +383,17 @@ CORS_ORIGIN=*               # CORS设置
 
 📖 **完整故障排除指南：** [SERVER_ACCESS_TROUBLESHOOTING.md](./SERVER_ACCESS_TROUBLESHOOTING.md)
 
-**快速诊断：**
+**快速诊断（推荐使用快速脚本）：**
 ```bash
-# 在服务器上运行自动诊断脚本
+# 方式1: 快速检查（30秒完成，推荐）
 cd ~/stock-manager
+./scripts/deploy/quick-check.sh
+
+# 方式2: 完整诊断（详细报告）
 ./scripts/deploy/diagnose-server.sh
+
+# 方式3: 手动检查
+pm2 status && sudo netstat -tuln | grep 3000 && curl -I localhost:3000
 ```
 
 **快速检查清单：**

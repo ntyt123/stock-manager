@@ -14,32 +14,72 @@
 
 ## 🎯 快速诊断
 
-我们提供了一个自动诊断脚本，可以快速定位问题：
+我们提供了两个诊断脚本：
 
-### 上传并运行诊断脚本
+### 方式1: 快速检查脚本（推荐，30秒完成）⭐
+
+只检查最关键的6项，快速定位问题，不会卡住：
 
 ```bash
-# 方法1: 从本地上传
-scp scripts/deploy/diagnose-server.sh user@server-ip:~/
-ssh user@server-ip
-chmod +x diagnose-server.sh
-./diagnose-server.sh
+# 在服务器上运行
+cd ~/stock-manager
+chmod +x scripts/deploy/quick-check.sh
+./scripts/deploy/quick-check.sh
+```
 
-# 方法2: 直接在服务器上运行
-ssh user@server-ip
+**检查内容：**
+- ✅ PM2 服务状态
+- ✅ 端口监听情况（是否为 0.0.0.0）
+- ✅ 本地访问测试
+- ✅ UFW 防火墙状态
+- ✅ 服务器 IP 地址
+- ✅ 云安全组提示
+
+### 方式2: 完整诊断脚本（详细诊断）
+
+检查所有可能的问题，提供详细报告：
+
+```bash
+# 在服务器上运行
 cd ~/stock-manager
 chmod +x scripts/deploy/diagnose-server.sh
 ./scripts/deploy/diagnose-server.sh
 ```
 
-诊断脚本会自动检查：
+**检查内容：**
 - ✅ PM2 服务状态
 - ✅ 端口监听情况
 - ✅ 本地访问测试
-- ✅ 防火墙配置
+- ✅ 防火墙配置（UFW + iptables）
 - ✅ 网络接口状态
+- ✅ 外网 IP 地址（现已添加超时，不会卡住）
 - ✅ 应用日志
 - ✅ 环境变量配置
+
+**注意：** 如果脚本在"外网IP地址"处卡住，说明服务器无法访问外网的IP查询服务。这不影响系统功能，脚本会在5秒后自动跳过。
+
+### 方式3: 手动快速检查
+
+如果脚本无法运行，可以手动执行以下命令：
+
+```bash
+# 1. 检查服务状态
+pm2 status | grep stock-manager
+
+# 2. 检查端口监听（最重要）
+sudo netstat -tuln | grep 3000
+# 应该显示: 0.0.0.0:3000 而非 127.0.0.1:3000
+
+# 3. 测试本地访问
+curl -I http://localhost:3000
+# 应该返回 HTTP/1.1 200 OK
+
+# 4. 检查防火墙
+sudo ufw status | grep 3000
+
+# 5. 查看日志
+pm2 logs stock-manager --lines 20
+```
 
 ---
 

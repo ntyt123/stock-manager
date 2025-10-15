@@ -170,7 +170,11 @@ fi
 
 echo ""
 print_info "外网 IP 地址："
-curl -s ifconfig.me || curl -s ipinfo.io/ip || echo "无法获取外网 IP"
+# 设置超时时间为5秒，避免卡住
+curl -s --connect-timeout 5 --max-time 5 ifconfig.me 2>/dev/null || \
+curl -s --connect-timeout 5 --max-time 5 ipinfo.io/ip 2>/dev/null || \
+curl -s --connect-timeout 5 --max-time 5 icanhazip.com 2>/dev/null || \
+echo "无法获取（服务器可能无法访问外网，这不影响功能）"
 
 # ==================== 6. 检查云服务商安全组 ====================
 print_header "6️⃣ 云服务商安全组检查"
