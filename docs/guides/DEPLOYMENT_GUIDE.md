@@ -375,7 +375,31 @@ CORS_ORIGIN=*               # CORS设置
 
 ## 🐛 常见问题
 
-### 0. 部署后无法访问 IP:3000 ⭐⭐⭐
+### 0. 登录时出现 500 错误 ⭐⭐⭐⭐
+
+**问题：** 使用 admin/admin 登录时返回 `500 Internal Server Error`
+
+**这是数据库密码哈希问题！** 已在最新代码中修复。
+
+📖 **完整修复指南：** [LOGIN_ERROR_500_FIX.md](./LOGIN_ERROR_500_FIX.md)
+
+**快速修复（在服务器上执行）：**
+```bash
+# 方式1: 运行自动修复脚本（推荐）
+cd ~/stock-manager
+chmod +x scripts/deploy/fix-login-remote.sh
+./scripts/deploy/fix-login-remote.sh
+
+# 方式2: 使用密码重置工具
+node scripts/tools/reset-admin-password.js reset admin admin
+pm2 restart stock-manager
+
+# 方式3: 重新部署最新代码
+git pull origin master
+pm2 restart stock-manager
+```
+
+### 0.1. 部署后无法访问 IP:3000 ⭐⭐⭐
 
 **问题：** 服务器安装完成，但浏览器访问 `http://服务器IP:3000` 无响应
 

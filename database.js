@@ -233,7 +233,7 @@ function initDatabase() {
                     {
                         username: 'admin',
                         account: 'admin',
-                        password: '$2a$10$8K1p/a0dRTJ5q0ZbQ8z8e.3J9WgZ8X8Z8X8X8X8X8X8X8X8X8X8X', // admin
+                        password: '$2a$10$B8axSY5g4BF.1uT8c2sJh.xIQSuECdTn..wQe4Edi0TdpDZGcfZca', // admin
                         email: 'admin@stock.com',
                         avatar: '/assets/avatars/admin.png',
                         role: 'super_admin',
@@ -243,7 +243,7 @@ function initDatabase() {
                     {
                         username: '测试管理员',
                         account: 'manager',
-                        password: '$2a$10$8K1p/a0dRTJ5q0ZbQ8z8e.3J9WgZ8X8Z8X8X8X8X8X8X8X8X8X8X', // 默认密码
+                        password: '$2a$10$B8axSY5g4BF.1uT8c2sJh.xIQSuECdTn..wQe4Edi0TdpDZGcfZca', // admin
                         email: 'manager@stock.com',
                         avatar: '/assets/avatars/user2.png',
                         role: 'admin',

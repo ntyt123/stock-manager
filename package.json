@@ -11,6 +11,8 @@
     "deploy:bat": "scripts/deploy/deploy.bat",
     "logs": "scripts/deploy/logs.bat",
     "status": "scripts/deploy/status.bat",
+    "reset-password": "node scripts/tools/reset-admin-password.js",
+    "list-users": "node scripts/tools/reset-admin-password.js list",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop stock-manager",
     "pm2:restart": "pm2 restart stock-manager",

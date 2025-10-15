@@ -16,10 +16,10 @@ const CONFIG_FILE = path.join(__dirname, '.deploy-config.json');
 
 // 默认配置
 let CONFIG = {
-  remoteHost: '',
-  remoteUser: '',
+  remoteHost: '39.102.212.245',
+  remoteUser: 'root',
   remotePort: '22',
-  remotePath: '/home/ubuntu/stock-manager',
+  remotePath: '/opt/stock-manager',
   branch: 'master',
   skipGitCheck: false
 };

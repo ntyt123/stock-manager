@@ -6,10 +6,10 @@ REM ==========================================
 chcp 65001 >nul
 
 REM ========== 配置（与deploy.bat保持一致） ==========
-set REMOTE_HOST=your-server-ip
-set REMOTE_USER=ubuntu
+set REMOTE_HOST=39.102.212.245
+set REMOTE_USER=root
 set REMOTE_PORT=22
-set REMOTE_PATH=/home/ubuntu/stock-manager
+set REMOTE_PATH=/opt/stock-manager
 
 REM ================================================
 
@@ -20,7 +20,7 @@ echo ========================================
 echo.
 
 REM 检查配置
-if "%REMOTE_HOST%"=="your-server-ip" (
+if "%REMOTE_HOST%"=="39.102.212.245" (
     echo ❌ 错误: 请先在 deploy.bat 中配置服务器信息
     pause
     exit /b 1
