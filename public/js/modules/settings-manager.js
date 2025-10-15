@@ -857,6 +857,107 @@ const SettingsManager = {
         console.log('✅ 缓存已清除');
     },
 
+    // 清除所有数据
+    async clearAllData() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showNotification('请先登录', 'error');
+            return;
+        }
+
+        // 第一次确认
+        const confirm1 = confirm(
+            '⚠️ 危险操作警告！\n\n' +
+            '此操作将永久删除您的所有数据，包括：\n' +
+            '✓ 所有持仓数据\n' +
+            '✓ 所有交易记录\n' +
+            '✓ 所有交易计划\n' +
+            '✓ 所有持仓成本记录\n' +
+            '✓ 所有分析报告\n' +
+            '✓ 自选股列表\n' +
+            '✓ 其他相关数据\n\n' +
+            '账户信息将被保留，但所有业务数据将被永久删除！\n\n' +
+            '确定要继续吗？'
+        );
+
+        if (!confirm1) {
+            showNotification('已取消操作', 'info');
+            return;
+        }
+
+        // 第二次确认
+        const confirm2 = confirm(
+            '⚠️ 最后确认！\n\n' +
+            '这是您最后一次机会！\n' +
+            '数据删除后将无法恢复！\n\n' +
+            '建议在删除前先导出数据进行备份。\n\n' +
+            '确定要清除所有数据吗？'
+        );
+
+        if (!confirm2) {
+            showNotification('已取消操作', 'info');
+            return;
+        }
+
+        // 要求输入密码确认
+        const password = prompt('请输入您的账户密码以确认此操作：');
+        if (!password) {
+            showNotification('已取消操作', 'info');
+            return;
+        }
+
+        try {
+            showNotification('正在清除数据，请稍候...', 'info');
+            console.log('🔥 开始清除所有数据...');
+
+            const response = await fetch('/api/auth/clear-data', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ password })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                console.log('✅ 数据清除成功:', result.stats);
+
+                // 显示清除统计
+                let statsMessage = '数据清除成功！\n\n清除统计：\n';
+                const stats = result.stats || {};
+                statsMessage += `✓ 持仓数据: ${stats.positions || 0} 条\n`;
+                statsMessage += `✓ 自选股: ${stats.watchlist || 0} 条\n`;
+                statsMessage += `✓ 分析报告: ${stats.analysisReports || 0} 条\n`;
+                statsMessage += `✓ 手动持仓: ${stats.manualPositions || 0} 条\n`;
+                statsMessage += `✓ 交易记录: ${stats.tradeOperations || 0} 条\n`;
+                statsMessage += `✓ 交易计划: ${stats.tradingPlans || 0} 条\n`;
+                statsMessage += `✓ 计划执行记录: ${stats.planExecutions || 0} 条\n`;
+                statsMessage += `✓ 成本记录: ${stats.costRecords || 0} 条\n`;
+                statsMessage += `✓ 成本调整记录: ${stats.costAdjustments || 0} 条\n`;
+                statsMessage += `✓ 持仓更新记录: ${stats.positionUpdates || 0} 条\n`;
+
+                alert(statsMessage);
+                showNotification('所有数据已清除', 'success');
+
+                // 清除本地缓存
+                this.clearCache();
+
+                // 2秒后刷新页面
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showNotification(result.error || '清除数据失败', 'error');
+                console.error('❌ 清除数据失败:', result.error);
+            }
+        } catch (error) {
+            console.error('❌ 清除数据错误:', error);
+            showNotification('清除数据失败: ' + error.message, 'error');
+        }
+    },
+
     // 数据备份（统一使用导出功能）
     async backupData() {
         console.log('📦 数据备份功能调用，重定向到导出功能...');

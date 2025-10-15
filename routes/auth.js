@@ -249,6 +249,45 @@ module.exports = (JWT_SECRET) => {
         }
     });
 
+    // 清除用户所有数据API
+    router.delete('/clear-data', authenticateToken, async (req, res) => {
+        console.log('📝 收到清除数据请求, 用户ID:', req.user.id);
+        const { password } = req.body;
+
+        if (!password) {
+            console.log('❌ 参数缺失: password=', !!password);
+            return res.status(400).json({ error: '需要输入密码确认' });
+        }
+
+        try {
+            // 获取当前用户信息
+            const user = await userModel.findById(req.user.id);
+            if (!user) {
+                return res.status(404).json({ error: '用户不存在' });
+            }
+
+            // 验证密码
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                return res.status(401).json({ error: '密码错误' });
+            }
+
+            // 清除用户所有数据
+            const result = await userModel.clearAllUserData(req.user.id);
+
+            console.log('✅ 用户数据清除成功, 统计:', result.stats);
+
+            res.json({
+                success: true,
+                message: '所有数据已清除',
+                stats: result.stats
+            });
+        } catch (error) {
+            console.error('清除数据错误:', error);
+            return res.status(500).json({ error: '清除数据失败，请稍后重试' });
+        }
+    });
+
     // 管理员API - 获取所有用户信息
     router.get('/admin/users', authenticateToken, requireAdmin, async (req, res) => {
         try {
