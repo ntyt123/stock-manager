@@ -99,8 +99,17 @@ async function configWizard() {
   const remotePath = await prompt(`远程项目路径 [${CONFIG.remotePath}]: `);
   if (remotePath) CONFIG.remotePath = remotePath;
 
-  const branch = await prompt(`Git分支 [${CONFIG.branch}]: `);
-  if (branch) CONFIG.branch = branch;
+  const branch = await prompt(`Git分支名 (如: master, main) [${CONFIG.branch}]: `);
+  if (branch) {
+    // 验证分支名格式，防止输入完整URL
+    if (branch.includes('://') || branch.includes('@')) {
+      console.log('⚠️  错误：请输入分支名（如 master），不是完整的仓库URL');
+      const retryBranch = await prompt(`Git分支名 [${CONFIG.branch}]: `);
+      if (retryBranch) CONFIG.branch = retryBranch;
+    } else {
+      CONFIG.branch = branch;
+    }
+  }
 
   saveConfig();
 

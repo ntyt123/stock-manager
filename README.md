@@ -199,6 +199,7 @@ GET /api/health
 ### 常见问题
 
 - **登录出现 500 错误？** → 查看 [登录 500 错误修复指南](./docs/guides/LOGIN_ERROR_500_FIX.md) ⭐⭐
+- **部署推送代码失败？** → 查看 [Git Push 错误修复指南](./docs/guides/DEPLOY_PUSH_ERROR_FIX.md) ⭐
 - **部署后无法访问服务器？** → 查看 [服务器访问故障排除指南](./docs/guides/SERVER_ACCESS_TROUBLESHOOTING.md) ⭐
 - **无法克隆 GitHub 项目？** → 查看 [GitHub 连接故障排除指南](./docs/guides/GITHUB_CONNECTION_TROUBLESHOOTING.md)
 - **如何部署到服务器？** → 查看 [部署指南](./docs/guides/DEPLOYMENT_GUIDE.md)

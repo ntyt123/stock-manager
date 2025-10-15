@@ -399,7 +399,28 @@ git pull origin master
 pm2 restart stock-manager
 ```
 
-### 0.1. 部署后无法访问 IP:3000 ⭐⭐⭐
+### 0.1. 部署推送代码失败 (invalid refspec) ⭐
+
+**问题：** 推送代码时出现 `fatal: invalid refspec 'https://github.com/...'`
+
+**原因：** 配置文件中 `branch` 字段被误设置为仓库URL而不是分支名。
+
+📖 **完整修复指南：** [DEPLOY_PUSH_ERROR_FIX.md](./DEPLOY_PUSH_ERROR_FIX.md)
+
+**快速修复：**
+```bash
+# 配置文件已修复，直接重新运行即可
+npm run deploy
+
+# 或重新配置（会启动配置向导）
+npm run deploy -- --config
+```
+
+**注意：** 在配置向导中，Git分支名应该填：
+- ✅ 正确：`master` 或 `main`
+- ❌ 错误：`https://github.com/user/repo.git`
+
+### 0.2. 部署后无法访问 IP:3000 ⭐⭐⭐
 
 **问题：** 服务器安装完成，但浏览器访问 `http://服务器IP:3000` 无响应
 
@@ -432,7 +453,7 @@ pm2 status && sudo netstat -tuln | grep 3000 && curl -I localhost:3000
 - 腾讯云：控制台 → 安全组 → 修改规则 → 添加入站规则
 - AWS EC2：Security Groups → Edit inbound rules → Add rule
 
-### 0.1. GitHub 克隆失败
+### 0.3. GitHub 克隆失败
 
 **问题：** `Failed to connect to github.com port 443` 或 `Connection timed out`
 
