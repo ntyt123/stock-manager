@@ -236,6 +236,34 @@
     background: #e67e22;
 }
 
+.setting-btn.danger {
+    background: #e74c3c;
+}
+
+.setting-btn.danger:hover {
+    background: #c0392b;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+}
+
+/* 危险区域样式 */
+.setting-item.danger-zone {
+    background: #fff5f5;
+    border: 2px solid #fee;
+}
+
+.setting-item.danger-zone:hover {
+    background: #ffebeb;
+    border-color: #fcc;
+}
+
+.danger-title {
+    color: #e74c3c !important;
+}
+
+.danger-desc {
+    color: #c0392b !important;
+}
+
 /* 设置徽章 */
 .setting-badge {
     padding: 6px 12px;
