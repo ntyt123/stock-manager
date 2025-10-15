@@ -375,6 +375,65 @@ CORS_ORIGIN=*               # CORS设置
 
 ## 🐛 常见问题
 
+### 0. 部署后无法访问 IP:3000 ⭐⭐⭐
+
+**问题：** 服务器安装完成，但浏览器访问 `http://服务器IP:3000` 无响应
+
+**这是最最常见的问题！** 90% 的情况是云服务商安全组配置问题。
+
+📖 **完整故障排除指南：** [SERVER_ACCESS_TROUBLESHOOTING.md](./SERVER_ACCESS_TROUBLESHOOTING.md)
+
+**快速诊断：**
+```bash
+# 在服务器上运行自动诊断脚本
+cd ~/stock-manager
+./scripts/deploy/diagnose-server.sh
+```
+
+**快速检查清单：**
+1. ✅ 检查 PM2 服务状态：`pm2 status`
+2. ✅ 检查端口监听：`sudo netstat -tuln | grep 3000`
+3. ✅ 测试本地访问：`curl http://localhost:3000`
+4. 🔥 **检查云服务商安全组**（最重要！）
+5. ✅ 检查系统防火墙：`sudo ufw status`
+
+**最常见原因：云服务商安全组未开放 3000 端口**
+- 阿里云：控制台 → 安全组 → 配置规则 → 添加入方向规则
+- 腾讯云：控制台 → 安全组 → 修改规则 → 添加入站规则
+- AWS EC2：Security Groups → Edit inbound rules → Add rule
+
+### 0.1. GitHub 克隆失败
+
+**问题：** `Failed to connect to github.com port 443` 或 `Connection timed out`
+
+**解决方案：**
+
+📖 **详细指南：** [GITHUB_CONNECTION_TROUBLESHOOTING.md](./GITHUB_CONNECTION_TROUBLESHOOTING.md)
+
+**快速解决：**
+
+```bash
+# 推荐方案：使用 SSH 协议而非 HTTPS
+# 1. 生成 SSH 密钥（如果还没有）
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+
+# 2. 查看公钥并添加到 GitHub
+cat ~/.ssh/id_rsa.pub
+# 访问 https://github.com/settings/keys 添加公钥
+
+# 3. 测试连接
+ssh -T git@github.com
+
+# 4. 使用 SSH 地址克隆
+git clone git@github.com:ntyt123/stock-manager.git
+```
+
+其他解决方案：
+- 🔧 配置代理
+- 🌏 使用 Gitee 镜像（中国大陆服务器）
+- 🔨 修改 hosts 文件
+- 📦 手动上传代码
+
 ### 1. 部署时SSH连接失败
 
 **问题：** `Connection refused` 或 `Connection timed out`

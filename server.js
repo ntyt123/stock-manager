@@ -131,13 +131,15 @@ cron.schedule('30 9 * * 1-5', async () => {
         // 初始化数据库
         await initDatabase();
 
-        // 启动服务器
-        app.listen(PORT, () => {
+        // 启动服务器 - 监听所有网络接口
+        app.listen(PORT, '0.0.0.0', () => {
             console.log('🚀 个人股票信息系统服务器已启动');
-            console.log(`📍 服务地址: http://localhost:${PORT}`);
+            console.log(`📍 本地访问: http://localhost:${PORT}`);
             console.log(`🌐 网络访问: http://<服务器IP>:${PORT}`);
+            console.log(`🔌 监听地址: 0.0.0.0:${PORT} (所有网络接口)`);
             console.log(`⏰ 启动时间: ${new Date().toLocaleString('zh-CN')}`);
             console.log(`💾 数据存储: SQLite数据库 (stock_manager.db)`);
+            console.log(`🌍 环境: ${process.env.NODE_ENV || 'development'}`);
         });
     } catch (error) {
         console.error('❌ 服务器启动失败:', error.message);

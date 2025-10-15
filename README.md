@@ -190,9 +190,18 @@ GET /api/health
 
 ## 📞 技术支持
 
-如有问题请联系：
-- 邮箱: support@stock-manager.com
-- 文档: [查看完整文档]
+### 📚 相关文档
+
+- 📖 [部署指南](./docs/guides/DEPLOYMENT_GUIDE.md) - 完整的部署流程
+- 🔧 [GitHub 连接故障排除](./docs/guides/GITHUB_CONNECTION_TROUBLESHOOTING.md) - 解决克隆失败问题
+- 📁 [项目结构说明](./PROJECT_STRUCTURE.md) - 详细的目录结构
+
+### 常见问题
+
+- **部署后无法访问服务器？** → 查看 [服务器访问故障排除指南](./docs/guides/SERVER_ACCESS_TROUBLESHOOTING.md) ⭐
+- **无法克隆 GitHub 项目？** → 查看 [GitHub 连接故障排除指南](./docs/guides/GITHUB_CONNECTION_TROUBLESHOOTING.md)
+- **如何部署到服务器？** → 查看 [部署指南](./docs/guides/DEPLOYMENT_GUIDE.md)
+- **项目文件在哪里？** → 查看 [项目结构说明](./PROJECT_STRUCTURE.md)
 
 ## 📄 许可证
 

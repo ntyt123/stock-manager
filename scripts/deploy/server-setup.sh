@@ -61,7 +61,11 @@ print_header "Stock Manager 服务器环境初始化"
 print_info "请提供以下配置信息："
 echo ""
 
-read -p "Git仓库地址 (例: https://github.com/user/stock-manager.git): " GIT_REPO
+print_info "Git仓库地址格式："
+echo "  HTTPS: https://github.com/user/stock-manager.git"
+echo "  SSH:   git@github.com:user/stock-manager.git"
+echo ""
+read -p "Git仓库地址: " GIT_REPO
 read -p "项目安装路径 [默认: $HOME/stock-manager]: " PROJECT_DIR
 PROJECT_DIR=${PROJECT_DIR:-"$HOME/stock-manager"}
 
