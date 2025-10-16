@@ -28,10 +28,83 @@ module.exports = (authenticateToken) => {
                 });
             }
 
-            // 2. 构建详细的持仓数据摘要
+            // 2. 刷新所有持仓股票的最新价格（从新浪财经API获取实时行情）
+            console.log(`📊 开始刷新 ${positions.length} 个持仓股票的最新价格...`);
+            try {
+                const stockCodes = positions.map(pos => pos.stockCode);
+
+                // 构建新浪财经API的股票代码列表
+                const fullCodes = stockCodes.map(code => {
+                    let market;
+                    if (code === '000001') {
+                        market = 'sh';  // 上证指数
+                    } else if (code.startsWith('6')) {
+                        market = 'sh';  // 沪市股票
+                    } else {
+                        market = 'sz';  // 深市股票
+                    }
+                    return `${market}${code}`;
+                }).join(',');
+
+                // 调用新浪财经API获取实时行情
+                const sinaUrl = `https://hq.sinajs.cn/list=${fullCodes}`;
+                const response = await axios.get(sinaUrl, {
+                    headers: { 'Referer': 'https://finance.sina.com.cn' },
+                    timeout: 10000,
+                    responseType: 'arraybuffer'
+                });
+
+                const data = iconv.decode(Buffer.from(response.data), 'gbk');
+                const lines = data.split('\n').filter(line => line.trim());
+
+                console.log(`📊 成功获取 ${lines.length} 个股票的实时行情数据`);
+
+                // 解析每个股票的行情数据并更新持仓信息
+                for (let i = 0; i < stockCodes.length; i++) {
+                    const line = lines[i];
+                    if (!line) continue;
+
+                    const match = line.match(/="(.+)"/);
+                    if (!match || !match[1]) continue;
+
+                    const values = match[1].split(',');
+                    if (values.length < 32) continue;
+
+                    const currentPrice = parseFloat(values[3]);  // 当前价格
+                    if (currentPrice > 0) {
+                        const pos = positions[i];
+                        const oldPrice = pos.currentPrice;
+
+                        // 更新现价
+                        pos.currentPrice = currentPrice;
+
+                        // 重新计算市值
+                        pos.marketValue = currentPrice * pos.quantity;
+
+                        // 重新计算盈亏
+                        pos.profitLoss = (currentPrice - pos.costPrice) * pos.quantity;
+
+                        // 重新计算盈亏率
+                        pos.profitLossRate = pos.costPrice > 0
+                            ? ((currentPrice - pos.costPrice) / pos.costPrice * 100)
+                            : 0;
+
+                        console.log(`📊 ${pos.stockName}(${pos.stockCode}): 价格更新 ¥${oldPrice.toFixed(2)} → ¥${currentPrice.toFixed(2)}, 盈亏: ¥${pos.profitLoss.toFixed(2)}`);
+                    }
+                }
+
+                console.log(`✅ 所有持仓股票价格已刷新完成`);
+
+            } catch (priceError) {
+                console.error('⚠️ 刷新股票价格失败:', priceError.message);
+                console.log('⚠️ 将使用数据库中的价格进行分析（可能不是最新价格）');
+                // 价格刷新失败不影响分析流程，继续使用数据库中的价格
+            }
+
+            // 3. 构建详细的持仓数据摘要（使用刷新后的最新价格）
             const portfolioSummary = buildPortfolioSummary(positions);
 
-            // 3. 调用DeepSeek AI进行分析
+            // 4. 调用DeepSeek AI进行分析
             const analysisPrompt = `请作为专业的股票投资顾问，对以下持仓进行全面深入的分析：
 
 【持仓概况】
@@ -94,11 +167,11 @@ ${portfolioSummary.detailedPositions}
 
             console.log('✅ 持仓分析完成');
 
-            // 4. 保存分析报告到数据库
+            // 5. 保存分析报告到数据库
             const savedReport = await analysisReportModel.save(userId, aiResponse, portfolioSummary, 'manual');
             console.log(`📄 分析报告已保存，ID: ${savedReport.id}`);
 
-            // 5. 返回分析结果
+            // 6. 返回分析结果（包含提示词供前端输出）
             res.json({
                 success: true,
                 data: {
@@ -106,7 +179,8 @@ ${portfolioSummary.detailedPositions}
                     analysis: aiResponse,
                     portfolioSummary: portfolioSummary,
                     timestamp: savedReport.created_at,
-                    positions: positions
+                    positions: positions,
+                    prompt: analysisPrompt  // 包含提示词
                 }
             });
 
@@ -383,7 +457,7 @@ ${positionSummary}
             const savedAnalysis = await callAuctionAnalysisModel.save(today, aiAnalysis, marketSummary, 'manual');
             console.log(`📄 集合竞价分析已保存，ID: ${savedAnalysis.id}`);
 
-            // 6. 返回分析结果
+            // 6. 返回分析结果（包含提示词供前端输出）
             res.json({
                 success: true,
                 data: {
@@ -391,7 +465,8 @@ ${positionSummary}
                     analysisDate: today,
                     analysis: aiAnalysis,
                     marketSummary: marketSummary,
-                    timestamp: savedAnalysis.created_at
+                    timestamp: savedAnalysis.created_at,
+                    prompt: analysisPrompt  // 包含提示词
                 }
             });
 

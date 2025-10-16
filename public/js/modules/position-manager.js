@@ -641,13 +641,33 @@ async function submitManualPosition() {
 
         if (result.success) {
             console.log('✅ 手动持仓保存成功');
-            statusDiv.textContent = '✅ 持仓保存成功！';
+            statusDiv.textContent = '✅ 持仓保存成功！正在刷新数据...';
             statusDiv.className = 'form-status success';
 
-            showNotification('持仓添加成功', 'success');
+            showNotification('持仓添加成功，正在刷新相关数据...', 'success');
 
-            // 自动刷新持仓列表
-            loadUserPositions();
+            // 1. 自动将持仓股票添加到自选股
+            const position = {
+                stockCode: stockCode,
+                stockName: stockName
+            };
+            await addPositionsToWatchlist([position]);
+
+            // 2. 刷新持仓列表
+            await loadUserPositions();
+
+            // 3. 刷新总览页面的自选股行情
+            if (typeof loadOverviewWatchlistQuotes === 'function') {
+                setTimeout(() => loadOverviewWatchlistQuotes(), 200);
+            }
+
+            // 4. 刷新持仓概览统计
+            if (typeof loadPortfolioStats === 'function') {
+                setTimeout(() => loadPortfolioStats(), 300);
+            }
+
+            console.log('✅ 所有相关数据已刷新');
+            showNotification('持仓添加成功，数据已更新', 'success');
 
             // 延迟关闭模态框
             setTimeout(() => {

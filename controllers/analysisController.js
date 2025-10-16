@@ -66,12 +66,33 @@ function buildPortfolioSummary(positions) {
 
     let detailedPositions = '';
 
+    console.log('📊 [buildPortfolioSummary] 开始构建持仓摘要，持仓数量:', positions.length);
+
     positions.forEach((pos, index) => {
+        console.log(`📊 [buildPortfolioSummary] 持仓 ${index + 1}:`, {
+            stockCode: pos.stockCode,
+            stockName: pos.stockName,
+            marketValue: pos.marketValue,
+            profitLoss: pos.profitLoss,
+            profitLossRate: pos.profitLossRate,
+            costPrice: pos.costPrice,
+            currentPrice: pos.currentPrice,
+            quantity: pos.quantity
+        });
+
         const marketValue = parseFloat(pos.marketValue) || 0;
         const profitLoss = parseFloat(pos.profitLoss) || 0;
         const profitLossRate = parseFloat(pos.profitLossRate) || 0;
         const costPrice = parseFloat(pos.costPrice) || 0;
         const currentPrice = parseFloat(pos.currentPrice) || 0;
+
+        console.log(`📊 [buildPortfolioSummary] 解析后的值:`, {
+            marketValue,
+            profitLoss,
+            profitLossRate,
+            costPrice,
+            currentPrice
+        });
 
         totalMarketValue += marketValue;
         totalProfitLoss += profitLoss;
@@ -89,7 +110,7 @@ function buildPortfolioSummary(positions) {
 
     const totalProfitLossRate = totalCost > 0 ? ((totalProfitLoss / totalCost) * 100).toFixed(2) : '0.00';
 
-    return {
+    const summary = {
         totalStocks: positions.length,
         totalMarketValue,
         totalProfitLoss,
@@ -98,6 +119,10 @@ function buildPortfolioSummary(positions) {
         lossStocks,
         detailedPositions: detailedPositions.trim()
     };
+
+    console.log('📊 [buildPortfolioSummary] 最终摘要:', summary);
+
+    return summary;
 }
 
 /**

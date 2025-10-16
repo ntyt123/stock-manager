@@ -58,7 +58,11 @@ module.exports = (authenticateToken) => {
                     data: {
                         message: aiResponse,
                         model: 'deepseek-chat',
-                        timestamp: new Date().toISOString()
+                        timestamp: new Date().toISOString(),
+                        prompt: {
+                            system: systemPrompt,
+                            user: message
+                        }
                     }
                 });
             } else {

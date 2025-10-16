@@ -220,13 +220,26 @@ async function analyzePortfolio() {
         const result = await response.json();
 
         if (result.success && result.data) {
-            const { analysis, portfolioSummary, timestamp } = result.data;
+            const { analysis, portfolioSummary, timestamp, prompt } = result.data;
+
+            // 在浏览器控制台输出发送给AI的提示词
+            if (prompt) {
+                console.log('%c📝 ==================== AI持仓分析提示词 ====================', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+                console.log(prompt);
+                console.log('%c📝 ============================================================', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
+            }
 
             // 显示分析结果
             displayPortfolioAnalysis(analysis, portfolioSummary, timestamp);
 
             console.log('✅ 持仓分析完成');
             showNotification('持仓分析完成', 'success');
+
+            // 自动刷新风险预警模块
+            console.log('🔄 正在刷新风险预警模块...');
+            setTimeout(() => {
+                loadRiskWarnings();
+            }, 500);
 
         } else {
             throw new Error(result.error || '分析失败');
@@ -258,6 +271,22 @@ async function analyzePortfolio() {
 // displayPortfolioAnalysis
 function displayPortfolioAnalysis(analysis, summary, timestamp) {
     const container = document.getElementById('portfolioAnalysis');
+
+    // 调试日志：检查 summary 对象
+    console.log('📊 [displayPortfolioAnalysis] summary 对象:', summary);
+    console.log('📊 [displayPortfolioAnalysis] summary 类型:', typeof summary);
+    console.log('📊 [displayPortfolioAnalysis] summary 是否为字符串:', typeof summary === 'string');
+
+    // 如果 summary 是字符串，尝试解析为对象
+    if (typeof summary === 'string') {
+        console.warn('⚠️ [displayPortfolioAnalysis] summary 是字符串，尝试解析为JSON');
+        try {
+            summary = JSON.parse(summary);
+            console.log('✅ [displayPortfolioAnalysis] JSON 解析成功:', summary);
+        } catch (error) {
+            console.error('❌ [displayPortfolioAnalysis] JSON 解析失败:', error);
+        }
+    }
 
     const analysisTime = new Date(timestamp).toLocaleString('zh-CN');
 
@@ -475,7 +504,22 @@ async function showReportDetailInModal(reportId) {
         const result = await response.json();
 
         if (result.success && result.data) {
-            const { analysis, portfolioSummary, timestamp } = result.data;
+            let { analysis, portfolioSummary, timestamp } = result.data;
+
+            // 调试日志：检查 portfolioSummary 对象
+            console.log('📊 [showReportDetailInModal] portfolioSummary 对象:', portfolioSummary);
+            console.log('📊 [showReportDetailInModal] portfolioSummary 类型:', typeof portfolioSummary);
+
+            // 如果 portfolioSummary 是字符串，尝试解析为对象
+            if (typeof portfolioSummary === 'string') {
+                console.warn('⚠️ [showReportDetailInModal] portfolioSummary 是字符串，尝试解析为JSON');
+                try {
+                    portfolioSummary = JSON.parse(portfolioSummary);
+                    console.log('✅ [showReportDetailInModal] JSON 解析成功:', portfolioSummary);
+                } catch (error) {
+                    console.error('❌ [showReportDetailInModal] JSON 解析失败:', error);
+                }
+            }
 
             // 格式化时间
             const analysisTime = new Date(timestamp).toLocaleString('zh-CN');
@@ -643,7 +687,14 @@ async function analyzeCallAuction() {
         const result = await response.json();
 
         if (result.success && result.data) {
-            const { analysis, marketSummary, timestamp, analysisDate } = result.data;
+            const { analysis, marketSummary, timestamp, analysisDate, prompt } = result.data;
+
+            // 在浏览器控制台输出发送给AI的提示词
+            if (prompt) {
+                console.log('%c📝 ==================== AI集合竞价分析提示词 ====================', 'color: #2196F3; font-weight: bold; font-size: 14px;');
+                console.log(prompt);
+                console.log('%c📝 ================================================================', 'color: #2196F3; font-weight: bold; font-size: 14px;');
+            }
 
             // 显示分析结果
             displayCallAuctionAnalysis(analysis, marketSummary, timestamp, analysisDate);
@@ -1113,6 +1164,14 @@ async function sendToAI() {
         const result = await response.json();
 
         if (result.success && result.data) {
+            // 在浏览器控制台输出发送给AI的提示词
+            if (result.data.prompt) {
+                console.log('%c📝 ==================== AI投资助手提示词 ====================', 'color: #FF9800; font-weight: bold; font-size: 14px;');
+                console.log('System Prompt:', result.data.prompt.system);
+                console.log('User Message:', result.data.prompt.user);
+                console.log('%c📝 ============================================================', 'color: #FF9800; font-weight: bold; font-size: 14px;');
+            }
+
             // 显示响应时间
             const now = new Date();
             responseTime.textContent = now.toLocaleTimeString('zh-CN');
