@@ -69,6 +69,12 @@ const aiRoutes = require('./routes/ai')(authenticateToken);
 const tradingPlanRoutes = require('./routes/trading-plans')(authenticateToken);
 const costManagementRoutes = require('./routes/cost-management')(authenticateToken);
 const profitAnalysisRoutes = require('./routes/profit-analysis')(authenticateToken);
+const fundManagementRoutes = require('./routes/fund-management')(authenticateToken);
+const tradingLogsRoutes = require('./routes/trading-logs')(authenticateToken);
+const stockPoolRoutes = require('./routes/stock-pool')(authenticateToken);
+const marketSentimentRoutes = require('./routes/market-sentiment')(authenticateToken);
+const aiPromptsRoutes = require('./routes/ai-prompts')(authenticateToken);
+const riskControlRoutes = require('./routes/risk-control')(authenticateToken);
 
 // 挂载路由
 app.use('/api/auth', authRoutes);
@@ -84,6 +90,12 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/trading-plans', tradingPlanRoutes);
 app.use('/api/cost-management', costManagementRoutes);
 app.use('/api/profit-analysis', profitAnalysisRoutes);
+app.use('/api/fund-management', fundManagementRoutes);
+app.use('/api/trading-logs', tradingLogsRoutes);
+app.use('/api/stock-pool', stockPoolRoutes);
+app.use('/api/market-sentiment', marketSentimentRoutes);
+app.use('/api/ai-prompts', aiPromptsRoutes);
+app.use('/api/risk-control', riskControlRoutes);
 
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）

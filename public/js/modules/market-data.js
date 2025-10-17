@@ -1184,6 +1184,468 @@ function updateStockData() {
     });
 }
 
+// ==================== 市场情绪分析功能 ====================
+
+// 加载市场情绪分析
+async function loadMarketSentiment() {
+    console.log('📊 开始加载市场情绪分析...');
+
+    try {
+        // 并行加载所有模块
+        await Promise.all([
+            loadSentimentOverview(),
+            loadFundsFlowData(),
+            loadIndustryFlowData(),
+            loadDragonTigerData(),
+            loadBigOrdersData()
+        ]);
+
+        // 初始化标签页切换
+        initSentimentTabs();
+
+        console.log('✅ 市场情绪分析加载完成');
+    } catch (error) {
+        console.error('❌ 加载市场情绪分析失败:', error);
+    }
+}
+
+// 加载市场情绪概览（四个指标卡片）
+async function loadSentimentOverview() {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            updateSentimentCard('sentimentIndex', '--', '请登录查看');
+            updateSentimentCard('gainLossRatio', '--', '请登录查看');
+            updateSentimentCard('northboundFunds', '--', '请登录查看');
+            updateSentimentCard('marketHeat', '--', '请登录查看');
+            return;
+        }
+
+        // 获取自选股行情数据用于计算情绪指数
+        const watchlistResponse = await fetch('/api/watchlist', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!watchlistResponse.ok) throw new Error('获取自选股列表失败');
+
+        const watchlistResult = await watchlistResponse.json();
+        if (!watchlistResult.success || !watchlistResult.data || watchlistResult.data.length === 0) {
+            updateSentimentCard('sentimentIndex', '--', '暂无自选股数据');
+            updateSentimentCard('gainLossRatio', '--', '暂无自选股数据');
+            updateSentimentCard('northboundFunds', '--', '数据获取中...');
+            updateSentimentCard('marketHeat', '--', '数据获取中...');
+            return;
+        }
+
+        const stockCodes = watchlistResult.data.map(stock => stock.stock_code);
+
+        // 获取行情数据
+        const quotesResponse = await fetch('/api/stock/quotes', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ stockCodes })
+        });
+
+        if (!quotesResponse.ok) throw new Error('获取行情数据失败');
+
+        const quotesResult = await quotesResponse.json();
+        if (!quotesResult.success || !quotesResult.data) throw new Error('行情数据为空');
+
+        const quotes = quotesResult.data;
+
+        // 计算涨跌比例
+        let upCount = 0, downCount = 0, flatCount = 0;
+        let totalChange = 0;
+
+        quotes.forEach(quote => {
+            const change = parseFloat(quote.changePercent);
+            totalChange += change;
+            if (change > 0) upCount++;
+            else if (change < 0) downCount++;
+            else flatCount++;
+        });
+
+        const gainLossRatio = upCount / (upCount + downCount + flatCount);
+        const avgChange = totalChange / quotes.length;
+
+        // 计算市场情绪指数 (基于涨跌比例和平均涨幅)
+        const sentimentIndex = Math.round((gainLossRatio * 60 + (avgChange + 10) * 2));
+        const sentimentLevel = sentimentIndex >= 70 ? '极度乐观' :
+                               sentimentIndex >= 55 ? '乐观' :
+                               sentimentIndex >= 45 ? '中性' :
+                               sentimentIndex >= 30 ? '谨慎' : '恐慌';
+
+        // 计算市场热度 (基于成交额和涨停数量)
+        const bigUpCount = quotes.filter(q => parseFloat(q.changePercent) > 5).length;
+        const marketHeat = Math.round((bigUpCount / quotes.length) * 100);
+        const heatLevel = marketHeat >= 15 ? '🔥 极热' :
+                         marketHeat >= 10 ? '🌡️ 活跃' :
+                         marketHeat >= 5 ? '😐 温和' : '❄️ 清淡';
+
+        // 更新市场情绪指数
+        updateSentimentCard('sentimentIndex', sentimentIndex.toString(), sentimentLevel);
+
+        // 更新涨跌比例
+        const ratioText = `${upCount}:${downCount}`;
+        const ratioStatus = gainLossRatio >= 0.6 ? '强势上涨' :
+                           gainLossRatio >= 0.4 ? '震荡整理' : '普遍下跌';
+        updateSentimentCard('gainLossRatio', ratioText, ratioStatus);
+
+        // 更新北上资金 (真实数据)
+        try {
+            const northboundResponse = await fetch('/api/market-sentiment/northbound-funds', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (northboundResponse.ok) {
+                const northboundResult = await northboundResponse.json();
+                if (northboundResult.success && northboundResult.data) {
+                    const northboundAmount = parseFloat(northboundResult.data.total);
+                    const northboundStatus = northboundAmount >= 0 ? '净流入' : '净流出';
+                    updateSentimentCard('northboundFunds',
+                        `${northboundAmount >= 0 ? '+' : ''}${northboundAmount}亿`,
+                        northboundStatus);
+                } else {
+                    updateSentimentCard('northboundFunds', '--', '数据获取失败');
+                }
+            } else {
+                updateSentimentCard('northboundFunds', '--', '数据获取失败');
+            }
+        } catch (error) {
+            console.error('❌ 获取北上资金失败:', error);
+            updateSentimentCard('northboundFunds', '--', '数据获取失败');
+        }
+
+        // 更新市场热度
+        updateSentimentCard('marketHeat', `${marketHeat}%`, heatLevel);
+
+    } catch (error) {
+        console.error('❌ 加载市场情绪概览失败:', error);
+        updateSentimentCard('sentimentIndex', '--', '加载失败');
+        updateSentimentCard('gainLossRatio', '--', '加载失败');
+        updateSentimentCard('northboundFunds', '--', '加载失败');
+        updateSentimentCard('marketHeat', '--', '加载失败');
+    }
+}
+
+// 更新情绪卡片
+function updateSentimentCard(cardId, value, status) {
+    const valueElement = document.getElementById(cardId);
+
+    // 正确映射cardId到statusId
+    const statusIdMap = {
+        'sentimentIndex': 'sentimentStatus',
+        'gainLossRatio': 'gainLossStatus',
+        'northboundFunds': 'northboundStatus',
+        'marketHeat': 'marketHeatStatus'
+    };
+
+    const statusElement = document.getElementById(statusIdMap[cardId]);
+
+    if (valueElement) valueElement.textContent = value;
+    if (statusElement) statusElement.textContent = status;
+
+    // 根据状态设置颜色
+    if (statusElement) {
+        statusElement.className = 'sentiment-status';
+        if (status.includes('乐观') || status.includes('强势') || status.includes('净流入') || status.includes('极热') || status.includes('活跃')) {
+            statusElement.classList.add('positive');
+        } else if (status.includes('恐慌') || status.includes('下跌') || status.includes('净流出') || status.includes('清淡')) {
+            statusElement.classList.add('negative');
+        }
+    }
+}
+
+// 加载资金流向数据
+async function loadFundsFlowData() {
+    const container = document.getElementById('fundsFlowData');
+    if (!container) return;
+
+    try {
+        container.innerHTML = '<div class="loading-text">正在加载资金流向数据...</div>';
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            container.innerHTML = '<div class="loading-text">请登录查看资金流向</div>';
+            return;
+        }
+
+        // 调用真实API获取资金流向数据
+        const response = await fetch('/api/market-sentiment/funds-flow', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取资金流向失败');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error('资金流向数据为空');
+        }
+
+        const fundsFlowData = result.data;
+
+        let html = '<div class="funds-flow-table">';
+        html += '<div class="flow-table-header">';
+        html += '<div class="flow-col">类型</div>';
+        html += '<div class="flow-col">流入(亿)</div>';
+        html += '<div class="flow-col">流出(亿)</div>';
+        html += '<div class="flow-col">净额(亿)</div>';
+        html += '</div>';
+
+        fundsFlowData.forEach(item => {
+            const isPositive = item.net >= 0;
+            html += `
+                <div class="flow-table-row">
+                    <div class="flow-col flow-sector">${item.sector}</div>
+                    <div class="flow-col flow-inflow">+${item.inflow.toFixed(2)}</div>
+                    <div class="flow-col flow-outflow">-${item.outflow.toFixed(2)}</div>
+                    <div class="flow-col flow-net ${isPositive ? 'positive' : 'negative'}">
+                        ${isPositive ? '+' : ''}${item.net.toFixed(2)}
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('❌ 加载资金流向失败:', error);
+        container.innerHTML = '<div class="loading-text">加载失败</div>';
+    }
+}
+
+// 加载行业资金流向数据
+async function loadIndustryFlowData() {
+    const container = document.getElementById('industryFlowData');
+    if (!container) return;
+
+    try {
+        container.innerHTML = '<div class="loading-text">正在加载行业资金流向...</div>';
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            container.innerHTML = '<div class="loading-text">请登录查看行业资金</div>';
+            return;
+        }
+
+        // 调用真实API获取行业资金流向数据
+        const response = await fetch('/api/market-sentiment/industry-flow', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取行业资金流向失败');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error('行业资金流向数据为空');
+        }
+
+        const industryFlowData = result.data;
+
+        let html = '<div class="industry-flow-table">';
+        html += '<div class="flow-table-header">';
+        html += '<div class="flow-col">行业</div>';
+        html += '<div class="flow-col">净流入(亿)</div>';
+        html += '<div class="flow-col">涨跌幅(%)</div>';
+        html += '</div>';
+
+        industryFlowData.forEach(item => {
+            const isPositive = item.net >= 0;
+            html += `
+                <div class="flow-table-row">
+                    <div class="flow-col flow-industry">${item.industry}</div>
+                    <div class="flow-col flow-net ${isPositive ? 'positive' : 'negative'}">
+                        ${isPositive ? '+' : ''}${item.net.toFixed(2)}
+                    </div>
+                    <div class="flow-col ${item.change >= 0 ? 'positive' : 'negative'}">
+                        ${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('❌ 加载行业资金流向失败:', error);
+        container.innerHTML = '<div class="loading-text">加载失败</div>';
+    }
+}
+
+// 加载龙虎榜数据
+async function loadDragonTigerData() {
+    const container = document.getElementById('dragonTigerData');
+    if (!container) return;
+
+    try {
+        container.innerHTML = '<div class="loading-text">正在加载龙虎榜数据...</div>';
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            container.innerHTML = '<div class="loading-text">请登录查看龙虎榜</div>';
+            return;
+        }
+
+        // 调用真实API获取龙虎榜数据
+        const response = await fetch('/api/market-sentiment/dragon-tiger', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取龙虎榜失败');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error('龙虎榜数据为空');
+        }
+
+        const dragonTigerData = result.data.map(item => ({
+            stockCode: item.code,
+            stockName: item.name,
+            change: parseFloat(item.change),
+            amount: parseFloat(item.amount),
+            reason: item.reason
+        }));
+
+        let html = '<div class="dragon-tiger-list">';
+
+        dragonTigerData.forEach(item => {
+            const isPositive = item.change >= 0;
+            html += `
+                <div class="dragon-tiger-item">
+                    <div class="dt-header">
+                        <div class="dt-stock">
+                            <span class="dt-name">${item.stockName}</span>
+                            <span class="dt-code">${item.stockCode}</span>
+                        </div>
+                        <div class="dt-change ${isPositive ? 'positive' : 'negative'}">
+                            ${isPositive ? '+' : ''}${item.change.toFixed(2)}%
+                        </div>
+                    </div>
+                    <div class="dt-info">
+                        <div class="dt-amount">成交额: ¥${item.amount.toFixed(2)}亿</div>
+                        <div class="dt-reason">${item.reason}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('❌ 加载龙虎榜失败:', error);
+        container.innerHTML = '<div class="loading-text">加载失败</div>';
+    }
+}
+
+// 加载大单追踪数据
+async function loadBigOrdersData() {
+    const container = document.getElementById('bigOrdersData');
+    if (!container) return;
+
+    try {
+        container.innerHTML = '<div class="loading-text">正在加载大单追踪数据...</div>';
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            container.innerHTML = '<div class="loading-text">请登录查看大单追踪</div>';
+            return;
+        }
+
+        // 调用真实API获取大单追踪数据
+        const response = await fetch('/api/market-sentiment/big-orders', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            throw new Error('获取大单追踪失败');
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+            throw new Error('大单追踪数据为空');
+        }
+
+        const bigOrdersData = result.data.map(item => ({
+            stockCode: item.code,
+            stockName: item.name,
+            type: item.type,
+            amount: parseFloat(item.amount),
+            price: parseFloat(item.price),
+            time: item.time
+        }));
+
+        let html = '<div class="big-orders-list">';
+
+        bigOrdersData.forEach(item => {
+            const isBuy = item.type === 'buy';
+            html += `
+                <div class="big-order-item">
+                    <div class="order-header">
+                        <div class="order-stock">
+                            <span class="order-name">${item.stockName}</span>
+                            <span class="order-code">${item.stockCode}</span>
+                        </div>
+                        <div class="order-type ${isBuy ? 'buy' : 'sell'}">
+                            ${isBuy ? '买入' : '卖出'}
+                        </div>
+                    </div>
+                    <div class="order-info">
+                        <div class="order-amount">金额: ¥${item.amount.toFixed(2)}亿</div>
+                        <div class="order-price">价格: ¥${item.price.toFixed(2)}</div>
+                        <div class="order-time">${item.time}</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+
+    } catch (error) {
+        console.error('❌ 加载大单追踪失败:', error);
+        container.innerHTML = '<div class="loading-text">加载失败</div>';
+    }
+}
+
+// 初始化情绪分析标签页切换
+function initSentimentTabs() {
+    const tabBtns = document.querySelectorAll('.sentiment-tab-btn');
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetTab = this.getAttribute('data-tab');
+
+            // 移除所有active状态
+            tabBtns.forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.sentiment-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            // 添加当前active状态
+            this.classList.add('active');
+            const targetContent = document.getElementById(`${targetTab}-content`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+        });
+    });
+}
+
+// 将函数暴露到全局作用域
+window.loadMarketSentiment = loadMarketSentiment;
+
 // ==================== 监听总资金更新事件 ====================
 document.addEventListener('capitalUpdated', (event) => {
     console.log('💰 检测到总资金更新，刷新持仓概览...', event.detail);

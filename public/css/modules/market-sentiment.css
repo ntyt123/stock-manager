@@ -1,0 +1,419 @@
+/* ==================== 市场情绪分析模块样式 ====================
+ * 包含市场情绪指数、资金流向、龙虎榜、大单追踪等功能的样式
+ */
+
+/* ==================== 市场情绪概览卡片 ==================== */
+.sentiment-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.sentiment-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.sentiment-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.sentiment-icon {
+    font-size: 40px;
+    line-height: 1;
+}
+
+.sentiment-info {
+    flex: 1;
+}
+
+.sentiment-label {
+    font-size: 14px;
+    color: #7f8c8d;
+    margin-bottom: 8px;
+}
+
+.sentiment-value {
+    font-size: 28px;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.sentiment-status {
+    font-size: 14px;
+    color: #95a5a6;
+}
+
+.sentiment-status.positive {
+    color: #27ae60;
+}
+
+.sentiment-status.negative {
+    color: #e74c3c;
+}
+
+/* ==================== 情绪分析标签页 ==================== */
+.sentiment-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 10px;
+}
+
+.sentiment-tab-btn {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: #7f8c8d;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-radius: 8px 8px 0 0;
+    position: relative;
+}
+
+.sentiment-tab-btn:hover {
+    background: #f8f9fa;
+    color: #2c3e50;
+}
+
+.sentiment-tab-btn.active {
+    color: #3498db;
+    background: #eaf4fc;
+}
+
+.sentiment-tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #3498db;
+    border-radius: 3px 3px 0 0;
+}
+
+.sentiment-tab-content {
+    display: none;
+}
+
+.sentiment-tab-content.active {
+    display: block;
+}
+
+/* ==================== 资金流向表格 ==================== */
+.funds-flow-table,
+.industry-flow-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.flow-table-header {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+    padding: 16px;
+    font-size: 14px;
+}
+
+.industry-flow-table .flow-table-header {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+.flow-table-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr;
+    padding: 14px 16px;
+    border-bottom: 1px solid #ecf0f1;
+    transition: background 0.2s ease;
+}
+
+.industry-flow-table .flow-table-row {
+    grid-template-columns: 2fr 1fr 1fr;
+}
+
+.flow-table-row:hover {
+    background: #f8f9fa;
+}
+
+.flow-table-row:last-child {
+    border-bottom: none;
+}
+
+.flow-col {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #2c3e50;
+}
+
+.flow-sector,
+.flow-industry {
+    font-weight: 600;
+    color: #34495e;
+}
+
+.flow-inflow {
+    color: #27ae60;
+    font-weight: 500;
+}
+
+.flow-outflow {
+    color: #e74c3c;
+    font-weight: 500;
+}
+
+.flow-net {
+    font-weight: 600;
+}
+
+.flow-net.positive {
+    color: #27ae60;
+}
+
+.flow-net.negative {
+    color: #e74c3c;
+}
+
+/* ==================== 龙虎榜列表 ==================== */
+.dragon-tiger-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dragon-tiger-item {
+    background: white;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.dragon-tiger-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateX(4px);
+}
+
+.dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.dt-stock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dt-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.dt-code {
+    font-size: 13px;
+    color: #7f8c8d;
+    background: #ecf0f1;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.dt-change {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.dt-change.positive {
+    color: #27ae60;
+}
+
+.dt-change.negative {
+    color: #e74c3c;
+}
+
+.dt-info {
+    display: flex;
+    gap: 24px;
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+.dt-amount {
+    color: #34495e;
+    font-weight: 500;
+}
+
+.dt-reason {
+    color: #95a5a6;
+}
+
+/* ==================== 大单追踪列表 ==================== */
+.big-orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.big-order-item {
+    background: white;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.big-order-item:hover {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.order-stock {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.order-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.order-code {
+    font-size: 12px;
+    color: #7f8c8d;
+    background: #f1f3f4;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.order-type {
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.order-type.buy {
+    background: rgba(39, 174, 96, 0.1);
+    color: #27ae60;
+    border: 1px solid rgba(39, 174, 96, 0.3);
+}
+
+.order-type.sell {
+    background: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.big-order-item:has(.order-type.buy) {
+    border-left-color: #27ae60;
+}
+
+.big-order-item:has(.order-type.sell) {
+    border-left-color: #e74c3c;
+}
+
+.order-info {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: #7f8c8d;
+}
+
+.order-amount {
+    color: #34495e;
+    font-weight: 500;
+}
+
+.order-price {
+    color: #34495e;
+}
+
+.order-time {
+    color: #95a5a6;
+    margin-left: auto;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 1200px) {
+    .sentiment-overview {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .flow-table-header,
+    .flow-table-row {
+        font-size: 13px;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 768px) {
+    .sentiment-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .sentiment-card {
+        padding: 18px;
+    }
+
+    .sentiment-tabs {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .sentiment-tab-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .flow-table-header,
+    .flow-table-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .industry-flow-table .flow-table-header,
+    .industry-flow-table .flow-table-row {
+        grid-template-columns: 1fr;
+    }
+
+    .dt-header,
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .dt-info,
+    .order-info {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

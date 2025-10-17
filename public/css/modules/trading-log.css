@@ -1,0 +1,474 @@
+/* ==================== 交易日志样式 ==================== */
+
+/* 交易日志主容器 */
+.trading-log-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 顶部工具栏 */
+.log-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.log-search-box {
+    flex: 1;
+    min-width: 250px;
+    max-width: 400px;
+    display: flex;
+    gap: 10px;
+}
+
+.log-search-input {
+    flex: 1;
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.log-search-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.log-search-btn {
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.log-search-btn:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
+/* 过滤器按钮组 */
+.log-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.log-filter-btn {
+    padding: 8px 16px;
+    background: #ecf0f1;
+    color: #2c3e50;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.log-filter-btn:hover {
+    background: #d5dbdb;
+}
+
+.log-filter-btn.active {
+    background: #3498db;
+    color: white;
+    border-color: #2980b9;
+}
+
+/* 统计信息 */
+#tradingLogStats {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 20px;
+    color: white;
+}
+
+.stats-summary {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.stats-types {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.type-stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 15px;
+    border-radius: 8px;
+}
+
+.type-stat-label {
+    font-size: 14px;
+}
+
+.type-stat-value {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* 日志列表 */
+.trading-log-list {
+    display: grid;
+    gap: 20px;
+}
+
+.trading-log-item {
+    background: white;
+    border: 2px solid #ecf0f1;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.trading-log-item:hover {
+    border-color: #3498db;
+    box-shadow: 0 4px 16px rgba(52, 152, 219, 0.2);
+    transform: translateY(-2px);
+}
+
+/* 日志类型样式 */
+.log-type-recap {
+    border-left: 4px solid #3498db;
+}
+
+.log-type-decision {
+    border-left: 4px solid #f39c12;
+}
+
+.log-type-insight {
+    border-left: 4px solid #9b59b6;
+}
+
+.log-type-error {
+    border-left: 4px solid #e74c3c;
+}
+
+.log-type-success {
+    border-left: 4px solid #27ae60;
+}
+
+/* 日志项头部 */
+.log-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.log-item-left {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.log-type-badge {
+    background: #3498db;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.log-important-badge {
+    background: #f39c12;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.log-sentiment {
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.sentiment-good {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.sentiment-neutral {
+    background: #f8f9fa;
+    color: #95a5a6;
+}
+
+.sentiment-bad {
+    background: #fadbd8;
+    color: #e74c3c;
+}
+
+.log-date {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+/* 日志项主体 */
+.log-item-body {
+    margin-bottom: 15px;
+}
+
+.log-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.log-content-preview {
+    color: #576574;
+    line-height: 1.6;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.log-tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.log-tag {
+    background: #ecf0f1;
+    color: #2c3e50;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+}
+
+.log-stocks {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.log-stock-code {
+    background: #e8f5e9;
+    color: #27ae60;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.log-profit-loss {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.log-profit-loss.profit {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.log-profit-loss.loss {
+    background: #fadbd8;
+    color: #e74c3c;
+}
+
+/* 日志项底部 */
+.log-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 15px;
+    border-top: 1px solid #ecf0f1;
+}
+
+.log-created-time {
+    font-size: 12px;
+    color: #95a5a6;
+}
+
+.log-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.log-action-btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.3s ease;
+}
+
+.log-action-btn.view-btn {
+    background: #3498db;
+    color: white;
+}
+
+.log-action-btn.view-btn:hover {
+    background: #2980b9;
+}
+
+.log-action-btn.edit-btn {
+    background: #f39c12;
+    color: white;
+}
+
+.log-action-btn.edit-btn:hover {
+    background: #e67e22;
+}
+
+.log-action-btn.delete-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+.log-action-btn.delete-btn:hover {
+    background: #c0392b;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.empty-icon {
+    font-size: 64px;
+    margin-bottom: 20px;
+}
+
+.empty-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.empty-desc {
+    font-size: 14px;
+    color: #7f8c8d;
+}
+
+/* 日志详情模态框 */
+.log-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.log-detail-badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.log-detail-date {
+    font-size: 16px;
+    color: #7f8c8d;
+}
+
+.log-detail-title h2 {
+    font-size: 24px;
+    color: #2c3e50;
+    margin-bottom: 25px;
+}
+
+.log-detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.content-section h3 {
+    font-size: 16px;
+    color: #2c3e50;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.content-text {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    line-height: 1.8;
+    color: #576574;
+    white-space: pre-wrap;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .log-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .log-search-box {
+        max-width: 100%;
+    }
+
+    .log-filters {
+        justify-content: center;
+    }
+
+    .stats-summary {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .log-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .log-item-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .log-actions {
+        justify-content: center;
+    }
+}

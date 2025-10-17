@@ -92,9 +92,33 @@ class StockChartManager {
      * @param {string} canvasId - Canvas元素的ID
      */
     destroyChart(canvasId) {
+        // 方法1: 从我们的实例缓存中销毁
         if (this.chartInstances[canvasId]) {
+            console.log(`📊 从缓存销毁图表: ${canvasId}`);
             this.chartInstances[canvasId].destroy();
             delete this.chartInstances[canvasId];
+        }
+
+        // 方法2: 从Chart.js全局注册表中查找并销毁
+        // Chart.getChart可以接受canvas元素或ID字符串
+        try {
+            // 先尝试直接用ID字符串
+            let existingChart = Chart.getChart(canvasId);
+
+            // 如果没找到，尝试用canvas元素
+            if (!existingChart) {
+                const canvas = document.getElementById(canvasId);
+                if (canvas) {
+                    existingChart = Chart.getChart(canvas);
+                }
+            }
+
+            if (existingChart) {
+                console.log(`📊 销毁Canvas ${canvasId} 上的遗留图表 (Chart ID: ${existingChart.id})`);
+                existingChart.destroy();
+            }
+        } catch (error) {
+            console.log(`📊 销毁图表时出现错误（可忽略）:`, error.message);
         }
     }
 
@@ -302,6 +326,13 @@ class StockChartManager {
      * @private
      */
     _renderIntradayChart(canvas, historyData, labels, isPositive, options) {
+        // 创建图表前的最后检查：确保canvas上没有遗留的图表
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            console.log(`⚠️ 创建分时图前发现遗留图表 (Chart ID: ${existingChart.id})，立即销毁`);
+            existingChart.destroy();
+        }
+
         const closePrices = historyData.map(item => item.close);
 
         return new Chart(canvas, {
@@ -392,6 +423,13 @@ class StockChartManager {
      * @private
      */
     _renderKLineChart(canvas, historyData, labels, isPositive, options) {
+        // 创建图表前的最后检查：确保canvas上没有遗留的图表
+        const existingChart = Chart.getChart(canvas);
+        if (existingChart) {
+            console.log(`⚠️ 创建K线图前发现遗留图表 (Chart ID: ${existingChart.id})，立即销毁`);
+            existingChart.destroy();
+        }
+
         // 准备开盘收盘柱状图数据（蜡烛实体）
         const bodyData = historyData.map(item => {
             const isUp = item.close >= item.open;

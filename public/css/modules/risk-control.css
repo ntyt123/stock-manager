@@ -1,0 +1,260 @@
+/* ==================== 风险控制样式 ==================== */
+
+.risk-control-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 风险概览 */
+.risk-overview {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-level-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: white;
+    font-weight: bold;
+}
+
+.risk-level-icon {
+    font-size: 32px;
+}
+
+.risk-level-text {
+    font-size: 24px;
+}
+
+.risk-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.risk-summary-item {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 6px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.risk-summary-item.risk-high {
+    border-color: rgba(244, 67, 54, 0.5);
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.risk-summary-item.risk-medium {
+    border-color: rgba(255, 152, 0, 0.5);
+    background: rgba(255, 152, 0, 0.1);
+}
+
+.risk-summary-item .summary-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+}
+
+.risk-summary-item .summary-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+}
+
+/* 操作按钮 */
+.risk-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* 风险区块 */
+.risk-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 15px 0;
+    font-size: 18px;
+    color: white;
+}
+
+.risk-icon {
+    font-size: 24px;
+}
+
+.risk-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* 风险项 */
+.risk-item {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    padding: 15px;
+    border-left: 4px solid rgba(255, 255, 255, 0.2);
+}
+
+.risk-item-high {
+    border-left-color: #f44336;
+    background: rgba(244, 67, 54, 0.05);
+}
+
+.risk-item-medium {
+    border-left-color: #ff9800;
+    background: rgba(255, 152, 0, 0.05);
+}
+
+.risk-item-low {
+    border-left-color: #ffeb3b;
+    background: rgba(255, 235, 59, 0.05);
+}
+
+.risk-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.risk-item-icon {
+    font-size: 20px;
+}
+
+.risk-item-title {
+    font-weight: bold;
+    color: white;
+    font-size: 15px;
+}
+
+.risk-item-stock {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.risk-item-message {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.risk-item-suggestion {
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* 规则配置表单 */
+.rules-section {
+    margin-bottom: 25px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rules-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.rules-section h4 {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 5px;
+}
+
+/* 加载旋转动画 */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-spinner {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .risk-summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .risk-level-text {
+        font-size: 20px;
+    }
+
+    .risk-level-icon {
+        font-size: 28px;
+    }
+
+    .form-row {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .risk-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .risk-actions {
+        flex-direction: column;
+    }
+
+    .risk-actions .action-btn {
+        width: 100%;
+    }
+}

@@ -24,7 +24,6 @@ const SettingsManager = {
         enableNotification: false,
         priceAlert: false,
         planReminder: false,
-        riskAlert: false,
 
         // 风险管理
         riskPreference: 'balanced',
@@ -58,7 +57,7 @@ const SettingsManager = {
         // 左侧导航点击事件
         const navItems = document.querySelectorAll('.settings-nav-item');
         navItems.forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', async () => {
                 // 移除所有激活状态
                 navItems.forEach(n => n.classList.remove('active'));
                 document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
@@ -69,6 +68,11 @@ const SettingsManager = {
                 const section = document.getElementById(sectionId);
                 if (section) {
                     section.classList.add('active');
+                }
+
+                // 如果切换到AI提示词管理，初始化AIPromptManager
+                if (item.dataset.section === 'ai-prompts' && window.AIPromptManager) {
+                    await window.AIPromptManager.init();
                 }
             });
         });
@@ -119,7 +123,6 @@ const SettingsManager = {
         this.setCheckboxValue('setting-enable-notification', settings.enableNotification);
         this.setCheckboxValue('setting-price-alert', settings.priceAlert);
         this.setCheckboxValue('setting-plan-reminder', settings.planReminder);
-        this.setCheckboxValue('setting-risk-alert', settings.riskAlert);
 
         // 风险管理
         this.setSelectValue('setting-risk-preference', settings.riskPreference);
@@ -155,7 +158,6 @@ const SettingsManager = {
                 enableNotification: document.getElementById('setting-enable-notification')?.checked || false,
                 priceAlert: document.getElementById('setting-price-alert')?.checked || false,
                 planReminder: document.getElementById('setting-plan-reminder')?.checked || false,
-                riskAlert: document.getElementById('setting-risk-alert')?.checked || false,
 
                 // 风险管理
                 riskPreference: document.getElementById('setting-risk-preference')?.value || 'balanced',

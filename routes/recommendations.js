@@ -155,7 +155,8 @@ ${positionSummary}
             console.log('📝 ============================================================');
 
             // 4. 调用DeepSeek AI生成推荐
-            const aiRecommendation = await callDeepSeekAPI(recommendationPrompt, '你是一位专业的A股投资顾问，擅长分析市场趋势和推荐优质股票。');
+            const defaultSystemPrompt = '你是一位专业的A股投资顾问，擅长分析市场趋势和推荐优质股票。';
+            const aiRecommendation = await callDeepSeekAPI(recommendationPrompt, defaultSystemPrompt, 'stock_recommendation');
 
             console.log('✅ 股票推荐AI生成完成');
 

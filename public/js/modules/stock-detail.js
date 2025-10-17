@@ -1,6 +1,10 @@
 // ==================== stock-detail.js ====================
 // 自动生成的模块文件
 
+// 全局变量：保存当前悬浮框的图表实例和股票代码
+let currentTooltipChart = null;
+let currentTooltipStockCode = null;
+
 // showStockTooltip
 async function showStockTooltip(stockCode, stockName, event) {
     const tooltip = document.getElementById('stockDetailTooltip');
@@ -115,18 +119,36 @@ function buildCompanyInfo(quote, stockCode) {
                      stockCode.startsWith('3') ? '深圳证券交易所（创业板）' :
                      '深圳证券交易所';
 
+    // 安全获取数值，提供默认值
+    const safeNumber = (value) => {
+        const num = parseFloat(value);
+        return isNaN(num) ? null : num;
+    };
+
+    const formatPrice = (value) => {
+        const num = safeNumber(value);
+        return num !== null ? `¥${num.toFixed(2)}` : '--';
+    };
+
     // 计算涨跌幅
-    const changePercent = parseFloat(quote.changePercent);
-    const change = parseFloat(quote.change);
+    const changePercent = safeNumber(quote.changePercent) || 0;
+    const change = safeNumber(quote.change) || 0;
     const isPositive = changePercent >= 0;
 
     // 计算振幅
-    const amplitude = quote.todayHigh && quote.todayLow && quote.yesterdayClose ?
-        (((quote.todayHigh - quote.todayLow) / quote.yesterdayClose) * 100).toFixed(2) : '--';
+    const todayHigh = safeNumber(quote.todayHigh);
+    const todayLow = safeNumber(quote.todayLow);
+    const yesterdayClose = safeNumber(quote.yesterdayClose);
+    const amplitude = (todayHigh && todayLow && yesterdayClose) ?
+        (((todayHigh - todayLow) / yesterdayClose) * 100).toFixed(2) : '--';
 
     // 计算市值（如果有成交量和价格的话，这里是估算）
-    const volume = quote.volume || 0;
-    const marketValue = volume > 0 ? `约 ${(quote.currentPrice * volume / 100000000).toFixed(2)} 亿元` : '数据加载中';
+    const volume = safeNumber(quote.volume) || 0;
+    const currentPrice = safeNumber(quote.currentPrice);
+    const marketValue = (volume > 0 && currentPrice) ?
+        `约 ${(currentPrice * volume / 100000000).toFixed(2)} 亿元` : '数据加载中';
+
+    const amount = safeNumber(quote.amount);
 
     return `
         <div class="company-info-section">
@@ -140,7 +162,7 @@ function buildCompanyInfo(quote, stockCode) {
             </div>
             <div class="info-row">
                 <span class="info-label">📊 股票名称：</span>
-                <span class="info-value">${quote.stockName}</span>
+                <span class="info-value">${quote.stockName || '--'}</span>
             </div>
         </div>
 
@@ -148,27 +170,27 @@ function buildCompanyInfo(quote, stockCode) {
             <div class="section-subtitle">💹 今日表现</div>
             <div class="info-row">
                 <span class="info-label">开盘价：</span>
-                <span class="info-value">¥${quote.todayOpen.toFixed(2)}</span>
+                <span class="info-value">${formatPrice(quote.todayOpen)}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">当前价：</span>
                 <span class="info-value" style="color: ${isPositive ? '#e74c3c' : '#27ae60'}; font-weight: 700;">
-                    ¥${quote.currentPrice.toFixed(2)}
+                    ${formatPrice(quote.currentPrice)}
                     <span style="font-size: 0.85em;">(${isPositive ? '+' : ''}${changePercent.toFixed(2)}%)</span>
                 </span>
             </div>
             <div class="info-row">
                 <span class="info-label">最高价：</span>
-                <span class="info-value">¥${quote.todayHigh.toFixed(2)}</span>
+                <span class="info-value">${formatPrice(quote.todayHigh)}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">最低价：</span>
-                <span class="info-value">¥${quote.todayLow.toFixed(2)}</span>
+                <span class="info-value">${formatPrice(quote.todayLow)}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">涨跌额：</span>
                 <span class="info-value" style="color: ${isPositive ? '#e74c3c' : '#27ae60'};">
-                    ${isPositive ? '+' : ''}¥${change.toFixed(2)}
+                    ${isPositive ? '+' : ''}${formatPrice(change)}
                 </span>
             </div>
             <div class="info-row">
@@ -181,7 +203,7 @@ function buildCompanyInfo(quote, stockCode) {
             <div class="section-subtitle">📈 市场数据</div>
             <div class="info-row">
                 <span class="info-label">昨收价：</span>
-                <span class="info-value">¥${quote.yesterdayClose.toFixed(2)}</span>
+                <span class="info-value">${formatPrice(quote.yesterdayClose)}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">成交量：</span>
@@ -189,7 +211,7 @@ function buildCompanyInfo(quote, stockCode) {
             </div>
             <div class="info-row">
                 <span class="info-label">成交额：</span>
-                <span class="info-value">${quote.amount ? (quote.amount / 100000000).toFixed(2) + ' 亿元' : '数据加载中'}</span>
+                <span class="info-value">${amount ? (amount / 100000000).toFixed(2) + ' 亿元' : '数据加载中'}</span>
             </div>
             <div class="info-row">
                 <span class="info-label">流通市值：</span>
@@ -235,17 +257,27 @@ async function fetchStockDetail(stockCode, stockName) {
         document.getElementById('tooltipCompanyInfo').innerHTML = companyInfo;
 
         // 更新实时行情
-        const changePercent = parseFloat(quote.changePercent);
+        const safeNumber = (value) => {
+            const num = parseFloat(value);
+            return isNaN(num) ? 0 : num;
+        };
+
+        const formatPrice = (value) => {
+            const num = safeNumber(value);
+            return num !== 0 ? `¥${num.toFixed(2)}` : '--';
+        };
+
+        const changePercent = safeNumber(quote.changePercent);
         const isPositive = changePercent >= 0;
 
-        document.getElementById('tooltipCurrentPrice').textContent = `¥${quote.currentPrice.toFixed(2)}`;
+        document.getElementById('tooltipCurrentPrice').textContent = formatPrice(quote.currentPrice);
         document.getElementById('tooltipCurrentPrice').className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
 
         document.getElementById('tooltipChangePercent').textContent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
         document.getElementById('tooltipChangePercent').className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
 
-        document.getElementById('tooltipHigh').textContent = `¥${quote.todayHigh.toFixed(2)}`;
-        document.getElementById('tooltipLow').textContent = `¥${quote.todayLow.toFixed(2)}`;
+        document.getElementById('tooltipHigh').textContent = formatPrice(quote.todayHigh);
+        document.getElementById('tooltipLow').textContent = formatPrice(quote.todayLow);
 
         // 隐藏加载状态，显示数据（先显示行情数据）
         tooltipLoading.style.display = 'none';
@@ -273,11 +305,10 @@ async function renderTooltipChart(stockCode, period) {
             console.log(`📊 [股票详情] 使用默认K线周期: ${period}`);
         }
 
-        // 销毁旧图表
-        if (currentTooltipChart) {
-            stockChartManager.destroyChart(canvasId);
-            currentTooltipChart = null;
-        }
+        // 强制销毁旧图表（不管currentTooltipChart是否存在）
+        // 这确保Canvas上的任何图表都被清理
+        stockChartManager.destroyChart(canvasId);
+        currentTooltipChart = null;
 
         // 使用通用K线图组件渲染图表
         const options = period === 'intraday' ? {

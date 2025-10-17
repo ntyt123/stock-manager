@@ -1,6 +1,6 @@
 const axios = require('axios');
 const iconv = require('iconv-lite');
-const { userModel, positionModel, analysisReportModel, callAuctionAnalysisModel } = require('../database');
+const { userModel, positionModel, analysisReportModel, callAuctionAnalysisModel, aiPromptTemplateModel } = require('../database');
 
 // 股票代码到行业的映射表
 const STOCK_INDUSTRY_MAP = {
@@ -127,15 +127,35 @@ function buildPortfolioSummary(positions) {
 
 /**
  * 调用DeepSeek API的通用函数
+ * @param {string} userMessage - 用户消息内容
+ * @param {string} systemMessage - 默认系统提示词
+ * @param {string} sceneType - 场景类型，用于从数据库获取自定义提示词
  */
-async function callDeepSeekAPI(userMessage, systemMessage = '你是一位专业的股票投资顾问助手。') {
+async function callDeepSeekAPI(userMessage, systemMessage = '你是一位专业的股票投资顾问助手。', sceneType = null) {
     try {
+        // 如果提供了场景类型，尝试从数据库获取自定义提示词
+        let finalSystemMessage = systemMessage;
+
+        if (sceneType) {
+            try {
+                const template = await aiPromptTemplateModel.findBySceneType(sceneType);
+                if (template && template.is_active) {
+                    finalSystemMessage = template.system_prompt;
+                    console.log(`✅ [${sceneType}] 使用自定义提示词模板`);
+                } else {
+                    console.log(`ℹ️ [${sceneType}] 使用默认提示词（未找到或未启用自定义模板）`);
+                }
+            } catch (err) {
+                console.warn(`⚠️ [${sceneType}] 获取自定义提示词失败，使用默认提示词:`, err.message);
+            }
+        }
+
         const response = await axios.post('https://api.deepseek.com/chat/completions', {
             model: 'deepseek-chat',
             messages: [
                 {
                     role: 'system',
-                    content: systemMessage
+                    content: finalSystemMessage
                 },
                 {
                     role: 'user',
@@ -308,7 +328,8 @@ ${portfolioSummary.detailedPositions}
 
 请简明扼要，突出重点。`;
 
-                    const analysis = await callDeepSeekAPI(analysisPrompt);
+                    const defaultSystemPrompt = '你是一位专业的股票投资顾问助手，擅长分析持仓数据并提供投资建议。';
+                    const analysis = await callDeepSeekAPI(analysisPrompt, defaultSystemPrompt, 'portfolio_analysis');
 
                     // 保存分析结果到数据库
                     const savedReport = await analysisReportModel.save(user.id, analysis, portfolioSummary, 'scheduled');
@@ -450,7 +471,8 @@ ${indexQuotes.map(idx =>
 请提供简明扼要、可执行的专业分析建议。注意：以上建议仅供参考，不构成具体投资建议。`;
 
         // 4. 调用DeepSeek AI进行分析
-        const aiAnalysis = await callDeepSeekAPI(analysisPrompt, '你是一位专业的A股市场分析师，擅长解读集合竞价和盘前信息。');
+        const defaultSystemPrompt = '你是一位专业的A股市场分析师，擅长解读集合竞价和盘前信息。';
+        const aiAnalysis = await callDeepSeekAPI(analysisPrompt, defaultSystemPrompt, 'call_auction_analysis');
 
         console.log('✅ 集合竞价AI分析完成');
 

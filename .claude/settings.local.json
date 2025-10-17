@@ -1,12 +1,13 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git commit:*)",
       "Bash(node:*)",
       "Bash(npm start)",
-      "Bash(npm run dev)",
-      "Bash(npm install:*)",
-      "Bash(git mv:*)"
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": [],
     "ask": []

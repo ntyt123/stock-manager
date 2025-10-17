@@ -1,5 +1,6 @@
 const express = require('express');
 const axios = require('axios');
+const { aiPromptTemplateModel } = require('../database');
 
 module.exports = (authenticateToken) => {
     const router = express.Router();
@@ -18,7 +19,20 @@ module.exports = (authenticateToken) => {
         try {
             console.log('📤 发送AI请求到DeepSeek:', message.substring(0, 50) + '...');
 
-            const systemPrompt = '你是一位专业的股票投资顾问助手。你需要为用户提供专业的投资建议、市场分析和风险提示。请用简洁、专业的语言回答用户的问题。注意：你的建议仅供参考，不构成具体的投资建议。';
+            // 从数据库获取AI聊天的自定义提示词模板
+            let systemPrompt = '你是一位专业的股票投资顾问助手。你需要为用户提供专业的投资建议、市场分析和风险提示。请用简洁、专业的语言回答用户的问题。注意：你的建议仅供参考，不构成具体的投资建议。';
+
+            try {
+                const template = await aiPromptTemplateModel.findBySceneType('ai_chat');
+                if (template && template.is_active) {
+                    systemPrompt = template.system_prompt;
+                    console.log('✅ 使用自定义提示词模板: ai_chat');
+                } else {
+                    console.log('ℹ️ 使用默认提示词（未找到或未启用自定义模板）');
+                }
+            } catch (err) {
+                console.warn('⚠️ 获取自定义提示词失败，使用默认提示词:', err.message);
+            }
 
             // 打印提示词
             console.log('📝 ==================== AI投资助手提示词 ====================');

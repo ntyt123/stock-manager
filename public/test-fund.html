@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>资金管理测试</title>
+</head>
+<body>
+    <h1>资金管理模块测试</h1>
+    <button onclick="testFundManagement()">测试加载资金管理</button>
+    <div id="result"></div>
+
+    <script src="/js/modules/ui-utils.js"></script>
+    <script src="/js/modules/fund-management.js"></script>
+
+    <script>
+        console.log('FundManagementManager:', typeof FundManagementManager);
+        console.log('loadFundManagement:', typeof FundManagementManager?.loadFundManagement);
+
+        async function testFundManagement() {
+            const result = document.getElementById('result');
+            result.innerHTML = '正在测试...';
+
+            // 检查FundManagementManager是否存在
+            if (typeof FundManagementManager === 'undefined') {
+                result.innerHTML = '❌ FundManagementManager 未定义';
+                return;
+            }
+
+            if (typeof FundManagementManager.loadFundManagement !== 'function') {
+                result.innerHTML = '❌ loadFundManagement 不是函数';
+                return;
+            }
+
+            // 测试API调用
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    result.innerHTML = '❌ 未登录，请先登录';
+                    return;
+                }
+
+                const response = await fetch('/api/fund-management/account', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const data = await response.json();
+                result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                result.innerHTML = '❌ 错误: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

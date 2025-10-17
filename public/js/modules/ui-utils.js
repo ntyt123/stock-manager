@@ -46,6 +46,7 @@ function updateNavbar(user) {
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const adminBtn = document.getElementById('adminBtn');
+    const settingsBtn = document.getElementById('settingsBtn');
     const userName = document.getElementById('userName');
     const userBadge = document.getElementById('userBadge');
 
@@ -76,6 +77,7 @@ function updateNavbar(user) {
 
         loginBtn.style.display = 'none';
         logoutBtn.style.display = 'inline-block';
+        settingsBtn.style.display = 'inline-block';
 
         // 如果是管理员，显示管理按钮
         if (user.role === 'admin' || user.role === 'super_admin') {
@@ -91,6 +93,7 @@ function updateNavbar(user) {
         loginBtn.style.display = 'inline-block';
         logoutBtn.style.display = 'none';
         adminBtn.style.display = 'none';
+        settingsBtn.style.display = 'none';
 
         // 清除本地存储
         localStorage.removeItem('token');
@@ -241,6 +244,36 @@ function loadSubTabData(subtabId) {
                 ProfitAnalysisManager.loadProfitAnalysis();
             }
             break;
+        case 'overview-fund-management':
+            // 加载资金管理数据
+            if (typeof FundManagementManager !== 'undefined' && typeof FundManagementManager.loadFundManagement === 'function') {
+                FundManagementManager.loadFundManagement();
+            }
+            break;
+        case 'overview-trade-log':
+            // 加载交易日志数据
+            if (typeof TradingLogManager !== 'undefined' && typeof TradingLogManager.loadTradingLogs === 'function') {
+                TradingLogManager.loadTradingLogs('all');
+            }
+            break;
+        case 'market-stock-pool':
+            // 加载股票池管理数据
+            if (typeof StockPoolManager !== 'undefined' && typeof StockPoolManager.init === 'function') {
+                StockPoolManager.init();
+            }
+            break;
+        case 'market-sentiment':
+            // 加载市场情绪分析数据
+            if (typeof loadMarketSentiment === 'function') {
+                loadMarketSentiment();
+            }
+            break;
+        case 'analysis-risk-control':
+            // 加载风险控制数据
+            if (typeof RiskControlManager !== 'undefined' && typeof RiskControlManager.loadRiskControl === 'function') {
+                RiskControlManager.loadRiskControl();
+            }
+            break;
         // 可以在这里添加其他子页签的数据加载逻辑
         default:
             break;
@@ -345,6 +378,43 @@ function initModalCloseOnBackgroundClick() {
     }
 }
 
+// ==================== 工具函数对象 ====================
+// 提供给其他模块使用的工具函数集合
+const UIUtils = {
+    // 显示Toast提示（简化版通知）
+    showToast: function(message, type = 'info') {
+        showNotification(message, type);
+    },
+
+    // 格式化数字
+    formatNumber: function(num, decimals = 2) {
+        if (num === null || num === undefined || isNaN(num)) {
+            return '0.00';
+        }
+        const number = parseFloat(num);
+        return number.toLocaleString('zh-CN', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    },
+
+    // 显示表单状态消息
+    showFormStatus: function(elementId, message, type = 'info') {
+        const statusEl = document.getElementById(elementId);
+        if (!statusEl) return;
+
+        const typeClasses = {
+            'success': 'form-status-success',
+            'error': 'form-status-error',
+            'info': 'form-status-info'
+        };
+
+        statusEl.className = 'form-status ' + (typeClasses[type] || 'form-status-info');
+        statusEl.textContent = message;
+        statusEl.style.display = 'block';
+    }
+};
+
 // 添加通知样式
 (function() {
     const style = document.createElement('style');
@@ -405,6 +475,31 @@ function initModalCloseOnBackgroundClick() {
             align-items: center;
             margin-right: 15px;
             font-weight: 600;
+        }
+
+        .form-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .form-status-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .form-status-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .form-status-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
         }
     `;
     if (document.head) {

@@ -18,10 +18,15 @@
  * - /css/modules/trade-history.css - 交易历史样式
  * - /css/modules/industry.css - 行业分布样式
  * - /css/modules/trading-plans.css - 交易计划模块样式
+ * - /css/modules/cost-management.css - 持仓成本管理样式
+ * - /css/modules/profit-analysis.css - 盈亏分析样式
+ * - /css/modules/fund-management.css - 资金管理样式
+ * - /css/modules/feature-placeholder.css - 待开发功能占位样式
  *
  * 重构完成时间: 2025-10-11
+ * 最后更新时间: 2025-10-15
  * 原文件已备份至: main.css.original
- * 总模块数: 16个
+ * 总模块数: 20个
  * ========================================
  */
 
@@ -50,6 +55,8 @@
 @import url('./modules/trading-plans.css');
 @import url('./modules/cost-management.css');
 @import url('./modules/profit-analysis.css');
+@import url('./modules/fund-management.css');
+@import url('./modules/market-sentiment.css');
 @import url('./modules/feature-placeholder.css');
 
 /* ==================== 模块化重构说明 ====================

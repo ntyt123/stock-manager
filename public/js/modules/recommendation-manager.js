@@ -401,11 +401,33 @@ async function loadTodayRecommendation() {
 
             console.log('✅ 今日推荐加载成功');
         } else {
+            // 显示暂无推荐的提示
             console.log('ℹ️ 今日暂无推荐');
+            container.innerHTML = `
+                <div class="analysis-hint">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">AI智能股票推荐</p>
+                        <p class="hint-desc">点击"生成推荐"按钮，AI将为您分析市场并推荐优质股票</p>
+                        <p class="hint-schedule">📅 系统每天收盘后自动生成推荐</p>
+                    </div>
+                </div>
+            `;
         }
 
     } catch (error) {
         console.error('❌ 加载今日推荐错误:', error);
+        // 发生错误时也显示提示信息
+        container.innerHTML = `
+            <div class="analysis-hint">
+                <div class="hint-icon">💡</div>
+                <div class="hint-content">
+                    <p class="hint-title">AI智能股票推荐</p>
+                    <p class="hint-desc">点击"生成推荐"按钮，AI将为您分析市场并推荐优质股票</p>
+                    <p class="hint-schedule">📅 系统每天收盘后自动生成推荐</p>
+                </div>
+            </div>
+        `;
     }
 }
 

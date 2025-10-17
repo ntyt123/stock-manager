@@ -12,11 +12,10 @@ async function loadAnalysisData() {
         return;
     }
 
-    // 并行加载最新的持仓报告、集合竞价报告、风险预警和今日推荐
+    // 并行加载最新的持仓报告、集合竞价报告和今日推荐
     await Promise.all([
         loadLatestPortfolioReport(),
         loadLatestCallAuctionReport(),
-        loadRiskWarnings(),
         loadTodayRecommendation()
     ]);
 }
@@ -234,12 +233,6 @@ async function analyzePortfolio() {
 
             console.log('✅ 持仓分析完成');
             showNotification('持仓分析完成', 'success');
-
-            // 自动刷新风险预警模块
-            console.log('🔄 正在刷新风险预警模块...');
-            setTimeout(() => {
-                loadRiskWarnings();
-            }, 500);
 
         } else {
             throw new Error(result.error || '分析失败');
@@ -988,138 +981,6 @@ async function deleteCallAuctionAnalysis(analysisId) {
     } catch (error) {
         console.error('❌ 删除集合竞价分析错误:', error);
         showNotification('删除分析记录失败: ' + error.message, 'error');
-    }
-}
-
-// loadRiskWarnings
-async function loadRiskWarnings() {
-    const container = document.getElementById('riskAssessment');
-
-    if (!container) return;
-
-    const token = localStorage.getItem('token');
-    if (!token) {
-        container.innerHTML = '<div class="loading-text">请登录后查看风险预警</div>';
-        return;
-    }
-
-    try {
-        console.log('📊 正在加载风险预警...');
-
-        // 显示加载状态
-        container.innerHTML = '<div class="loading-text">正在加载风险预警...</div>';
-
-        // 获取最新的持仓分析报告
-        const response = await fetch('/api/analysis/reports?limit=1', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            throw new Error('获取报告失败');
-        }
-
-        const result = await response.json();
-
-        if (!result.success || !result.data.reports || result.data.reports.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无风险预警数据，请先进行持仓分析</div>';
-            console.log('ℹ️ 没有找到持仓分析报告');
-            return;
-        }
-
-        // 获取最新报告的ID
-        const latestReportId = result.data.reports[0].id;
-        console.log(`📄 最新报告ID: ${latestReportId}`);
-
-        // 获取报告详情
-        const detailResponse = await fetch(`/api/analysis/reports/${latestReportId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!detailResponse.ok) {
-            throw new Error('获取报告详情失败');
-        }
-
-        const detailResult = await detailResponse.json();
-
-        if (!detailResult.success || !detailResult.data) {
-            throw new Error('报告数据为空');
-        }
-
-        const analysisContent = detailResult.data.analysis;
-
-        // 提取风险预警内容（寻找 ## 【风险预警】 标题）
-        const riskHeadingPattern = /##\s*【风险预警】/;
-        const match = analysisContent.match(riskHeadingPattern);
-
-        if (!match) {
-            console.log('⚠️ 未找到风险预警标题');
-            container.innerHTML = '<div class="loading-text">暂无风险预警数据<br><small>最新报告中未包含风险预警信息</small></div>';
-            return;
-        }
-
-        // 找到风险预警标题的位置
-        const headingStart = match.index;
-        const headingEnd = headingStart + match[0].length;
-
-        // 从标题后开始提取内容，直到下一个 ## 标题或文本结束
-        const contentAfterHeading = analysisContent.substring(headingEnd);
-        const nextHeadingMatch = contentAfterHeading.match(/\n##\s+/);
-
-        let riskWarningText;
-        if (nextHeadingMatch) {
-            // 提取到下一个标题之前的内容
-            riskWarningText = contentAfterHeading.substring(0, nextHeadingMatch.index).trim();
-        } else {
-            // 提取到文本结束
-            riskWarningText = contentAfterHeading.trim();
-        }
-
-        if (!riskWarningText) {
-            container.innerHTML = '<div class="loading-text">暂无风险预警数据</div>';
-            return;
-        }
-
-        console.log('✅ 成功提取风险预警内容');
-
-        // 使用marked解析Markdown格式的风险预警
-        let riskWarningHtml = marked.parse(riskWarningText);
-
-        // 对风险等级标签进行美化处理
-        riskWarningHtml = riskWarningHtml
-            .replace(/【高风险】/g, '<span class="risk-level-high">⚠️ 高风险</span>')
-            .replace(/【中风险】/g, '<span class="risk-level-medium">⚡ 中风险</span>')
-            .replace(/【注意】/g, '<span class="risk-level-notice">💡 注意</span>');
-
-        // 显示风险预警
-        const html = `
-            <div class="risk-warning-content">
-                <div class="risk-warning-header">
-                    <span class="warning-icon">⚠️</span>
-                    <span class="warning-title">最新风险预警</span>
-                    <span class="warning-time">${new Date(detailResult.data.timestamp).toLocaleString('zh-CN')}</span>
-                </div>
-                <div class="risk-warning-list">
-                    ${riskWarningHtml}
-                </div>
-            </div>
-        `;
-
-        container.innerHTML = html;
-
-        console.log('✅ 风险预警加载完成');
-
-    } catch (error) {
-        console.error('❌ 加载风险预警错误:', error);
-        container.innerHTML = `
-            <div class="loading-text">
-                加载失败: ${error.message}<br>
-                <small>请稍后重试或重新进行持仓分析</small>
-            </div>
-        `;
     }
 }
 

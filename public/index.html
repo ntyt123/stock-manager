@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>个人股票信息系统</title>
     <link rel="stylesheet" href="/css/main.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+    <link rel="stylesheet" href="/css/modules/trading-log.css">
+    <link rel="stylesheet" href="/css/modules/stock-pool.css">
+    <link rel="stylesheet" href="/css/modules/market-sentiment.css">
+    <link rel="stylesheet" href="/css/modules/ai-prompt-manager.css">
+    <link rel="stylesheet" href="/css/modules/risk-control.css">
+    <script src="/js/lib/chart.umd.min.js"></script>
+    <script src="/js/lib/marked.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -20,7 +25,7 @@
                     <span id="userName">游客</span>
                     <span class="user-badge badge-user" id="userBadge">游客</span>
                 </span>
-                <button class="nav-btn" onclick="SettingsManager.openSettings()">⚙️ 设置</button>
+                <button class="nav-btn" id="settingsBtn" onclick="SettingsManager.openSettings()" style="display: none;">⚙️ 设置</button>
                 <button class="nav-btn" id="loginBtn" onclick="goToLogin()">登录</button>
                 <button class="nav-btn" id="logoutBtn" onclick="logout()" style="display: none;">退出</button>
                 <button class="nav-btn" id="adminBtn" onclick="goToAdmin()" style="display: none;">管理</button>
@@ -120,11 +125,11 @@
                     </button>
                     <button class="sub-tab-btn" data-subtab="overview-fund-management">
                         <span class="sub-tab-icon">💵</span>
-                        <span class="sub-tab-text">资金管理（待开发）</span>
+                        <span class="sub-tab-text">资金管理</span>
                     </button>
                     <button class="sub-tab-btn" data-subtab="overview-trade-log">
                         <span class="sub-tab-icon">📝</span>
-                        <span class="sub-tab-text">交易日志（待开发）</span>
+                        <span class="sub-tab-text">交易日志</span>
                     </button>
                 </div>
 
@@ -316,54 +321,65 @@
                         </div>
                     </div>
 
-                    <!-- 资金管理（待开发） -->
+                    <!-- 资金管理 -->
                     <div class="sub-tab-content" id="overview-fund-management">
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon">💵</div>
-                                <div class="card-title">资金管理 <span class="dev-badge">待开发</span></div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 账户总资产追踪（现金 + 持仓市值）</li>
-                                        <li>✅ 资金流水记录（入金、出金、分红）</li>
-                                        <li>✅ 可用资金实时计算</li>
-                                        <li>✅ 资产配置比例分析</li>
-                                        <li>✅ 仓位控制提醒</li>
-                                        <li>✅ 资产变化趋势图</li>
-                                    </ul>
+                                <div class="card-title">资金管理</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="FundManagementManager.loadFundManagement()">
+                                        <span>🔄 刷新</span>
+                                    </button>
                                 </div>
+                            </div>
+                            <div id="fundManagementContent">
+                                <div class="loading-text">正在加载资金管理数据...</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 交易日志（待开发） -->
+                    <!-- 交易日志 -->
                     <div class="sub-tab-content" id="overview-trade-log">
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon">📝</div>
-                                <div class="card-title">交易日志 <span class="dev-badge">待开发</span></div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 每日交易复盘记录</li>
-                                        <li>✅ 交易决策理由记录</li>
-                                        <li>✅ 交易心得笔记</li>
-                                        <li>✅ 错误交易分析</li>
-                                        <li>✅ 成功案例总结</li>
-                                        <li>✅ 日志搜索和标签</li>
-                                    </ul>
+                                <div class="card-title">交易日志</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="TradingLogManager.openNewLogModal()">
+                                        <span>➕ 新建日志</span>
+                                    </button>
+                                    <button class="refresh-btn" onclick="TradingLogManager.loadTradingLogs('all')">
+                                        <span>🔄 刷新</span>
+                                    </button>
                                 </div>
+                            </div>
+
+                            <!-- 统计信息 -->
+                            <div id="tradingLogStats" style="margin-bottom: 20px;">
+                                <div class="loading-text">正在加载统计信息...</div>
+                            </div>
+
+                            <!-- 工具栏 -->
+                            <div class="log-toolbar">
+                                <div class="log-search-box">
+                                    <input type="text" id="logSearchInput" class="log-search-input" placeholder="搜索日志标题、内容或标签...">
+                                    <button class="log-search-btn" onclick="TradingLogManager.searchLogs()">🔍 搜索</button>
+                                </div>
+                                <div class="log-filters">
+                                    <button class="log-filter-btn active" onclick="TradingLogManager.filterLogs('all')">全部</button>
+                                    <button class="log-filter-btn" onclick="TradingLogManager.filterLogs('daily_recap')">📊 每日复盘</button>
+                                    <button class="log-filter-btn" onclick="TradingLogManager.filterLogs('decision_note')">💡 决策记录</button>
+                                    <button class="log-filter-btn" onclick="TradingLogManager.filterLogs('insight')">✍️ 交易心得</button>
+                                    <button class="log-filter-btn" onclick="TradingLogManager.filterLogs('error_analysis')">❌ 错误分析</button>
+                                    <button class="log-filter-btn" onclick="TradingLogManager.filterLogs('success_case')">✅ 成功案例</button>
+                                    <button class="log-filter-btn" onclick="TradingLogManager.filterLogs('important')">⭐ 重要</button>
+                                </div>
+                            </div>
+
+                            <!-- 日志列表 -->
+                            <div id="tradingLogContent">
+                                <div class="loading-text">正在加载交易日志...</div>
                             </div>
                         </div>
                     </div>
@@ -410,15 +426,11 @@
                     </button>
                     <button class="sub-tab-btn" data-subtab="market-stock-pool">
                         <span class="sub-tab-icon">🎯</span>
-                        <span class="sub-tab-text">股票池管理（待开发）</span>
-                    </button>
-                    <button class="sub-tab-btn" data-subtab="market-alert">
-                        <span class="sub-tab-icon">🔔</span>
-                        <span class="sub-tab-text">预警提醒（待开发）</span>
+                        <span class="sub-tab-text">股票池管理</span>
                     </button>
                     <button class="sub-tab-btn" data-subtab="market-sentiment">
                         <span class="sub-tab-icon">📈</span>
-                        <span class="sub-tab-text">市场情绪（待开发）</span>
+                        <span class="sub-tab-text">市场情绪分析</span>
                     </button>
                 </div>
 
@@ -542,78 +554,103 @@
                         </div>
                     </div>
 
-                    <!-- 股票池管理（待开发） -->
+                    <!-- 股票池管理 -->
                     <div class="sub-tab-content" id="market-stock-pool">
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon">🎯</div>
-                                <div class="card-title">股票池管理 <span class="dev-badge">待开发</span></div>
+                                <div class="card-title">股票池管理</div>
                             </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 创建多个自定义股票池（核心池、观察池、黑名单等）</li>
-                                        <li>✅ 标签分类（价值股、成长股、周期股等）</li>
-                                        <li>✅ 批量导入导出</li>
-                                        <li>✅ 股票池筛选条件保存</li>
-                                        <li>✅ 股票池业绩对比</li>
-                                    </ul>
-                                </div>
+
+                            <!-- 股票池视图（左侧列表 + 右侧详情） -->
+                            <div id="stockPoolGrid">
+                                <div class="loading-text">正在加载股票池...</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 预警提醒（待开发） -->
-                    <div class="sub-tab-content" id="market-alert">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon">🔔</div>
-                                <div class="card-title">预警提醒 <span class="dev-badge">待开发</span></div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 价格预警（涨跌幅、突破支撑/阻力位）</li>
-                                        <li>✅ 成交量异动预警</li>
-                                        <li>✅ 重要公告提醒（财报、分红、重组等）</li>
-                                        <li>✅ 止盈止损自动提醒</li>
-                                        <li>✅ 自选股异动推送</li>
-                                        <li>✅ 多渠道通知（浏览器、邮件、webhook）</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 市场情绪分析（待开发） -->
+                    <!-- 市场情绪分析 -->
                     <div class="sub-tab-content" id="market-sentiment">
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon">📈</div>
-                                <div class="card-title">市场情绪分析 <span class="dev-badge">待开发</span></div>
+                                <div class="card-title">市场情绪分析</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="loadMarketSentiment()">
+                                        <span>🔄 刷新数据</span>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 市场恐慌指数（VIX等）</li>
-                                        <li>✅ 资金流向分析（北上资金、融资融券）</li>
-                                        <li>✅ 龙虎榜数据</li>
-                                        <li>✅ 大单追踪</li>
-                                        <li>✅ 行业资金流向</li>
-                                        <li>✅ 市场热度指标</li>
-                                    </ul>
+
+                            <!-- 市场情绪概览 -->
+                            <div class="sentiment-overview">
+                                <div class="sentiment-card">
+                                    <div class="sentiment-icon">🎯</div>
+                                    <div class="sentiment-info">
+                                        <div class="sentiment-label">市场情绪指数</div>
+                                        <div class="sentiment-value" id="sentimentIndex">--</div>
+                                        <div class="sentiment-status" id="sentimentStatus">加载中...</div>
+                                    </div>
+                                </div>
+                                <div class="sentiment-card">
+                                    <div class="sentiment-icon">📊</div>
+                                    <div class="sentiment-info">
+                                        <div class="sentiment-label">涨跌比例</div>
+                                        <div class="sentiment-value" id="gainLossRatio">--</div>
+                                        <div class="sentiment-status" id="gainLossStatus">加载中...</div>
+                                    </div>
+                                </div>
+                                <div class="sentiment-card">
+                                    <div class="sentiment-icon">💰</div>
+                                    <div class="sentiment-info">
+                                        <div class="sentiment-label">北上资金</div>
+                                        <div class="sentiment-value" id="northboundFunds">--</div>
+                                        <div class="sentiment-status" id="northboundStatus">加载中...</div>
+                                    </div>
+                                </div>
+                                <div class="sentiment-card">
+                                    <div class="sentiment-icon">🔥</div>
+                                    <div class="sentiment-info">
+                                        <div class="sentiment-label">市场热度</div>
+                                        <div class="sentiment-value" id="marketHeat">--</div>
+                                        <div class="sentiment-status" id="marketHeatStatus">加载中...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 详细数据标签页 -->
+                            <div class="sentiment-tabs">
+                                <button class="sentiment-tab-btn active" data-tab="funds-flow">资金流向</button>
+                                <button class="sentiment-tab-btn" data-tab="industry-flow">行业资金</button>
+                                <button class="sentiment-tab-btn" data-tab="dragon-tiger">龙虎榜</button>
+                                <button class="sentiment-tab-btn" data-tab="big-orders">大单追踪</button>
+                            </div>
+
+                            <!-- 资金流向 -->
+                            <div class="sentiment-tab-content active" id="funds-flow-content">
+                                <div id="fundsFlowData">
+                                    <div class="loading-text">正在加载资金流向数据...</div>
+                                </div>
+                            </div>
+
+                            <!-- 行业资金 -->
+                            <div class="sentiment-tab-content" id="industry-flow-content">
+                                <div id="industryFlowData">
+                                    <div class="loading-text">正在加载行业资金流向...</div>
+                                </div>
+                            </div>
+
+                            <!-- 龙虎榜 -->
+                            <div class="sentiment-tab-content" id="dragon-tiger-content">
+                                <div id="dragonTigerData">
+                                    <div class="loading-text">正在加载龙虎榜数据...</div>
+                                </div>
+                            </div>
+
+                            <!-- 大单追踪 -->
+                            <div class="sentiment-tab-content" id="big-orders-content">
+                                <div id="bigOrdersData">
+                                    <div class="loading-text">正在加载大单追踪数据...</div>
                                 </div>
                             </div>
                         </div>
@@ -649,11 +686,11 @@
                     </button>
                     <button class="sub-tab-btn" data-subtab="analysis-portfolio-optimize">
                         <span class="sub-tab-icon">🎯</span>
-                        <span class="sub-tab-text">组合优化（待开发）</span>
+                        <span class="sub-tab-text">组合优化</span>
                     </button>
                     <button class="sub-tab-btn" data-subtab="analysis-risk-control">
                         <span class="sub-tab-icon">🛡️</span>
-                        <span class="sub-tab-text">风险控制（待开发）</span>
+                        <span class="sub-tab-text">风险控制</span>
                     </button>
                     <button class="sub-tab-btn" data-subtab="analysis-fundamentals">
                         <span class="sub-tab-icon">📊</span>
@@ -801,6 +838,395 @@
                             </div>
                             <div class="risk-assessment" id="riskAssessment">
                                 <div class="loading-text">暂无风险预警数据，请先进行持仓分析</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 组合优化 -->
+                    <div class="sub-tab-content" id="analysis-portfolio-optimize">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🎯</div>
+                                <div class="card-title">组合优化</div>
+                                <div class="header-actions">
+                                    <button class="action-btn" onclick="optimizePortfolio()" id="portfolioOptimizeBtn">
+                                        <span>🎯 立即优化</span>
+                                    </button>
+                                    <button class="action-btn secondary-btn" onclick="viewOptimizationHistory()">
+                                        <span>📜 历史记录</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="portfolioOptimizationContent">
+                                <div class="analysis-hint">
+                                    <div class="hint-icon">💡</div>
+                                    <div class="hint-content">
+                                        <p class="hint-title">AI组合优化分析</p>
+                                        <p class="hint-desc">点击"立即优化"按钮，AI将对您的投资组合进行全面深度分析优化</p>
+                                        <p class="hint-features">
+                                            ✅ 资产配置分析<br>
+                                            ✅ 行业配置优化<br>
+                                            ✅ 个股权重调整<br>
+                                            ✅ 风险收益平衡<br>
+                                            ✅ 组合再平衡方案<br>
+                                            ✅ 长期配置建议
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 风险控制 -->
+                    <div class="sub-tab-content" id="analysis-risk-control">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🛡️</div>
+                                <div class="card-title">风险控制</div>
+                                <div class="header-actions">
+                                    <button class="refresh-btn" onclick="RiskControlManager.checkRisk()">
+                                        <span>🔄 刷新检查</span>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="riskControlContent">
+                                <div class="loading-text">正在加载风险控制功能...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基本面数据 -->
+                    <div class="sub-tab-content" id="analysis-fundamentals">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">基本面数据</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 财务数据分析</li>
+                                        <li>✅ 估值指标对比</li>
+                                        <li>✅ 盈利能力分析</li>
+                                        <li>✅ 成长性评估</li>
+                                        <li>✅ 行业对标分析</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 工具页签 -->
+        <div id="tools-tab" class="tab-content">
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="tools-calculator">
+                        <span class="sub-tab-icon">🧮</span>
+                        <span class="sub-tab-text">交易计算器</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="tools-position-calculator">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">仓位计算器</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="tools-profit-calculator">
+                        <span class="sub-tab-icon">💰</span>
+                        <span class="sub-tab-text">盈亏计算器</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="tools-api-test">
+                        <span class="sub-tab-icon">🔧</span>
+                        <span class="sub-tab-text">API测试工具</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="tools-data-export">
+                        <span class="sub-tab-icon">📤</span>
+                        <span class="sub-tab-text">数据导出</span>
+                    </button>
+                </div>
+
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 交易计算器 -->
+                    <div class="sub-tab-content active" id="tools-calculator">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🧮</div>
+                                <div class="card-title">交易计算器</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 买入成本计算（含手续费）</li>
+                                        <li>✅ 卖出收益计算（含税费）</li>
+                                        <li>✅ 加仓成本计算</li>
+                                        <li>✅ 减仓收益计算</li>
+                                        <li>✅ T+0盈亏计算</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 仓位计算器 -->
+                    <div class="sub-tab-content" id="tools-position-calculator">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">仓位计算器</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 根据风险承受能力计算建议仓位</li>
+                                        <li>✅ 分批买入计划制定</li>
+                                        <li>✅ 金字塔加仓计算</li>
+                                        <li>✅ 止损位置推荐</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 盈亏计算器 -->
+                    <div class="sub-tab-content" id="tools-profit-calculator">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">💰</div>
+                                <div class="card-title">盈亏计算器</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 预期收益率计算</li>
+                                        <li>✅ 止盈止损价格计算</li>
+                                        <li>✅ 持仓周期收益分析</li>
+                                        <li>✅ 复利收益计算</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- API测试工具 -->
+                    <div class="sub-tab-content" id="tools-api-test">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🔧</div>
+                                <div class="card-title">API测试工具</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 测试股票数据接口连接状态</li>
+                                        <li>✅ 查看API响应时间</li>
+                                        <li>✅ 测试单只股票行情获取</li>
+                                        <li>✅ 批量测试多只股票</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 数据导出 -->
+                    <div class="sub-tab-content" id="tools-data-export">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📤</div>
+                                <div class="card-title">数据导出</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 导出持仓数据到Excel</li>
+                                        <li>✅ 导出交易记录</li>
+                                        <li>✅ 导出盈亏报表</li>
+                                        <li>✅ 导出分析报告</li>
+                                        <li>✅ 数据备份与恢复</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 报表页签 -->
+        <div id="reports-tab" class="tab-content">
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="reports-portfolio">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">持仓报表</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="reports-trade">
+                        <span class="sub-tab-icon">📝</span>
+                        <span class="sub-tab-text">交易报表</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="reports-profit">
+                        <span class="sub-tab-icon">💰</span>
+                        <span class="sub-tab-text">盈亏报表</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="reports-monthly">
+                        <span class="sub-tab-icon">📅</span>
+                        <span class="sub-tab-text">月度报表</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="reports-annual">
+                        <span class="sub-tab-icon">📆</span>
+                        <span class="sub-tab-text">年度报表</span>
+                    </button>
+                </div>
+
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 持仓报表 -->
+                    <div class="sub-tab-content active" id="reports-portfolio">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">持仓报表</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 持仓明细汇总</li>
+                                        <li>✅ 行业分布统计</li>
+                                        <li>✅ 仓位占比分析</li>
+                                        <li>✅ 持仓成本分析</li>
+                                        <li>✅ 浮动盈亏统计</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 交易报表 -->
+                    <div class="sub-tab-content" id="reports-trade">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📝</div>
+                                <div class="card-title">交易报表</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 交易次数统计</li>
+                                        <li>✅ 买卖记录汇总</li>
+                                        <li>✅ 手续费统计</li>
+                                        <li>✅ 交易频率分析</li>
+                                        <li>✅ 操作成功率</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 盈亏报表 -->
+                    <div class="sub-tab-content" id="reports-profit">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">💰</div>
+                                <div class="card-title">盈亏报表</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 已实现盈亏统计</li>
+                                        <li>✅ 未实现盈亏统计</li>
+                                        <li>✅ 总盈亏汇总</li>
+                                        <li>✅ 收益率曲线</li>
+                                        <li>✅ 盈亏分布分析</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 月度报表 -->
+                    <div class="sub-tab-content" id="reports-monthly">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📅</div>
+                                <div class="card-title">月度报表</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 月度收益统计</li>
+                                        <li>✅ 月度交易次数</li>
+                                        <li>✅ 月度盈亏对比</li>
+                                        <li>✅ 最佳/最差月份</li>
+                                        <li>✅ 月度操作回顾</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 年度报表 -->
+                    <div class="sub-tab-content" id="reports-annual">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📆</div>
+                                <div class="card-title">年度报表</div>
+                            </div>
+                            <div class="feature-placeholder">
+                                <div class="placeholder-icon">🚧</div>
+                                <div class="placeholder-title">功能开发中</div>
+                                <div class="placeholder-desc">
+                                    <p>该功能正在努力开发中，敬请期待！</p>
+                                    <p class="feature-intro"><strong>功能简介：</strong></p>
+                                    <ul class="feature-list">
+                                        <li>✅ 年度收益总结</li>
+                                        <li>✅ 年度交易统计</li>
+                                        <li>✅ 年度盈亏分析</li>
+                                        <li>✅ 最佳/最差操作</li>
+                                        <li>✅ 年度投资回顾</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1371,6 +1797,10 @@
                             <span class="settings-nav-icon">⚠️</span>
                             <span class="settings-nav-text">风险管理</span>
                         </div>
+                        <div class="settings-nav-item" data-section="ai-prompts">
+                            <span class="settings-nav-icon">🤖</span>
+                            <span class="settings-nav-text">AI提示词管理</span>
+                        </div>
                         <div class="settings-nav-item" data-section="system">
                             <span class="settings-nav-icon">ℹ️</span>
                             <span class="settings-nav-text">系统信息</span>
@@ -1606,18 +2036,6 @@
                                         </label>
                                     </div>
                                 </div>
-                                <div class="setting-item">
-                                    <div class="setting-label">
-                                        <span class="setting-title">风险提醒</span>
-                                        <span class="setting-desc">出现风险信号时提醒</span>
-                                    </div>
-                                    <div class="setting-control">
-                                        <label class="setting-switch">
-                                            <input type="checkbox" id="setting-risk-alert">
-                                            <span class="setting-switch-slider"></span>
-                                        </label>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -1734,6 +2152,20 @@
                                         <input type="number" class="setting-input" id="setting-single-stock-limit" placeholder="20" min="0" max="100" step="5">
                                         <span class="setting-unit">%</span>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI提示词管理 -->
+                        <div class="settings-section" id="settings-ai-prompts">
+                            <div class="settings-section-header">
+                                <h3>🤖 AI提示词管理</h3>
+                                <p class="settings-section-desc">自定义AI分析场景的提示词模板</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <!-- 提示词模板列表 -->
+                                <div class="ai-prompts-list" id="aiPromptsList">
+                                    <div class="loading-text">正在加载提示词模板...</div>
                                 </div>
                             </div>
                         </div>
@@ -1956,6 +2388,254 @@
             </div>
         </div>
 
+        <!-- 交易日志模态框 -->
+        <div id="tradingLogModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 900px;">
+                <div class="modal-header">
+                    <h3 id="tradingLogModalTitle">📝 新建交易日志</h3>
+                    <button class="close-btn" onclick="TradingLogManager.closeLogModal()">×</button>
+                </div>
+
+                <div class="form-container">
+                    <form id="tradingLogForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="logDate">日期 *</label>
+                                <input type="date" id="logDate" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="logType">日志类型 *</label>
+                                <select id="logType" class="form-input" required>
+                                    <option value="">请选择</option>
+                                    <option value="daily_recap">📊 每日复盘</option>
+                                    <option value="decision_note">💡 决策记录</option>
+                                    <option value="insight">✍️ 交易心得</option>
+                                    <option value="error_analysis">❌ 错误分析</option>
+                                    <option value="success_case">✅ 成功案例</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="logTitle">标题 *</label>
+                            <input type="text" id="logTitle" class="form-input" placeholder="例如: 今日成功抓住科技股反弹" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="logContent">内容 *</label>
+                            <textarea id="logContent" class="form-textarea" placeholder="记录您的交易心得、分析、经验教训等..." rows="8" required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="logTags">标签</label>
+                                <input type="text" id="logTags" class="form-input" placeholder="用逗号分隔，例如: 科技股,趋势跟踪,短线">
+                            </div>
+                            <div class="form-group">
+                                <label for="logStockCodes">关联股票</label>
+                                <input type="text" id="logStockCodes" class="form-input" placeholder="用逗号分隔，例如: 600519,000001">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="logSentiment">心情状态 *</label>
+                                <select id="logSentiment" class="form-input" required>
+                                    <option value="neutral">😐 一般</option>
+                                    <option value="good">😊 良好</option>
+                                    <option value="bad">😞 糟糕</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="logProfitLoss">当日盈亏（元）</label>
+                                <input type="number" id="logProfitLoss" class="form-input" placeholder="例如: 1500.50" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="logIsImportant">
+                                <span>⭐ 标记为重要</span>
+                            </label>
+                        </div>
+
+                        <div class="form-status" id="logFormStatus"></div>
+                    </form>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="TradingLogManager.closeLogModal()">取消</button>
+                    <button class="action-btn" onclick="TradingLogManager.submitLog()">
+                        <span id="logSubmitBtnText">💾 保存日志</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 交易日志详情模态框 -->
+        <div id="logDetailModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1000px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>📝 日志详情</h3>
+                    <button class="close-btn" onclick="TradingLogManager.closeDetailModal()">×</button>
+                </div>
+
+                <div id="logDetailContent">
+                    <div class="loading-text">正在加载日志详情...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="TradingLogManager.closeDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 组合优化历史记录模态框 -->
+        <div id="optimizationHistoryModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 90%; width: 1000px;">
+                <div class="modal-header">
+                    <h3>📋 历史组合优化记录</h3>
+                    <button class="close-btn" onclick="closeOptimizationHistoryModal()">×</button>
+                </div>
+
+                <div class="optimization-history-content" id="optimizationHistoryContent">
+                    <div class="loading-text">正在加载历史记录...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeOptimizationHistoryModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 组合优化详情模态框 -->
+        <div id="optimizationDetailModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+                <div class="modal-header">
+                    <h3>🎯 组合优化分析详情</h3>
+                    <button class="close-btn" onclick="closeOptimizationDetailModal()">×</button>
+                </div>
+
+                <div class="optimization-detail-content" id="optimizationDetailContent">
+                    <div class="loading-text">正在加载详情...</div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="closeOptimizationDetailModal()">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 股票池表单模态框 -->
+        <div id="stockPoolFormModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3 id="poolModalTitle">创建股票池</h3>
+                    <button class="close-btn" onclick="StockPoolManager.closePoolFormModal()">×</button>
+                </div>
+
+                <div class="form-container">
+                    <form id="stockPoolForm" onsubmit="event.preventDefault();">
+                        <input type="hidden" id="poolFormId">
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="poolFormName">股票池名称 *</label>
+                            <input type="text" id="poolFormName" class="pool-form-input"
+                                   placeholder="例如：核心池、观察池、价值股池"
+                                   required>
+                        </div>
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="poolFormDescription">描述</label>
+                            <textarea id="poolFormDescription" class="pool-form-textarea"
+                                      placeholder="简单描述该股票池的用途和特点"
+                                      rows="3"></textarea>
+                        </div>
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="poolFormType">类型</label>
+                            <select id="poolFormType" class="pool-form-select">
+                                <option value="custom">自定义</option>
+                                <option value="core">核心池</option>
+                                <option value="watch">观察池</option>
+                                <option value="blacklist">黑名单</option>
+                            </select>
+                            <div class="pool-form-hint">不同类型的股票池会显示不同的颜色</div>
+                        </div>
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="poolFormTags">标签</label>
+                            <input type="text" id="poolFormTags" class="pool-form-input"
+                                   placeholder="用逗号分隔，例如：价值股,成长股,周期股">
+                            <div class="pool-form-hint">为股票池添加标签便于分类管理</div>
+                        </div>
+
+                        <div id="poolFormStatus"></div>
+                    </form>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="StockPoolManager.closePoolFormModal()">取消</button>
+                    <button class="action-btn" id="poolFormSubmitBtn" onclick="StockPoolManager.submitPoolForm()">
+                        <span>💾 创建</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 添加股票到股票池模态框 -->
+        <div id="addStockToPoolModal" class="modal" style="display: none;">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3>➕ 添加股票到股票池</h3>
+                    <button class="close-btn" onclick="StockPoolManager.closeAddStockModal()">×</button>
+                </div>
+
+                <div class="form-container">
+                    <form id="addStockToPoolForm" onsubmit="event.preventDefault();">
+                        <input type="hidden" id="addStockPoolId">
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="addStockCode">股票代码 *</label>
+                            <input type="text" id="addStockCode" class="pool-form-input"
+                                   placeholder="例如：600519"
+                                   maxlength="6"
+                                   required>
+                        </div>
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="addStockName">股票名称 *</label>
+                            <input type="text" id="addStockName" class="pool-form-input"
+                                   placeholder="例如：贵州茅台"
+                                   required>
+                        </div>
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="addStockTags">标签</label>
+                            <input type="text" id="addStockTags" class="pool-form-input"
+                                   placeholder="用逗号分隔，例如：价值股,白马股,消费">
+                        </div>
+
+                        <div class="pool-form-group">
+                            <label class="pool-form-label" for="addStockNotes">备注</label>
+                            <textarea id="addStockNotes" class="pool-form-textarea"
+                                      placeholder="记录添加该股票的理由、关注要点等"
+                                      rows="3"></textarea>
+                        </div>
+
+                        <div id="addStockFormStatus"></div>
+                    </form>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="action-btn secondary" onclick="StockPoolManager.closeAddStockModal()">取消</button>
+                    <button class="action-btn" onclick="StockPoolManager.submitAddStock()">
+                        <span>💾 添加</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">
             <p>© 2024 个人股票信息系统 | 版本 0.1</p>
             <p>系统状态: 正常运行 | 最后更新: <span id="update-time"></span></p>
@@ -1992,6 +2672,18 @@
     <script src="/js/modules/cost-management.js"></script>
     <!-- 盈亏分析模块 -->
     <script src="/js/modules/profit-analysis-manager.js"></script>
+    <!-- 资金管理模块 -->
+    <script src="/js/modules/fund-management.js"></script>
+    <!-- 交易日志管理模块 -->
+    <script src="/js/modules/trading-log-manager.js"></script>
+    <!-- 股票池管理模块 -->
+    <script src="/js/modules/stock-pool-manager.js"></script>
+    <!-- AI提示词管理模块 -->
+    <script src="/js/modules/ai-prompt-manager.js"></script>
+    <!-- 组合优化管理模块 -->
+    <script src="/js/modules/portfolio-optimization-manager.js"></script>
+    <!-- 风险控制管理模块 -->
+    <script src="/js/modules/risk-control-manager.js"></script>
 
     <!-- 核心初始化模块 -->
     <script src="/js/main-core.js"></script>

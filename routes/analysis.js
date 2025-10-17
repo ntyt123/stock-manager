@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const iconv = require('iconv-lite');
-const { positionModel, analysisReportModel, callAuctionAnalysisModel } = require('../database');
+const { positionModel, analysisReportModel, callAuctionAnalysisModel, portfolioOptimizationModel, userModel } = require('../database');
 const {
     buildPortfolioSummary,
     callDeepSeekAPI,
@@ -665,6 +665,328 @@ ${positionSummary}
             res.status(500).json({
                 success: false,
                 error: '获取行业分布失败: ' + error.message
+            });
+        }
+    });
+
+    // ==================== 组合优化API ====================
+
+    // 组合优化分析API
+    router.post('/portfolio-optimization', authenticateToken, async (req, res) => {
+        const userId = req.user.id;
+
+        try {
+            console.log(`📊 开始进行用户 ${userId} 的组合优化分析...`);
+
+            // 1. 获取用户信息和持仓数据
+            const user = await userModel.findById(userId);
+            const positions = await positionModel.findByUserId(userId);
+
+            if (!positions || positions.length === 0) {
+                return res.json({
+                    success: false,
+                    error: '暂无持仓数据，请先导入持仓信息'
+                });
+            }
+
+            const totalCapital = user?.total_capital || 0;
+
+            // 2. 刷新持仓价格
+            console.log(`📊 开始刷新 ${positions.length} 个持仓股票的最新价格...`);
+            try {
+                const stockCodes = positions.map(pos => pos.stockCode);
+                const fullCodes = stockCodes.map(code => {
+                    let market;
+                    if (code === '000001') {
+                        market = 'sh';
+                    } else if (code.startsWith('6')) {
+                        market = 'sh';
+                    } else {
+                        market = 'sz';
+                    }
+                    return `${market}${code}`;
+                }).join(',');
+
+                const sinaUrl = `https://hq.sinajs.cn/list=${fullCodes}`;
+                const response = await axios.get(sinaUrl, {
+                    headers: { 'Referer': 'https://finance.sina.com.cn' },
+                    timeout: 10000,
+                    responseType: 'arraybuffer'
+                });
+
+                const data = iconv.decode(Buffer.from(response.data), 'gbk');
+                const lines = data.split('\n').filter(line => line.trim());
+
+                for (let i = 0; i < stockCodes.length; i++) {
+                    const line = lines[i];
+                    if (!line) continue;
+
+                    const match = line.match(/="(.+)"/);
+                    if (!match || !match[1]) continue;
+
+                    const values = match[1].split(',');
+                    if (values.length < 32) continue;
+
+                    const currentPrice = parseFloat(values[3]);
+                    if (currentPrice > 0) {
+                        const pos = positions[i];
+                        pos.currentPrice = currentPrice;
+                        pos.marketValue = currentPrice * pos.quantity;
+                        pos.profitLoss = (currentPrice - pos.costPrice) * pos.quantity;
+                        pos.profitLossRate = pos.costPrice > 0
+                            ? ((currentPrice - pos.costPrice) / pos.costPrice * 100)
+                            : 0;
+                    }
+                }
+
+                console.log(`✅ 所有持仓股票价格已刷新完成`);
+
+            } catch (priceError) {
+                console.error('⚠️ 刷新股票价格失败:', priceError.message);
+            }
+
+            // 3. 构建持仓摘要
+            const portfolioSummary = buildPortfolioSummary(positions);
+            const positionRatio = totalCapital > 0 ? (portfolioSummary.totalMarketValue / totalCapital * 100).toFixed(2) : 0;
+
+            // 4. 构建行业分布统计
+            const industryMap = {};
+            positions.forEach(pos => {
+                const industry = getStockIndustry(pos.stockCode);
+                const marketValue = parseFloat(pos.marketValue) || 0;
+
+                if (!industryMap[industry]) {
+                    industryMap[industry] = {
+                        industry: industry,
+                        marketValue: 0,
+                        count: 0,
+                        percentage: 0
+                    };
+                }
+                industryMap[industry].marketValue += marketValue;
+                industryMap[industry].count += 1;
+            });
+
+            // 计算百分比
+            Object.values(industryMap).forEach(item => {
+                item.percentage = portfolioSummary.totalMarketValue > 0
+                    ? ((item.marketValue / portfolioSummary.totalMarketValue) * 100).toFixed(2)
+                    : '0.00';
+            });
+
+            const industryDistribution = Object.values(industryMap)
+                .sort((a, b) => b.marketValue - a.marketValue);
+
+            // 5. 构建AI分析提示词
+            const analysisPrompt = `请作为专业的投资组合管理顾问，对以下投资组合进行全面的优化分析：
+
+【资金情况】
+- 总资金：¥${totalCapital.toLocaleString('zh-CN')}
+- 持仓市值：¥${portfolioSummary.totalMarketValue.toFixed(2)}
+- 仓位占比：${positionRatio}%
+- 可用资金：¥${(totalCapital - portfolioSummary.totalMarketValue).toFixed(2)}
+
+【持仓概况】
+- 持仓股票：${portfolioSummary.totalStocks} 只
+- 总盈亏：¥${portfolioSummary.totalProfitLoss.toFixed(2)} (${portfolioSummary.totalProfitLossRate}%)
+- 盈利股票：${portfolioSummary.profitableStocks} 只
+- 亏损股票：${portfolioSummary.lossStocks} 只
+
+【行业分布】
+${industryDistribution.map(item => `- ${item.industry}: ¥${item.marketValue.toFixed(2)} (${item.percentage}%) - ${item.count}只股票`).join('\n')}
+
+【详细持仓】
+${portfolioSummary.detailedPositions}
+
+请从以下几个维度进行深入的组合优化分析：
+
+1. **资产配置分析**
+   - 评估当前仓位水平是否合理（${positionRatio}%）
+   - 根据资金规模给出合理的仓位建议
+   - 分析可用资金的使用策略
+
+2. **行业配置优化**
+   - 评估行业分布的集中度和风险
+   - 识别过度集中的行业（占比>30%需警惕）
+   - 建议增加或减少的行业配置
+
+3. **个股权重调整**
+   - 分析单只股票占比是否合理
+   - 识别权重过高的个股（建议单股不超过20%）
+   - 给出具体的加仓或减仓建议
+
+4. **风险收益平衡**
+   - 评估当前组合的风险收益比
+   - 分析盈亏分布的合理性
+   - 建议止盈止损的具体操作
+
+5. **组合再平衡方案**
+   - 提供具体的调仓建议（哪些股票加仓、哪些减仓）
+   - 给出新资金的配置方向
+   - 建议调整的时机和节奏
+
+6. **长期配置建议**
+   - 核心持仓（长期持有）的选择
+   - 卫星持仓（波段操作）的选择
+   - 防御性资产的配置建议
+
+请提供详细、具体、可执行的优化方案。注意：以上建议仅供参考，不构成具体投资建议。`;
+
+            console.log('📝 ==================== AI组合优化提示词 ====================');
+            console.log(analysisPrompt);
+            console.log('📝 ============================================================');
+
+            // 6. 调用AI进行分析
+            const aiResponse = await callDeepSeekAPI(
+                analysisPrompt,
+                '你是一位专业的投资组合管理顾问，擅长资产配置和组合优化。',
+                'portfolio_optimization'
+            );
+
+            console.log('✅ 组合优化分析完成');
+
+            // 7. 保存分析结果
+            const optimizationId = portfolioOptimizationModel.create(
+                userId,
+                aiResponse,
+                {
+                    ...portfolioSummary,
+                    totalCapital,
+                    positionRatio,
+                    industryDistribution
+                },
+                'manual'
+            );
+
+            console.log(`📄 组合优化分析已保存，ID: ${optimizationId}`);
+
+            // 8. 返回结果
+            res.json({
+                success: true,
+                data: {
+                    optimizationId,
+                    analysis: aiResponse,
+                    portfolioSummary: {
+                        ...portfolioSummary,
+                        totalCapital,
+                        positionRatio,
+                        industryDistribution
+                    },
+                    timestamp: new Date().toISOString(),
+                    prompt: analysisPrompt
+                }
+            });
+
+        } catch (error) {
+            console.error('❌ 组合优化分析错误:', error.message);
+            res.status(500).json({
+                success: false,
+                error: '组合优化分析失败: ' + error.message
+            });
+        }
+    });
+
+    // 获取组合优化历史记录列表
+    router.get('/portfolio-optimization/list', authenticateToken, async (req, res) => {
+        const userId = req.user.id;
+        const limit = parseInt(req.query.limit) || 30;
+
+        try {
+            const records = portfolioOptimizationModel.getByUserId(userId, limit);
+
+            res.json({
+                success: true,
+                data: {
+                    records,
+                    hasMore: records.length >= limit
+                }
+            });
+        } catch (error) {
+            console.error('❌ 获取组合优化历史错误:', error.message);
+            res.status(500).json({
+                success: false,
+                error: '获取历史记录失败'
+            });
+        }
+    });
+
+    // 获取单个组合优化详情
+    router.get('/portfolio-optimization/:optimizationId', authenticateToken, async (req, res) => {
+        const optimizationId = parseInt(req.params.optimizationId);
+        const userId = req.user.id;
+
+        try {
+            const record = portfolioOptimizationModel.getById(optimizationId);
+
+            if (!record) {
+                return res.status(404).json({
+                    success: false,
+                    error: '记录不存在'
+                });
+            }
+
+            if (record.user_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: '无权访问此记录'
+                });
+            }
+
+            res.json({
+                success: true,
+                data: {
+                    optimizationId: record.id,
+                    analysis: record.analysis_content,
+                    portfolioSummary: record.portfolio_summary,
+                    optimizationType: record.optimization_type,
+                    timestamp: record.created_at
+                }
+            });
+        } catch (error) {
+            console.error('❌ 获取组合优化详情错误:', error.message);
+            res.status(500).json({
+                success: false,
+                error: '获取详情失败'
+            });
+        }
+    });
+
+    // 删除组合优化记录
+    router.delete('/portfolio-optimization/:optimizationId', authenticateToken, async (req, res) => {
+        const optimizationId = parseInt(req.params.optimizationId);
+        const userId = req.user.id;
+
+        try {
+            const record = portfolioOptimizationModel.getById(optimizationId);
+
+            if (!record) {
+                return res.status(404).json({
+                    success: false,
+                    error: '记录不存在'
+                });
+            }
+
+            if (record.user_id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    error: '无权删除此记录'
+                });
+            }
+
+            portfolioOptimizationModel.delete(optimizationId);
+
+            console.log(`✅ 用户 ${userId} 删除了组合优化记录 ID: ${optimizationId}`);
+
+            res.json({
+                success: true,
+                message: '记录删除成功'
+            });
+
+        } catch (error) {
+            console.error('❌ 删除组合优化记录错误:', error.message);
+            res.status(500).json({
+                success: false,
+                error: '删除记录失败'
             });
         }
     });
