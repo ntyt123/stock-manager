@@ -7,6 +7,71 @@ const { fetchIntradayFromTencent, fetchIntradayFromSina, fetchIntradayFromNeteas
 module.exports = (authenticateToken) => {
     const router = express.Router();
 
+    // 股票搜索API
+    router.get('/search', async (req, res) => {
+        try {
+            const { keyword } = req.query;
+
+            if (!keyword || keyword.trim().length < 2) {
+                return res.json({
+                    success: true,
+                    data: []
+                });
+            }
+
+            // 使用新浪财经搜索API
+            const searchUrl = `https://suggest3.sinajs.cn/suggest/type=11,12&key=${encodeURIComponent(keyword)}&name=suggestdata`;
+            const response = await axios.get(searchUrl, {
+                headers: { 'Referer': 'https://finance.sina.com.cn' },
+                timeout: 5000,
+                responseType: 'arraybuffer'
+            });
+
+            // 转换编码
+            const data = iconv.decode(Buffer.from(response.data), 'gbk');
+
+            // 解析返回数据
+            // 格式: var suggestdata="code1,name1,code2,name2,..."
+            const match = data.match(/="(.*)"/);
+            if (!match || !match[1]) {
+                return res.json({
+                    success: true,
+                    data: []
+                });
+            }
+
+            const items = match[1].split(';').filter(item => item);
+            const results = items.map(item => {
+                const parts = item.split(',');
+                if (parts.length >= 4) {
+                    // parts[3]是完整代码（如sh600000），parts[4]是名称
+                    const fullCode = parts[3];
+                    const name = parts[4];
+                    // 提取6位股票代码
+                    const code = fullCode.substring(2);
+
+                    return {
+                        code: code,
+                        name: name
+                    };
+                }
+                return null;
+            }).filter(item => item !== null);
+
+            res.json({
+                success: true,
+                data: results
+            });
+
+        } catch (error) {
+            console.error('股票搜索错误:', error.message);
+            res.json({
+                success: true,
+                data: []
+            });
+        }
+    });
+
     // 获取股票实时行情
     router.get('/quote/:stockCode', async (req, res) => {
         try {
@@ -381,5 +446,471 @@ module.exports = (authenticateToken) => {
         }
     });
 
+    // 独立行情分析 - 获取股票、指数、板块、概念的分时数据
+    router.get('/independent-analysis/:stockCode', async (req, res) => {
+        try {
+            const { stockCode } = req.params;
+
+            console.log(`📊 开始独立行情分析: ${stockCode}`);
+
+            // 1. 获取股票信息
+            const stockInfo = await getStockBasicInfo(stockCode);
+
+            // 2. 获取股票所属的板块和概念
+            const { sectors, concepts } = await getStockSectorsAndConcepts(stockCode);
+            console.log(`📂 股票板块: ${sectors.join(', ')}`);
+            console.log(`💡 股票概念: ${concepts.join(', ')}`);
+
+            // 3. 获取板块和概念对应的指数代码
+            const indices = await getSectorConceptIndex(stockCode, sectors, concepts);
+
+            // 4. 获取分时数据（使用1分钟数据）
+            const stockMinute = await getMinuteData(stockCode);
+            const indexMinute = await getMinuteData('000001'); // 上证指数
+
+            // 5. 获取板块和概念的分时数据
+            let sectorMinute = null;
+            let sectorInfo = null;
+            try {
+                sectorMinute = await getMinuteData(indices.sector.code);
+                sectorInfo = indices.sector;
+                console.log(`✅ 板块 ${sectorInfo.name} (${sectorInfo.code}) 数据获取成功`);
+            } catch (error) {
+                console.warn('获取板块数据失败:', error.message);
+            }
+
+            let conceptMinute = null;
+            let conceptInfo = null;
+            try {
+                conceptMinute = await getMinuteData(indices.concept.code);
+                conceptInfo = indices.concept;
+                console.log(`✅ 概念 ${conceptInfo.name} (${conceptInfo.code}) 数据获取成功`);
+            } catch (error) {
+                console.warn('获取概念数据失败:', error.message);
+            }
+
+            // 6. 组织返回数据
+            const result = {
+                stock: {
+                    name: stockInfo.name,
+                    code: stockCode,
+                    sectors: sectors,
+                    concepts: concepts,
+                    minuteData: stockMinute
+                },
+                index: {
+                    name: '上证指数',
+                    code: '000001',
+                    minuteData: indexMinute
+                },
+                sector: sectorInfo ? {
+                    name: sectorInfo.name,
+                    code: sectorInfo.code,
+                    minuteData: sectorMinute
+                } : null,
+                concept: conceptInfo ? {
+                    name: conceptInfo.name,
+                    code: conceptInfo.code,
+                    minuteData: conceptMinute
+                } : null
+            };
+
+            res.json({
+                success: true,
+                data: result
+            });
+
+        } catch (error) {
+            console.error('独立行情分析错误:', error.message);
+            res.status(500).json({
+                success: false,
+                error: '获取数据失败: ' + error.message
+            });
+        }
+    });
+
     return router;
 };
+
+/**
+ * 获取股票基本信息
+ */
+async function getStockBasicInfo(stockCode) {
+    // 判断市场
+    let market;
+    if (stockCode === '000001') {
+        market = 'sh';
+    } else if (stockCode.startsWith('6')) {
+        market = 'sh';
+    } else {
+        market = 'sz';
+    }
+    const fullCode = `${market}${stockCode}`;
+
+    // 使用新浪API获取基本信息
+    const sinaUrl = `https://hq.sinajs.cn/list=${fullCode}`;
+    const response = await axios.get(sinaUrl, {
+        headers: { 'Referer': 'https://finance.sina.com.cn' },
+        timeout: 5000,
+        responseType: 'arraybuffer'
+    });
+
+    const data = iconv.decode(Buffer.from(response.data), 'gbk');
+    const match = data.match(/="(.+)"/);
+
+    if (!match || !match[1]) {
+        throw new Error('股票不存在');
+    }
+
+    const parts = match[1].split(',');
+    return {
+        name: parts[0],
+        code: stockCode
+    };
+}
+
+/**
+ * 获取分时数据
+ */
+async function getMinuteData(stockCode) {
+    // 判断市场
+    let market;
+    if (stockCode === '000001') {
+        market = 'sh';
+    } else if (stockCode.startsWith('6')) {
+        market = 'sh';
+    } else {
+        market = 'sz';
+    }
+    const fullCode = `${market}${stockCode}`;
+
+    // 1. 先获取股票的实时行情以获得昨收价
+    let yesterdayClose = 0;
+    try {
+        const sinaUrl = `https://hq.sinajs.cn/list=${fullCode}`;
+        const quoteResponse = await axios.get(sinaUrl, {
+            headers: { 'Referer': 'https://finance.sina.com.cn' },
+            timeout: 5000
+        });
+
+        const quoteData = quoteResponse.data;
+        const match = quoteData.match(/="([^"]+)"/);
+        if (match && match[1]) {
+            const fields = match[1].split(',');
+            yesterdayClose = parseFloat(fields[2]) || 0; // 昨收价在第3个字段
+        }
+    } catch (error) {
+        console.warn('获取昨收价失败，使用默认值:', error.message);
+    }
+
+    // 2. 获取分时K线数据（使用多数据源备份）
+    // 优先使用5分钟数据（更容易获取，尤其在非交易时间）
+    let result = null;
+    let dataSource = '';
+    const period = '5';  // 使用5分钟数据
+    const limit = 48;    // 5分钟 * 48 = 4小时的数据
+
+    // 尝试方案1: 腾讯财经API
+    try {
+        result = await fetchIntradayFromTencent(fullCode, stockCode, period, limit);
+        dataSource = 'tencent';
+    } catch (tencentError) {
+        console.warn(`腾讯API失败: ${tencentError.message}`);
+
+        // 尝试方案2: 新浪财经API
+        try {
+            result = await fetchIntradayFromSina(fullCode, stockCode, period, '5', limit);
+            dataSource = 'sina';
+        } catch (sinaError) {
+            console.warn(`新浪API失败: ${sinaError.message}`);
+            throw new Error('所有数据源均获取失败');
+        }
+    }
+
+    if (!result || !result.intraday || result.intraday.length === 0) {
+        throw new Error('获取分时数据失败');
+    }
+
+    console.log(`✅ 分时数据来源: ${dataSource}, 数据条数: ${result.intraday.length}`);
+
+    // 3. 转换为前端需要的格式
+    // 使用收盘价作为当前价格，计算移动平均作为均价
+    const minuteData = result.intraday.map((item, index, array) => {
+        const price = item.close || item.price || 0;
+
+        // 计算均价：使用前N个数据点的平均值
+        let avgPrice = price;
+        if (index > 0) {
+            const lookback = Math.min(index + 1, 10); // 使用最近10个数据点
+            let sum = 0;
+            for (let i = 0; i < lookback; i++) {
+                sum += array[index - i].close || array[index - i].price || 0;
+            }
+            avgPrice = sum / lookback;
+        }
+
+        return {
+            time: item.time,
+            price: price,
+            avgPrice: avgPrice,
+            yesterdayClose: yesterdayClose || price // 如果没有昨收价，使用当前价
+        };
+    });
+
+    return minuteData;
+}
+
+/**
+ * 获取股票所属的板块和概念
+ */
+async function getStockSectorsAndConcepts(stockCode) {
+    const sectors = [];
+    const concepts = [];
+
+    try {
+        // 方法1: 使用东方财富API获取板块和概念
+        const secid = getEastmoneySecid(stockCode);
+
+        // 获取所属板块和概念列表
+        const url = `http://push2.eastmoney.com/api/qt/stock/get?secid=${secid}&fields=f12,f13,f14,f62,f184,f86,f100,f127,f116,f117,f85`;
+        console.log(`🔍 请求东方财富API: ${url}`);
+
+        const response = await axios.get(url, {
+            headers: {
+                'Referer': 'http://quote.eastmoney.com/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            },
+            timeout: 8000
+        });
+
+        console.log(`📊 东方财富API返回状态: ${response.status}`);
+
+        if (response.data && response.data.data) {
+            const stockData = response.data.data;
+            console.log('📦 股票基本信息:', JSON.stringify(stockData).substring(0, 200));
+
+            // 解析行业信息（f127字段）
+            if (stockData.f127) {
+                sectors.push(stockData.f127);
+                console.log(`✅ 从东方财富获取到行业: ${stockData.f127}`);
+            }
+
+            // 解析板块信息（f100字段通常包含板块代码）
+            if (stockData.f100) {
+                console.log(`📌 板块代码: ${stockData.f100}`);
+            }
+        }
+
+        // 方法2: 使用东方财富的概念板块API
+        try {
+            // 使用东方财富的概念板块查询接口
+            const conceptUrl = `http://emweb.securities.eastmoney.com/PC_HSF10/CoreConception/CoreConceptionAjax?code=${secid}`;
+            console.log(`🔍 尝试东方财富概念API: ${conceptUrl}`);
+
+            const conceptResponse = await axios.get(conceptUrl, {
+                headers: {
+                    'Referer': 'http://emweb.securities.eastmoney.com/',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                },
+                timeout: 8000
+            });
+
+            // 打印返回数据以便调试
+            if (conceptResponse.data) {
+                console.log(`📦 东方财富概念API返回数据: ${JSON.stringify(conceptResponse.data).substring(0, 500)}`);
+
+                // 尝试多个可能的数据结构
+                let conceptData = null;
+
+                // 尝试不同的数据路径
+                if (Array.isArray(conceptResponse.data)) {
+                    conceptData = conceptResponse.data;
+                } else if (conceptResponse.data.gngd) {
+                    conceptData = conceptResponse.data.gngd;
+                } else if (conceptResponse.data.data && Array.isArray(conceptResponse.data.data)) {
+                    conceptData = conceptResponse.data.data;
+                } else if (conceptResponse.data.Result) {
+                    conceptData = conceptResponse.data.Result;
+                }
+
+                if (Array.isArray(conceptData) && conceptData.length > 0) {
+                    conceptData.forEach(item => {
+                        // 尝试多个可能的字段名
+                        const name = item.GDMC || item.NAME || item.name || item.ConceptionName || item.板块名称;
+                        if (name && name !== '未分类概念') {
+                            concepts.push(name);
+                        }
+                    });
+                    if (concepts.length > 0) {
+                        console.log(`✅ 从东方财富获取到 ${concepts.length} 个概念: ${concepts.join(', ')}`);
+                    }
+                }
+            }
+
+        } catch (emError) {
+            console.warn('东方财富概念API失败:', emError.message);
+        }
+
+        // 方法2.2: 如果上面的API失败，尝试另一个东方财富板块概念API
+        if (concepts.length === 0) {
+            try {
+                const plateUrl = `http://push2.eastmoney.com/api/qt/stock/get?secid=${secid}&fields=f12,f13,f14,f127,f128`;
+                console.log(`🔍 尝试东方财富板块分类API`);
+
+                const plateResponse = await axios.get(plateUrl, {
+                    headers: {
+                        'Referer': 'http://quote.eastmoney.com/',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    },
+                    timeout: 8000
+                });
+
+                if (plateResponse.data && plateResponse.data.data) {
+                    const data = plateResponse.data.data;
+                    console.log(`📦 板块分类API返回: ${JSON.stringify(data).substring(0, 300)}`);
+
+                    // f128 可能包含概念信息
+                    if (data.f128) {
+                        concepts.push(data.f128);
+                        console.log(`✅ 从板块分类API获取到概念: ${data.f128}`);
+                    }
+                }
+            } catch (plateError) {
+                console.warn('东方财富板块分类API失败:', plateError.message);
+            }
+        }
+
+        // 方法3: 备用 - 尝试同花顺概念板块API
+        if (concepts.length === 0) {
+            try {
+                const thsUrl = `http://basic.10jqka.com.cn/mobile/stock/plate.html?code=${stockCode}`;
+                console.log(`🔍 尝试同花顺API: ${thsUrl}`);
+
+                const thsResponse = await axios.get(thsUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Referer': 'http://www.10jqka.com.cn/'
+                    },
+                    timeout: 8000
+                });
+
+                // 解析HTML内容获取板块概念
+                const htmlContent = thsResponse.data;
+
+                // 查找行业板块
+                const sectorMatch = htmlContent.match(/行业板块[^>]*>([^<]+)</);
+                if (sectorMatch && sectorMatch[1] && sectors.length === 0) {
+                    sectors.push(sectorMatch[1].trim());
+                }
+
+                // 查找概念板块（可能有多个）
+                const conceptRegex = /概念板块.*?<div[^>]*>([^<]+)<\/div>/g;
+                let match;
+                while ((match = conceptRegex.exec(htmlContent)) !== null) {
+                    if (match[1] && match[1].trim()) {
+                        concepts.push(match[1].trim());
+                    }
+                }
+
+            } catch (thsError) {
+                console.warn('同花顺API失败:', thsError.message);
+            }
+        }
+
+        // 方法3: 使用新浪财经的板块信息（备用）
+        if (sectors.length === 0 && concepts.length === 0) {
+            try {
+                // 判断市场
+                const market = stockCode.startsWith('6') ? 'sh' : 'sz';
+                const sinaUrl = `http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData?page=1&num=1&sort=symbol&asc=1&node=hy_${market}&symbol=${market}${stockCode}`;
+
+                console.log(`🔍 尝试新浪财经API: ${sinaUrl}`);
+
+                const sinaResponse = await axios.get(sinaUrl, {
+                    headers: {
+                        'Referer': 'http://finance.sina.com.cn',
+                        'User-Agent': 'Mozilla/5.0'
+                    },
+                    timeout: 5000
+                });
+
+                if (Array.isArray(sinaResponse.data) && sinaResponse.data.length > 0) {
+                    const stockInfo = sinaResponse.data[0];
+                    if (stockInfo.trade) {
+                        sectors.push(stockInfo.trade);
+                    }
+                }
+            } catch (sinaError) {
+                console.warn('新浪财经API失败:', sinaError.message);
+            }
+        }
+
+        console.log(`✅ 最终获取到板块: ${sectors.join(', ') || '无'}`);
+        console.log(`✅ 最终获取到概念: ${concepts.join(', ') || '无'}`);
+
+    } catch (error) {
+        console.warn('获取板块概念失败:', error.message);
+    }
+
+    return {
+        sectors: sectors.length > 0 ? sectors : ['未分类板块'],
+        concepts: concepts.length > 0 ? concepts : ['未分类概念']
+    };
+}
+
+/**
+ * 获取东方财富的secid
+ */
+function getEastmoneySecid(stockCode) {
+    // 沪市: 1.xxxxxx, 深市: 0.xxxxxx
+    if (stockCode.startsWith('6')) {
+        return `1.${stockCode}`;
+    } else {
+        return `0.${stockCode}`;
+    }
+}
+
+/**
+ * 获取板块或概念指数的代码
+ * 这里简化处理，根据股票所属市场返回对应的指数
+ */
+async function getSectorConceptIndex(stockCode, sectors, concepts) {
+    // 简化处理：根据股票所在市场返回相应指数
+    // 沪市股票 -> 上证50 (000016)
+    // 深市股票 -> 深证成指 (399001)
+    // 创业板 -> 创业板指 (399006)
+
+    let sectorCode = null;
+    let sectorName = null;
+    let conceptCode = null;
+    let conceptName = null;
+
+    if (stockCode.startsWith('6')) {
+        // 沪市
+        sectorCode = '000016'; // 上证50
+        sectorName = '上证50';
+    } else if (stockCode.startsWith('300')) {
+        // 创业板
+        sectorCode = '399006'; // 创业板指
+        sectorName = '创业板指';
+    } else {
+        // 其他深市
+        sectorCode = '399001'; // 深证成指
+        sectorName = '深证成指';
+    }
+
+    // 概念使用中小板指数作为示例
+    conceptCode = '399005'; // 中小板指
+    conceptName = '中小板指';
+
+    return {
+        sector: {
+            code: sectorCode,
+            name: sectors[0] || sectorName // 使用真实板块名称，如果有的话
+        },
+        concept: {
+            code: conceptCode,
+            name: concepts[0] || conceptName // 使用真实概念名称，如果有的话
+        }
+    };
+}

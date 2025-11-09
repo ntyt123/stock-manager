@@ -418,40 +418,31 @@
             border: 1px solid #bee5eb;
         }
 
-        /* 美化持仓显示样式 */
+        /* 美化持仓显示样式 - 表格行样式 */
         .position-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 15px 0;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(168, 237, 234, 0.3);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid #667eea;
             transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            display: flex;
+            align-items: center;
+            gap: 20px;
         }
 
         .position-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.05);
-            border-color: rgba(102, 126, 234, 0.5);
-        }
-
-        .position-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-left-color: #764ba2;
         }
 
         .position-header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
+            align-items: center;
+            gap: 12px;
+            min-width: 180px;
         }
 
         .stock-info {
@@ -459,135 +450,134 @@
         }
 
         .stock-symbol {
-            font-size: 1.3rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 4px;
-            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
 
         .stock-name {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             color: #7f8c8d;
             font-weight: 500;
         }
 
         .profit-indicator {
-            font-size: 1.8rem;
-            padding: 8px;
-            border-radius: 50%;
+            font-size: 1.3rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 50px;
-            height: 50px;
         }
 
         .profit-indicator.profit {
-            background: rgba(231, 76, 60, 0.1);
             color: #e74c3c;
         }
 
         .profit-indicator.loss {
-            background: rgba(39, 174, 96, 0.1);
             color: #27ae60;
         }
 
         .position-stats {
-            background: rgba(168, 237, 234, 0.08);
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .stat-row {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 12px;
-        }
-
-        .stat-row:last-child {
-            margin-bottom: 0;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
         }
 
         .stat-item {
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            flex: 1;
+            gap: 4px;
+            min-width: 100px;
         }
 
         .stat-label {
-            font-size: 0.85rem;
-            color: #7f8c8d;
+            font-size: 0.75rem;
+            color: #95a5a6;
             font-weight: 500;
-            margin-bottom: 4px;
+            text-transform: uppercase;
         }
 
         .stat-value {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             color: #2c3e50;
         }
 
         .position-summary {
             display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 220px;
             justify-content: flex-end;
-            margin-top: 10px;
         }
 
         .profit-loss {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: 700;
-            font-size: 1.1rem;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
         }
 
         .profit-loss.profit {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+            color: #e74c3c;
         }
 
         .profit-loss.loss {
-            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-            color: white;
-            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+            color: #27ae60;
         }
 
         .profit-amount {
-            font-size: 1.2rem;
+            font-size: 1rem;
+            font-weight: 700;
         }
 
         .profit-rate {
-            font-size: 1rem;
-            opacity: 0.9;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
         .positions-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
             margin: 20px 0;
         }
 
         @media (max-width: 768px) {
-            .positions-list {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
             .position-card {
-                padding: 15px;
-                margin: 10px 0;
-            }
-            
-            .stat-row {
                 flex-direction: column;
-                gap: 10px;
+                align-items: flex-start;
+                gap: 12px;
+                padding: 12px 16px;
+            }
+
+            .position-header {
+                width: 100%;
+                min-width: auto;
+            }
+
+            .stat-row {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .stat-item {
+                min-width: 80px;
+                flex: 1 1 40%;
+            }
+
+            .position-summary {
+                width: 100%;
+                min-width: auto;
+                justify-content: space-between;
             }
             
             .stat-item {

@@ -34,24 +34,41 @@ const TradingLogManager = {
 
             const result = await response.json();
 
-            if (result.success && result.data && result.data.length > 0) {
-                this.renderTradingLogs(result.data);
-                this.loadStatistics(); // 加载统计信息
+            if (result.success) {
+                if (result.data && result.data.length > 0) {
+                    this.renderTradingLogs(result.data);
+                } else {
+                    // 没有数据，显示空状态
+                    document.getElementById('tradingLogContent').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon">📝</div>
+                            <div class="empty-title">暂无交易日志</div>
+                            <div class="empty-desc">点击"新建日志"按钮开始记录您的交易心得</div>
+                        </div>
+                    `;
+                }
+                // 加载统计信息
+                this.loadStatistics();
             } else {
+                // API返回失败
                 document.getElementById('tradingLogContent').innerHTML = `
                     <div class="empty-state">
-                        <div class="empty-icon">📝</div>
-                        <div class="empty-title">暂无交易日志</div>
-                        <div class="empty-desc">点击"新建日志"按钮开始记录您的交易心得</div>
+                        <div class="empty-icon">❌</div>
+                        <div class="empty-title">加载失败</div>
+                        <div class="empty-desc">${result.error || '获取交易日志失败，请重试'}</div>
                     </div>
                 `;
-                // 即使没有日志，也要加载统计信息（显示0）
-                this.loadStatistics();
             }
 
         } catch (error) {
             console.error('❌ 加载交易日志失败:', error);
-            document.getElementById('tradingLogContent').innerHTML = '<div class="loading-text">加载失败，请重试</div>';
+            document.getElementById('tradingLogContent').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">⚠️</div>
+                    <div class="empty-title">网络错误</div>
+                    <div class="empty-desc">无法连接到服务器，请检查网络连接后重试</div>
+                </div>
+            `;
             // 即使加载失败，也尝试加载统计信息
             this.loadStatistics();
         }

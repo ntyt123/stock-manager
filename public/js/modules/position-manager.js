@@ -346,7 +346,7 @@ async function displayUploadedPositions(positions, summary = null) {
         }
     } else if (positionRatioEl) {
         positionRatioEl.textContent = '0%';
-        positionRatioEl.style.color = 'white';
+        positionRatioEl.style.color = '#000000';
     }
 
     // 生成持仓列表HTML
@@ -380,9 +380,6 @@ async function displayUploadedPositions(positions, summary = null) {
                             <span class="stat-label">成本价</span>
                             <span class="stat-value">¥${parseFloat(position.costPrice).toFixed(2)}</span>
                         </div>
-                    </div>
-                    
-                    <div class="stat-row">
                         <div class="stat-item">
                             <span class="stat-label">当前价</span>
                             <span class="stat-value">¥${parseFloat(position.currentPrice).toFixed(2)}</span>
@@ -513,9 +510,6 @@ function displayEBSCNPositions(data) {
                             <span class="stat-label">成本价</span>
                             <span class="stat-value">¥${parseFloat(position.costPrice).toFixed(2)}</span>
                         </div>
-                    </div>
-                    
-                    <div class="stat-row">
                         <div class="stat-item">
                             <span class="stat-label">当前价</span>
                             <span class="stat-value">¥${parseFloat(position.currentPrice).toFixed(2)}</span>
@@ -548,17 +542,65 @@ function openManualPositionModal() {
     }
 
     const modal = document.getElementById('manualPositionModal');
-    modal.style.display = 'block';
+    if (!modal) {
+        console.error('❌ 找不到manualPositionModal元素');
+        alert('模态框元素未找到，请刷新页面重试');
+        return;
+    }
+
+    // 将模态框移动到body最外层，避免被父元素的display:none影响
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    // 强制设置显示样式
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '10000';
+    modal.style.left = '0';
+    modal.style.top = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+
+    // 确保模态框内容也可见
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.display = 'block';
+        modalContent.style.position = 'relative';
+    }
 
     // 清空表单
     document.getElementById('manualPositionForm').reset();
     document.getElementById('positionFormStatus').textContent = '';
     document.getElementById('positionFormStatus').className = 'form-status';
 
-    // 绑定股票代码自动获取名称功能
-    bindStockCodeAutoFill('posStockCode', 'posStockName');
+    // 设置买入日期默认为今天
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('posBuyDate').value = today;
 
-    console.log('📝 打开手动持仓录入模态框');
+    // 绑定股票代码自动获取名称功能
+    try {
+        if (typeof bindStockCodeAutoFill === 'function') {
+            bindStockCodeAutoFill('posStockCode', 'posStockName');
+        } else {
+            console.warn('⚠️ bindStockCodeAutoFill函数未定义，跳过股票代码自动填充功能');
+        }
+    } catch (error) {
+        console.error('❌ 绑定股票代码自动填充功能时出错:', error);
+    }
+
+    console.log('📝 打开手动持仓录入模态框，display:', modal.style.display);
+    console.log('📝 模态框元素信息:', {
+        id: modal.id,
+        display: modal.style.display,
+        position: modal.style.position,
+        zIndex: modal.style.zIndex,
+        offsetWidth: modal.offsetWidth,
+        offsetHeight: modal.offsetHeight
+    });
 }
 
 // closeManualPositionModal
@@ -721,3 +763,13 @@ document.addEventListener('capitalUpdated', (event) => {
     }
 });
 
+
+
+// ==================== 导出全局函数 ====================
+// 将函数导出到全局作用域，供HTML onclick使用
+window.openExcelUploadModal = openExcelUploadModal;
+window.closeExcelUploadModal = closeExcelUploadModal;
+window.openManualPositionModal = openManualPositionModal;
+window.closeManualPositionModal = closeManualPositionModal;
+window.submitManualPosition = submitManualPosition;
+window.refreshPositionsDisplay = refreshPositionsDisplay;

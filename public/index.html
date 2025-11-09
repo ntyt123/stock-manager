@@ -10,8 +10,33 @@
     <link rel="stylesheet" href="/css/modules/market-sentiment.css">
     <link rel="stylesheet" href="/css/modules/ai-prompt-manager.css">
     <link rel="stylesheet" href="/css/modules/risk-control.css">
+    <link rel="stylesheet" href="/css/modules/fundamental.css">
+    <link rel="stylesheet" href="/css/modules/prediction.css">
+    <link rel="stylesheet" href="/css/modules/history.css">
+    <link rel="stylesheet" href="/css/modules/trading-calculator.css">
+    <link rel="stylesheet" href="/css/modules/ai-api-config.css">
+    <link rel="stylesheet" href="/css/modules/independent-analysis.css">
+    <link rel="stylesheet" href="/css/modules/recap.css">
+    <link rel="stylesheet" href="/css/modules/report.css">
+    <link rel="stylesheet" href="/css/modules/navigation.css">
+    <link rel="stylesheet" href="/css/modules/tooltips.css">
     <script src="/js/lib/chart.umd.min.js"></script>
     <script src="/js/lib/marked.min.js"></script>
+    <script src="/js/lib/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- 登录验证脚本 - 必须在页面加载前执行 -->
+    <script>
+        // 立即检查登录状态，未登录直接跳转
+        (function() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+
+            if (!token || !user) {
+                console.log('未检测到登录信息，重定向到登录页...');
+                window.location.href = '/login.html';
+            }
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -54,8 +79,64 @@
         </div>
 
         <div class="header">
-            <h1>个人股票信息系统</h1>
-            <p>为您提供实时股票行情、投资组合管理和分析工具</p>
+            <!-- 左侧：LOGO + 核心数据卡片 -->
+            <div class="header-left">
+                <div class="header-logo">📈</div>
+                <div class="header-stats">
+                    <div class="stat-card stat-profit">
+                        <div class="stat-label">总盈亏</div>
+                        <div class="stat-value" id="headerTotalProfit">--</div>
+                    </div>
+                    <div class="stat-card stat-positions">
+                        <div class="stat-label">持仓</div>
+                        <div class="stat-value" id="headerPositionCount">--</div>
+                    </div>
+                    <div class="stat-card stat-today">
+                        <div class="stat-label">今日</div>
+                        <div class="stat-value" id="headerTodayProfit">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间：交易时间轴 -->
+            <div class="header-timeline">
+                <div class="timeline-container">
+                    <div class="timeline-track"></div>
+                    <div class="timeline-progress" id="timelineProgress"></div>
+                    <div class="timeline-markers">
+                        <div class="timeline-marker start">
+                            <span class="marker-dot"></span>
+                            <span class="marker-time">09:30</span>
+                        </div>
+                        <div class="timeline-marker mid">
+                            <span class="marker-dot"></span>
+                            <span class="marker-time">12:00</span>
+                        </div>
+                        <div class="timeline-marker end">
+                            <span class="marker-dot"></span>
+                            <span class="marker-time">15:00</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-status" id="timelineStatus">
+                    <span class="status-text">市场已收盘</span>
+                </div>
+            </div>
+
+            <!-- 右侧：复盘入口 -->
+            <div class="header-right">
+                <button class="recap-entrance" id="recapEntranceBtn">
+                    <span class="recap-icon">📊</span>
+                    <div class="recap-status">
+                        <span class="recap-status-text">今日复盘</span>
+                        <span class="recap-status-dot disabled"></span>
+                    </div>
+                </button>
+                <button class="recap-history-entrance" id="recapHistoryBtn" onclick="RecapManager.openHistoryPanel()">
+                    <span class="recap-icon">📚</span>
+                    <span class="recap-history-text">历史复盘</span>
+                </button>
+            </div>
         </div>
 
         <!-- 页签导航 -->
@@ -71,6 +152,10 @@
             <button class="tab-btn" data-tab="analysis">
                 <span class="tab-icon">📈</span>
                 <span class="tab-text">分析</span>
+            </button>
+            <button class="tab-btn" data-tab="prediction">
+                <span class="tab-icon">🔮</span>
+                <span class="tab-text">预测</span>
             </button>
             <button class="tab-btn" data-tab="tools">
                 <span class="tab-icon">🛠️</span>
@@ -694,7 +779,15 @@
                     </button>
                     <button class="sub-tab-btn" data-subtab="analysis-fundamentals">
                         <span class="sub-tab-icon">📊</span>
-                        <span class="sub-tab-text">基本面数据（待开发）</span>
+                        <span class="sub-tab-text">基本面分析</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-trend">
+                        <span class="sub-tab-icon">📈</span>
+                        <span class="sub-tab-text">趋势分析</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="analysis-independent">
+                        <span class="sub-tab-icon">🎯</span>
+                        <span class="sub-tab-text">独立行情分析</span>
                     </button>
                 </div>
 
@@ -884,13 +977,19 @@
                                 <div class="card-icon">🛡️</div>
                                 <div class="card-title">风险控制</div>
                                 <div class="header-actions">
-                                    <button class="refresh-btn" onclick="RiskControlManager.checkRisk()">
-                                        <span>🔄 刷新检查</span>
+                                    <button class="refresh-btn" onclick="loadRiskControlModule()">
+                                        <span>🔄 刷新</span>
                                     </button>
                                 </div>
                             </div>
-                            <div id="riskControlContent">
-                                <div class="loading-text">正在加载风险控制功能...</div>
+                            <div id="riskControlContent" style="color: #2c3e50; background: white; padding: 20px; border-radius: 8px;">
+                                <div class="analysis-hint">
+                                    <div class="hint-icon">💡</div>
+                                    <div class="hint-content">
+                                        <p class="hint-title">AI智能风险控制</p>
+                                        <p class="hint-desc">请先进行持仓分析，AI将为您生成个性化的风险控制规则</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -900,21 +999,718 @@
                         <div class="card">
                             <div class="card-header">
                                 <div class="card-icon">📊</div>
-                                <div class="card-title">基本面数据</div>
+                                <div class="card-title">基本面分析</div>
                             </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 财务数据分析</li>
-                                        <li>✅ 估值指标对比</li>
-                                        <li>✅ 盈利能力分析</li>
-                                        <li>✅ 成长性评估</li>
-                                        <li>✅ 行业对标分析</li>
-                                    </ul>
+                            <div class="card-body">
+                                <!-- 搜索区域 -->
+                                <div class="fundamental-search-section">
+                                    <div class="search-input-group">
+                                        <input type="text" id="fundamentalStockInput" class="search-input" placeholder="请输入股票代码 (如: 600519)">
+                                        <select id="fundamentalWatchlistSelect" class="watchlist-select">
+                                            <option value="">或从自选股选择...</option>
+                                        </select>
+                                        <button onclick="searchFundamentalData()" class="primary-btn">
+                                            <span>🔍 查询基本面</span>
+                                        </button>
+                                        <button onclick="analyzeFundamental()" class="secondary-btn" id="fundamentalAnalyzeBtn">
+                                            <span>🤖 AI智能分析</span>
+                                        </button>
+                                    </div>
+                                    <div class="search-tips">
+                                        💡 提示：直接输入6位股票代码，或从自选股下拉框快速选择
+                                    </div>
+                                </div>
+
+                                <!-- 基本面数据展示区域 -->
+                                <div id="fundamentalDataContainer" style="display: none;">
+                                    <!-- 股票基本信息 -->
+                                    <div class="fundamental-stock-info">
+                                        <h3><span id="fundamental-stock-name">-</span> (<span id="fundamental-stock-code">-</span>)</h3>
+                                        <div class="stock-price-info">
+                                            <div class="price-item">
+                                                <span class="label">最新价</span>
+                                                <span class="value" id="fundamental-current-price">-</span>
+                                            </div>
+                                            <div class="price-item">
+                                                <span class="label">涨跌幅</span>
+                                                <span class="value" id="fundamental-change-percent">-</span>
+                                            </div>
+                                            <div class="price-item">
+                                                <span class="label">总市值</span>
+                                                <span class="value" id="fundamental-market-cap">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 财务数据 -->
+                                    <div class="fundamental-section">
+                                        <h4 class="section-title">💰 财务数据</h4>
+                                        <div class="data-grid">
+                                            <div class="data-item">
+                                                <span class="data-label">营业收入</span>
+                                                <span class="data-value" id="fundamental-revenue">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">净利润</span>
+                                                <span class="data-value" id="fundamental-net-profit">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">经营现金流</span>
+                                                <span class="data-value" id="fundamental-cash-flow">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">总资产</span>
+                                                <span class="data-value" id="fundamental-total-assets">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 估值指标 -->
+                                    <div class="fundamental-section">
+                                        <h4 class="section-title">📈 估值指标</h4>
+                                        <div class="data-grid">
+                                            <div class="data-item">
+                                                <span class="data-label">市盈率(PE)</span>
+                                                <span class="data-value" id="fundamental-pe">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">市净率(PB)</span>
+                                                <span class="data-value" id="fundamental-pb">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">市销率(PS)</span>
+                                                <span class="data-value" id="fundamental-ps">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">市现率(PCF)</span>
+                                                <span class="data-value" id="fundamental-pcf">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 盈利能力 -->
+                                    <div class="fundamental-section">
+                                        <h4 class="section-title">💎 盈利能力</h4>
+                                        <div class="data-grid">
+                                            <div class="data-item">
+                                                <span class="data-label">净资产收益率(ROE)</span>
+                                                <span class="data-value" id="fundamental-roe">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">总资产收益率(ROA)</span>
+                                                <span class="data-value" id="fundamental-roa">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">毛利率</span>
+                                                <span class="data-value" id="fundamental-gross-margin">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">净利率</span>
+                                                <span class="data-value" id="fundamental-net-margin">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 成长性指标 -->
+                                    <div class="fundamental-section">
+                                        <h4 class="section-title">🚀 成长性指标</h4>
+                                        <div class="data-grid">
+                                            <div class="data-item">
+                                                <span class="data-label">营收增长率(YoY)</span>
+                                                <span class="data-value" id="fundamental-revenue-growth">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">净利润增长率(YoY)</span>
+                                                <span class="data-value" id="fundamental-profit-growth">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">每股收益(EPS)</span>
+                                                <span class="data-value" id="fundamental-eps">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">每股净资产(BPS)</span>
+                                                <span class="data-value" id="fundamental-bps">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 偿债能力 -->
+                                    <div class="fundamental-section">
+                                        <h4 class="section-title">🛡️ 偿债能力</h4>
+                                        <div class="data-grid">
+                                            <div class="data-item">
+                                                <span class="data-label">资产负债率</span>
+                                                <span class="data-value" id="fundamental-debt-ratio">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">流动比率</span>
+                                                <span class="data-value" id="fundamental-current-ratio">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">速动比率</span>
+                                                <span class="data-value" id="fundamental-quick-ratio">-</span>
+                                            </div>
+                                            <div class="data-item">
+                                                <span class="data-label">现金比率</span>
+                                                <span class="data-value" id="fundamental-cash-ratio">-</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- AI分析结果区域 -->
+                                <div id="fundamentalAnalysisContainer" style="display: none;">
+                                    <div class="analysis-result">
+                                        <h4 class="section-title">🤖 AI智能分析报告</h4>
+                                        <div id="fundamentalAnalysisContent" class="analysis-content"></div>
+                                        <div class="analysis-timestamp" id="fundamentalAnalysisTime">
+                                            📅 分析时间：-
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 历史分析记录按钮 -->
+                                <div class="action-buttons" style="margin-top: 20px;">
+                                    <button onclick="viewFundamentalHistory()" class="secondary-btn">
+                                        <span>📋 查看历史记录</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 趋势分析 -->
+                    <div class="sub-tab-content" id="analysis-trend">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📈</div>
+                                <div class="card-title">股票趋势分析</div>
+                            </div>
+                            <div class="card-body">
+                                <!-- 股票输入区 -->
+                                <div class="trend-input-section" style="background: #f5f7fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">📝 输入股票信息</h3>
+                                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 15px; align-items: end;">
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票代码：</label>
+                                            <input type="text" id="trendStockCode" class="form-control" placeholder="如: 600036" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                                        </div>
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票名称：</label>
+                                            <input type="text" id="trendStockName" class="form-control" placeholder="自动获取..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 14px;">
+                                            <small id="stockNameStatus" style="color: #78909c; margin-top: 3px; display: block; font-size: 12px;"></small>
+                                        </div>
+                                        <button onclick="startTrendAnalysis()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; white-space: nowrap;">
+                                            🔍 开始分析
+                                        </button>
+                                    </div>
+                                    <small style="color: #78909c; margin-top: 10px; display: block; font-size: 12px;">💡 提示：输入股票代码后会自动获取股票名称</small>
+                                </div>
+
+                                <!-- 分析结果显示区 -->
+                                <div id="trendAnalysisResult" style="display: none; margin-top: 20px;">
+                                    <div class="prediction-result-container">
+                                        <div class="prediction-result-header">
+                                            <div class="result-header-icon">📈</div>
+                                            <h3 class="result-header-title" id="trendAnalysisTitle">趋势分析结果</h3>
+                                            <div class="result-header-badge" id="trendAnalysisBadge">AI分析</div>
+                                        </div>
+                                        <div id="trendAnalysisContent" class="prediction-markdown-content"></div>
+                                        <div class="prediction-result-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="result-footer-icon">📅</div>
+                                                <div id="trendAnalysisTime" class="result-footer-time"></div>
+                                            </div>
+                                            <button onclick="openModuleHistory('trend_prediction')" style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                                📚 查看历史
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 独立行情分析 -->
+                    <div class="sub-tab-content" id="analysis-independent">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🎯</div>
+                                <div class="card-title">独立行情分析</div>
+                                <div class="card-subtitle">去除大盘、板块、概念的共同影响，分析股票独立涨跌</div>
+                            </div>
+                            <div class="card-content">
+                                <!-- 股票搜索区域 -->
+                                <div class="independent-search-section">
+                                    <div class="search-input-wrapper">
+                                        <input type="text"
+                                               id="independentStockInput"
+                                               class="independent-stock-input"
+                                               placeholder="输入股票代码或名称（如：600519 或 贵州茅台）"
+                                               autocomplete="off">
+                                        <button id="independentAnalyzeBtn" class="btn-analyze">
+                                            🎯 开始分析
+                                        </button>
+                                    </div>
+                                    <div id="independentStockSuggestions" class="stock-suggestions"></div>
+                                </div>
+
+                                <!-- 股票信息展示区 -->
+                                <div id="independentStockInfo" class="stock-info-section" style="display: none;">
+                                    <div class="stock-info-card">
+                                        <div class="stock-info-header">
+                                            <h3 id="stockInfoName">--</h3>
+                                            <span id="stockInfoCode" class="stock-code-badge">--</span>
+                                        </div>
+                                        <div class="stock-info-body">
+                                            <div class="info-item">
+                                                <span class="info-label">所属板块：</span>
+                                                <div id="stockSectors" class="info-tags">--</div>
+                                            </div>
+                                            <div class="info-item">
+                                                <span class="info-label">所属概念：</span>
+                                                <div id="stockConcepts" class="info-tags">--</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 分时图对比区域 -->
+                                <div id="independentChartsArea" class="charts-comparison-area" style="display: none;">
+                                    <!-- 左侧：4个参考分时图 -->
+                                    <div class="reference-charts-column">
+                                        <div class="chart-card">
+                                            <div class="chart-header">
+                                                <span class="chart-icon">📊</span>
+                                                <span class="chart-title" id="stockChartTitle">个股分时</span>
+                                            </div>
+                                            <div class="chart-container">
+                                                <canvas id="stockMinuteChart"></canvas>
+                                            </div>
+                                        </div>
+
+                                        <div class="chart-card">
+                                            <div class="chart-header">
+                                                <span class="chart-icon">📈</span>
+                                                <span class="chart-title">上证指数</span>
+                                            </div>
+                                            <div class="chart-container">
+                                                <canvas id="indexMinuteChart"></canvas>
+                                            </div>
+                                        </div>
+
+                                        <div class="chart-card">
+                                            <div class="chart-header">
+                                                <span class="chart-icon">🏢</span>
+                                                <span class="chart-title" id="sectorChartTitle">板块分时</span>
+                                            </div>
+                                            <div class="chart-container">
+                                                <canvas id="sectorMinuteChart"></canvas>
+                                            </div>
+                                        </div>
+
+                                        <div class="chart-card">
+                                            <div class="chart-header">
+                                                <span class="chart-icon">💡</span>
+                                                <span class="chart-title" id="conceptChartTitle">概念分时</span>
+                                            </div>
+                                            <div class="chart-container">
+                                                <canvas id="conceptMinuteChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 右侧：独立行情分析 -->
+                                    <div class="independent-chart-column">
+                                        <div class="chart-card independent-chart-card">
+                                            <div class="chart-header">
+                                                <span class="chart-icon">🎯</span>
+                                                <span class="chart-title">独立涨跌分析</span>
+                                                <span class="chart-subtitle">去除大盘、板块、概念影响</span>
+                                            </div>
+                                            <div class="chart-container large">
+                                                <canvas id="independentChart"></canvas>
+                                            </div>
+                                            <div class="independent-stats">
+                                                <div class="stat-item">
+                                                    <span class="stat-label">独立涨跌幅：</span>
+                                                    <span class="stat-value" id="independentChangePercent">--%</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">相关性（大盘）：</span>
+                                                    <span class="stat-value" id="indexCorrelation">--</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">相关性（板块）：</span>
+                                                    <span class="stat-value" id="sectorCorrelation">--</span>
+                                                </div>
+                                                <div class="stat-item">
+                                                    <span class="stat-label">相关性（概念）：</span>
+                                                    <span class="stat-value" id="conceptCorrelation">--</span>
+                                                </div>
+                                            </div>
+                                            <div class="independent-analysis-text">
+                                                <div class="analysis-header">📝 分析说明</div>
+                                                <div id="analysisDescription" class="analysis-content">
+                                                    独立涨跌图表显示的是去除大盘、板块、概念等外部因素影响后，该股票自身的独立涨跌情况。
+                                                    正值表示股票表现强于参考对象,负值表示弱于参考对象。
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 加载提示 -->
+                                <div id="independentLoadingTip" class="loading-overlay" style="display: none;">
+                                    <div class="loading-spinner"></div>
+                                    <div class="loading-text">正在加载分析数据...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 预测页签 -->
+        <div id="prediction-tab" class="tab-content">
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="prediction-market">
+                        <span class="sub-tab-icon">📈</span>
+                        <span class="sub-tab-text">大盘预测</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="prediction-trend">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">趋势预测</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="prediction-risk">
+                        <span class="sub-tab-icon">⚠️</span>
+                        <span class="sub-tab-text">风险预测</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="prediction-sentiment">
+                        <span class="sub-tab-icon">😊</span>
+                        <span class="sub-tab-text">情绪预测</span>
+                    </button>
+                </div>
+
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 大盘预测 -->
+                    <div class="sub-tab-content active" id="prediction-market">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📈</div>
+                                <div class="card-title">大盘预测 - 六壬预测法</div>
+                            </div>
+                            <div class="card-body">
+                                <!-- 排盘设置 -->
+                                <div class="paipan-settings">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">⚙️ 排盘设置</h3>
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a;">预测日期时间：</label>
+                                        <input type="datetime-local" id="predictionDateTime" class="form-control" style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <small style="color: #78909c; margin-top: 5px; display: block;">默认为当前时间，可手动调整</small>
+                                    </div>
+                                    <div class="form-actions" style="margin-top: 15px;">
+                                        <button onclick="performLiuRenPaipan()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #00897b 0%, #00695c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                            🎲 开始排盘
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 排盘结果 -->
+                                <div id="paipanResult" style="display: none; margin-top: 30px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">📊 排盘结果</h3>
+                                    <div id="paipanContent" class="paipan-display-area"></div>
+
+                                    <div class="form-actions" style="margin-top: 20px;">
+                                        <button onclick="startMarketPrediction()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                            🔮 开始预测
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 预测结果 -->
+                                <div id="predictionResult" style="display: none; margin-top: 30px;">
+                                    <div class="prediction-result-container">
+                                        <div class="prediction-result-header">
+                                            <div class="result-header-icon">🔮</div>
+                                            <h3 class="result-header-title">AI智能预测结果</h3>
+                                            <div class="result-header-badge">基于六壬排盘</div>
+                                        </div>
+                                        <div id="predictionContent" class="prediction-markdown-content"></div>
+                                        <div class="prediction-result-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="result-footer-icon">📅</div>
+                                                <div id="predictionTime" class="result-footer-time"></div>
+                                            </div>
+                                            <button onclick="openModuleHistory('market_prediction')" style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                                📚 查看历史
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 趋势预测（六壬） -->
+                    <div class="sub-tab-content" id="prediction-trend">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">股票趋势预测 - 六壬预测法</div>
+                            </div>
+                            <div class="card-body">
+                                <!-- 股票输入和排盘设置 -->
+                                <div class="paipan-settings" style="background: #f5f7fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">⚙️ 股票信息和排盘设置</h3>
+
+                                    <!-- 股票信息 -->
+                                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票代码：</label>
+                                            <input type="text" id="liurenTrendStockCode" class="form-control" placeholder="如: 600036" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                                        </div>
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票名称：</label>
+                                            <input type="text" id="liurenTrendStockName" class="form-control" placeholder="自动获取..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 14px;">
+                                            <small id="liurenStockNameStatus" style="color: #78909c; margin-top: 3px; display: block; font-size: 12px;"></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 排盘时间 -->
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">预测日期时间：</label>
+                                        <input type="datetime-local" id="liurenTrendDateTime" class="form-control" style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <small style="color: #78909c; margin-top: 5px; display: block;">默认为当前时间，可手动调整</small>
+                                    </div>
+
+                                    <div class="form-actions" style="margin-top: 15px;">
+                                        <button onclick="performLiuRenTrendPaipan()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #00897b 0%, #00695c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; margin-right: 10px;">
+                                            🎲 开始排盘
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 排盘结果 -->
+                                <div id="liurenTrendPaipanResult" style="display: none; margin-top: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">📊 排盘结果</h3>
+                                    <div id="liurenTrendPaipanContent" class="paipan-display-area"></div>
+
+                                    <div class="form-actions" style="margin-top: 20px;">
+                                        <button onclick="startLiuRenTrendPrediction()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                            🔮 开始预测
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 预测结果 -->
+                                <div id="liurenTrendPredictionResult" style="display: none; margin-top: 30px;">
+                                    <div class="prediction-result-container">
+                                        <div class="prediction-result-header">
+                                            <div class="result-header-icon">🔮</div>
+                                            <h3 class="result-header-title" id="liurenTrendResultTitle">股票趋势预测结果</h3>
+                                            <div class="result-header-badge">基于六壬排盘</div>
+                                        </div>
+                                        <div id="liurenTrendPredictionContent" class="prediction-markdown-content"></div>
+                                        <div class="prediction-result-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="result-footer-icon">📅</div>
+                                                <div id="liurenTrendPredictionTime" class="result-footer-time"></div>
+                                            </div>
+                                            <button onclick="openModuleHistory('stock_trend_prediction')" style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                                📚 查看历史
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 风险预测（六壬） -->
+                    <div class="sub-tab-content" id="prediction-risk">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">⚠️</div>
+                                <div class="card-title">股票风险预测 - 六壬预测法</div>
+                            </div>
+                            <div class="card-body">
+                                <!-- 股票输入和排盘设置 -->
+                                <div class="paipan-settings" style="background: #f5f7fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">⚙️ 股票信息和排盘设置</h3>
+
+                                    <!-- 股票信息 -->
+                                    <div class="form-row" style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票代码：</label>
+                                            <input type="text" id="liurenRiskStockCode" class="form-control" placeholder="如: 600036" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                                        </div>
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票名称：</label>
+                                            <input type="text" id="liurenRiskStockName" class="form-control" placeholder="自动获取..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 14px;">
+                                            <small id="liurenRiskStockNameStatus" style="color: #78909c; margin-top: 3px; display: block; font-size: 12px;"></small>
+                                        </div>
+                                    </div>
+
+                                    <!-- 排盘时间 -->
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">预测日期时间：</label>
+                                        <input type="datetime-local" id="liurenRiskDateTime" class="form-control" style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <small style="color: #78909c; margin-top: 5px; display: block;">默认为当前时间，可手动调整</small>
+                                    </div>
+
+                                    <div class="form-actions" style="margin-top: 15px;">
+                                        <button onclick="performLiuRenRiskPaipan()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #00897b 0%, #00695c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; margin-right: 10px;">
+                                            🎲 开始排盘
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 排盘结果 -->
+                                <div id="liurenRiskPaipanResult" style="display: none; margin-top: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">📊 排盘结果</h3>
+                                    <div id="liurenRiskPaipanContent" class="paipan-display-area"></div>
+
+                                    <div class="form-actions" style="margin-top: 20px;">
+                                        <button onclick="startLiuRenRiskPrediction()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #f44336 0%, #c62828 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                            ⚠️ 开始风险预测
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 预测结果 -->
+                                <div id="liurenRiskPredictionResult" style="display: none; margin-top: 30px;">
+                                    <div class="prediction-result-container">
+                                        <div class="prediction-result-header">
+                                            <div class="result-header-icon">⚠️</div>
+                                            <h3 class="result-header-title" id="liurenRiskResultTitle">股票风险预测结果</h3>
+                                            <div class="result-header-badge" style="background: linear-gradient(135deg, #f44336 0%, #c62828 100%);">基于六壬排盘</div>
+                                        </div>
+                                        <div id="liurenRiskPredictionContent" class="prediction-markdown-content"></div>
+                                        <div class="prediction-result-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="result-footer-icon">📅</div>
+                                                <div id="liurenRiskPredictionTime" class="result-footer-time"></div>
+                                            </div>
+                                            <button onclick="openModuleHistory('stock_risk_prediction')" style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                                📚 查看历史
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 情绪预测（六壬） -->
+                    <div class="sub-tab-content" id="prediction-sentiment">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">😊</div>
+                                <div class="card-title">市场情绪预测 - 六壬预测法</div>
+                            </div>
+                            <div class="card-body">
+                                <!-- 股票输入和排盘设置 -->
+                                <div class="paipan-settings" style="background: #f5f7fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">⚙️ 预测设置</h3>
+
+                                    <!-- 预测类型选择 -->
+                                    <div class="form-group" style="margin-bottom: 20px;">
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #546e7a; font-size: 14px;">预测类型：</label>
+                                        <div style="display: flex; gap: 15px;">
+                                            <label style="display: flex; align-items: center; cursor: pointer; padding: 10px 16px; border: 2px solid #e0e0e0; border-radius: 6px; background: white; transition: all 0.2s;">
+                                                <input type="radio" name="sentimentType" value="stock" id="sentimentTypeStock" checked onchange="toggleSentimentType()" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                                <span style="font-size: 14px; font-weight: 500; color: #424242;">📈 个股情绪预测</span>
+                                            </label>
+                                            <label style="display: flex; align-items: center; cursor: pointer; padding: 10px 16px; border: 2px solid #e0e0e0; border-radius: 6px; background: white; transition: all 0.2s;">
+                                                <input type="radio" name="sentimentType" value="market" id="sentimentTypeMarket" onchange="toggleSentimentType()" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                                <span style="font-size: 14px; font-weight: 500; color: #424242;">🌐 市场整体情绪</span>
+                                            </label>
+                                        </div>
+                                        <small style="color: #78909c; margin-top: 5px; display: block;">选择预测个股情绪还是整个市场情绪</small>
+                                    </div>
+
+                                    <!-- 市场指数选择 (市场情绪模式) -->
+                                    <div id="sentimentMarketSelector" style="display: none; margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">市场指数：</label>
+                                        <select id="sentimentMarketIndex" class="form-control" style="width: 100%; max-width: 300px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                                            <option value="000001">上证指数 (000001)</option>
+                                            <option value="399001">深证成指 (399001)</option>
+                                            <option value="399006">创业板指 (399006)</option>
+                                            <option value="000300">沪深300 (000300)</option>
+                                        </select>
+                                        <small style="color: #78909c; margin-top: 5px; display: block;">选择要分析的市场指数</small>
+                                    </div>
+
+                                    <!-- 股票信息 (个股情绪模式) -->
+                                    <div id="sentimentStockSelector">
+                                        <div class="form-row" style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
+                                            <div class="form-group" style="margin: 0;">
+                                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票代码：</label>
+                                                <input type="text" id="liurenSentimentStockCode" class="form-control" placeholder="如: 600036" style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                                            </div>
+                                            <div class="form-group" style="margin: 0;">
+                                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">股票名称：</label>
+                                                <input type="text" id="liurenSentimentStockName" class="form-control" placeholder="自动获取..." readonly style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff; font-size: 14px;">
+                                                <small id="liurenSentimentStockNameStatus" style="color: #78909c; margin-top: 3px; display: block; font-size: 12px;"></small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 排盘时间 -->
+                                    <div class="form-group" style="margin-bottom: 15px;">
+                                        <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #546e7a; font-size: 14px;">预测日期时间：</label>
+                                        <input type="datetime-local" id="liurenSentimentDateTime" class="form-control" style="width: 100%; max-width: 300px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                                        <small style="color: #78909c; margin-top: 5px; display: block;">默认为当前时间，可手动调整</small>
+                                    </div>
+
+                                    <div class="form-actions" style="margin-top: 15px;">
+                                        <button onclick="performLiuRenSentimentPaipan()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #00897b 0%, #00695c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; margin-right: 10px;">
+                                            🎲 开始排盘
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 排盘结果 -->
+                                <div id="liurenSentimentPaipanResult" style="display: none; margin-top: 20px;">
+                                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #00695c;">📊 排盘结果</h3>
+                                    <div id="liurenSentimentPaipanContent" class="paipan-display-area"></div>
+
+                                    <div class="form-actions" style="margin-top: 20px;">
+                                        <button onclick="startLiuRenSentimentPrediction()" class="btn-primary" style="padding: 10px 24px; background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                                            😊 开始情绪预测
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 预测结果 -->
+                                <div id="liurenSentimentPredictionResult" style="display: none; margin-top: 30px;">
+                                    <div class="prediction-result-container">
+                                        <div class="prediction-result-header">
+                                            <div class="result-header-icon">😊</div>
+                                            <h3 class="result-header-title" id="liurenSentimentResultTitle">市场情绪预测结果</h3>
+                                            <div class="result-header-badge" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);">基于六壬排盘</div>
+                                        </div>
+                                        <div id="liurenSentimentPredictionContent" class="prediction-markdown-content"></div>
+                                        <div class="prediction-result-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <div class="result-footer-icon">📅</div>
+                                                <div id="liurenSentimentPredictionTime" class="result-footer-time"></div>
+                                            </div>
+                                            <div style="display: flex; gap: 8px;">
+                                                <button id="sentimentHistoryStockBtn" onclick="openModuleHistory('stock_sentiment_prediction')" style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                                    📚 个股情绪历史
+                                                </button>
+                                                <button id="sentimentHistoryMarketBtn" onclick="openModuleHistory('market_sentiment_prediction')" style="padding: 8px 16px; background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">
+                                                    📚 市场情绪历史
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -959,19 +1755,248 @@
                                 <div class="card-icon">🧮</div>
                                 <div class="card-title">交易计算器</div>
                             </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 买入成本计算（含手续费）</li>
-                                        <li>✅ 卖出收益计算（含税费）</li>
-                                        <li>✅ 加仓成本计算</li>
-                                        <li>✅ 减仓收益计算</li>
-                                        <li>✅ T+0盈亏计算</li>
-                                    </ul>
+                            <div class="card-content trading-calculator">
+                                <!-- 计算器提示 -->
+                                <div class="calculator-tip">
+                                    <span class="calculator-tip-icon">💡</span>
+                                    <div>所有费率可在下方自定义设置，设置后会自动保存到本地浏览器中。默认费率：佣金0.03%（最低5元）、印花税0.1%、过户费0.002%</div>
+                                </div>
+
+                                <!-- 费率设置 -->
+                                <div class="fee-settings">
+                                    <div class="fee-settings-title">⚙️ 费率设置</div>
+                                    <div class="fee-settings-grid">
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">佣金率</label>
+                                            <div class="fee-input-wrapper">
+                                                <input type="number" id="commissionRate" class="calculator-form-input" value="0.030" step="0.001" min="0">
+                                                <span class="fee-unit">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">最低佣金</label>
+                                            <div class="fee-input-wrapper">
+                                                <input type="number" id="minCommission" class="calculator-form-input" value="5" step="1" min="0">
+                                                <span class="fee-unit">元</span>
+                                            </div>
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">印花税率</label>
+                                            <div class="fee-input-wrapper">
+                                                <input type="number" id="stampTaxRate" class="calculator-form-input" value="0.10" step="0.01" min="0">
+                                                <span class="fee-unit">%</span>
+                                            </div>
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">过户费率</label>
+                                            <div class="fee-input-wrapper">
+                                                <input type="number" id="transferFeeRate" class="calculator-form-input" value="0.002" step="0.001" min="0">
+                                                <span class="fee-unit">%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 计算器模式切换 -->
+                                <div class="calculator-mode-tabs">
+                                    <button class="calculator-mode-tab active" data-mode="buy">买入成本</button>
+                                    <button class="calculator-mode-tab" data-mode="sell">卖出收益</button>
+                                    <button class="calculator-mode-tab" data-mode="add">加仓成本</button>
+                                    <button class="calculator-mode-tab" data-mode="reduce">减仓收益</button>
+                                    <button class="calculator-mode-tab" data-mode="t0">T+0盈亏</button>
+                                </div>
+
+                                <!-- 买入成本计算器 -->
+                                <div class="calculator-form active" data-mode="buy">
+                                    <div class="calculator-form-grid">
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                买入价格 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="buyPrice" class="calculator-form-input" placeholder="请输入买入价格" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                买入股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="buyShares" class="calculator-form-input" placeholder="请输入买入股数" step="100" min="100">
+                                        </div>
+                                    </div>
+                                    <div class="calculator-actions">
+                                        <button class="calculator-btn calculator-btn-primary" id="calculateBuyBtn">
+                                            <span>💰</span> 计算买入成本
+                                        </button>
+                                        <button class="calculator-btn calculator-btn-secondary">
+                                            <span>🔄</span> 重置
+                                        </button>
+                                    </div>
+                                    <div class="calculator-result" id="buyResult"></div>
+                                </div>
+
+                                <!-- 卖出收益计算器 -->
+                                <div class="calculator-form" data-mode="sell">
+                                    <div class="calculator-form-grid">
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                买入价格 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="sellBuyPrice" class="calculator-form-input" placeholder="请输入买入价格" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                卖出价格 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="sellPrice" class="calculator-form-input" placeholder="请输入卖出价格" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="sellShares" class="calculator-form-input" placeholder="请输入股数" step="100" min="100">
+                                        </div>
+                                    </div>
+                                    <div class="calculator-actions">
+                                        <button class="calculator-btn calculator-btn-primary" id="calculateSellBtn">
+                                            <span>📊</span> 计算卖出收益
+                                        </button>
+                                        <button class="calculator-btn calculator-btn-secondary">
+                                            <span>🔄</span> 重置
+                                        </button>
+                                    </div>
+                                    <div class="calculator-result" id="sellResult"></div>
+                                </div>
+
+                                <!-- 加仓成本计算器 -->
+                                <div class="calculator-form" data-mode="add">
+                                    <div class="calculator-form-grid">
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                原持仓成本价 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="addOriginalPrice" class="calculator-form-input" placeholder="原持仓成本价" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                原持仓股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="addOriginalShares" class="calculator-form-input" placeholder="原持仓股数" step="100" min="100">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                加仓价格 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="addPrice" class="calculator-form-input" placeholder="加仓价格" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                加仓股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="addShares" class="calculator-form-input" placeholder="加仓股数" step="100" min="100">
+                                        </div>
+                                    </div>
+                                    <div class="calculator-actions">
+                                        <button class="calculator-btn calculator-btn-primary" id="calculateAddBtn">
+                                            <span>📈</span> 计算加仓成本
+                                        </button>
+                                        <button class="calculator-btn calculator-btn-secondary">
+                                            <span>🔄</span> 重置
+                                        </button>
+                                    </div>
+                                    <div class="calculator-result" id="addResult"></div>
+                                </div>
+
+                                <!-- 减仓收益计算器 -->
+                                <div class="calculator-form" data-mode="reduce">
+                                    <div class="calculator-form-grid">
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                持仓成本价 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="reduceCostPrice" class="calculator-form-input" placeholder="持仓成本价" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                总持仓股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="reduceTotalShares" class="calculator-form-input" placeholder="总持仓股数" step="100" min="100">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                减仓价格 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="reducePrice" class="calculator-form-input" placeholder="减仓价格" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                减仓股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="reduceShares" class="calculator-form-input" placeholder="减仓股数" step="100" min="100">
+                                        </div>
+                                    </div>
+                                    <div class="calculator-actions">
+                                        <button class="calculator-btn calculator-btn-primary" id="calculateReduceBtn">
+                                            <span>📉</span> 计算减仓收益
+                                        </button>
+                                        <button class="calculator-btn calculator-btn-secondary">
+                                            <span>🔄</span> 重置
+                                        </button>
+                                    </div>
+                                    <div class="calculator-result" id="reduceResult"></div>
+                                </div>
+
+                                <!-- T+0盈亏计算器 -->
+                                <div class="calculator-form" data-mode="t0">
+                                    <div class="calculator-form-grid">
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                原持仓成本价 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="t0CostPrice" class="calculator-form-input" placeholder="原持仓成本价" step="0.01" min="0">
+                                        </div>
+                                        <div class="calculator-form-group">
+                                            <label class="calculator-form-label">
+                                                原持仓股数 <span class="required">*</span>
+                                            </label>
+                                            <input type="number" id="t0TotalShares" class="calculator-form-input" placeholder="原持仓股数" step="100" min="100">
+                                        </div>
+                                    </div>
+                                    <div class="t0-operations">
+                                        <div class="t0-operation-section">
+                                            <div class="t0-operation-title buy">🔴 买入操作</div>
+                                            <div class="calculator-form-grid">
+                                                <div class="calculator-form-group">
+                                                    <label class="calculator-form-label">买入价格 <span class="required">*</span></label>
+                                                    <input type="number" id="t0BuyPrice" class="calculator-form-input" placeholder="买入价格" step="0.01" min="0">
+                                                </div>
+                                                <div class="calculator-form-group">
+                                                    <label class="calculator-form-label">买入股数 <span class="required">*</span></label>
+                                                    <input type="number" id="t0BuyShares" class="calculator-form-input" placeholder="买入股数" step="100" min="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="t0-operation-section">
+                                            <div class="t0-operation-title sell">🟢 卖出操作</div>
+                                            <div class="calculator-form-grid">
+                                                <div class="calculator-form-group">
+                                                    <label class="calculator-form-label">卖出价格 <span class="required">*</span></label>
+                                                    <input type="number" id="t0SellPrice" class="calculator-form-input" placeholder="卖出价格" step="0.01" min="0">
+                                                </div>
+                                                <div class="calculator-form-group">
+                                                    <label class="calculator-form-label">卖出股数 <span class="required">*</span></label>
+                                                    <input type="number" id="t0SellShares" class="calculator-form-input" placeholder="卖出股数" step="100" min="100">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="calculator-actions">
+                                        <button class="calculator-btn calculator-btn-primary" id="calculateT0Btn">
+                                            <span>🔄</span> 计算T+0盈亏
+                                        </button>
+                                        <button class="calculator-btn calculator-btn-secondary">
+                                            <span>🔄</span> 重置
+                                        </button>
+                                    </div>
+                                    <div class="calculator-result" id="t0Result"></div>
                                 </div>
                             </div>
                         </div>
@@ -1108,111 +2133,54 @@
                 <div class="sub-tab-content-area">
                     <!-- 持仓报表 -->
                     <div class="sub-tab-content active" id="reports-portfolio">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon">📊</div>
-                                <div class="card-title">持仓报表</div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 持仓明细汇总</li>
-                                        <li>✅ 行业分布统计</li>
-                                        <li>✅ 仓位占比分析</li>
-                                        <li>✅ 持仓成本分析</li>
-                                        <li>✅ 浮动盈亏统计</li>
-                                    </ul>
-                                </div>
+                        <div id="report-content-holder" class="report-content-holder">
+                            <div class="loading-indicator">
+                                <div class="spinner"></div>
+                                <p>加载中...</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- 交易报表 -->
                     <div class="sub-tab-content" id="reports-trade">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon">📝</div>
-                                <div class="card-title">交易报表</div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 交易次数统计</li>
-                                        <li>✅ 买卖记录汇总</li>
-                                        <li>✅ 手续费统计</li>
-                                        <li>✅ 交易频率分析</li>
-                                        <li>✅ 操作成功率</li>
-                                    </ul>
-                                </div>
+                        <div id="trade-report-content-holder" class="report-content-holder">
+                            <div class="loading-indicator">
+                                <div class="spinner"></div>
+                                <p>加载中...</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- 盈亏报表 -->
                     <div class="sub-tab-content" id="reports-profit">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon">💰</div>
-                                <div class="card-title">盈亏报表</div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 已实现盈亏统计</li>
-                                        <li>✅ 未实现盈亏统计</li>
-                                        <li>✅ 总盈亏汇总</li>
-                                        <li>✅ 收益率曲线</li>
-                                        <li>✅ 盈亏分布分析</li>
-                                    </ul>
-                                </div>
+                        <div id="profit-report-content-holder" class="report-content-holder">
+                            <div class="loading-indicator">
+                                <div class="spinner"></div>
+                                <p>加载中...</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- 月度报表 -->
                     <div class="sub-tab-content" id="reports-monthly">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon">📅</div>
-                                <div class="card-title">月度报表</div>
-                            </div>
-                            <div class="feature-placeholder">
-                                <div class="placeholder-icon">🚧</div>
-                                <div class="placeholder-title">功能开发中</div>
-                                <div class="placeholder-desc">
-                                    <p>该功能正在努力开发中，敬请期待！</p>
-                                    <p class="feature-intro"><strong>功能简介：</strong></p>
-                                    <ul class="feature-list">
-                                        <li>✅ 月度收益统计</li>
-                                        <li>✅ 月度交易次数</li>
-                                        <li>✅ 月度盈亏对比</li>
-                                        <li>✅ 最佳/最差月份</li>
-                                        <li>✅ 月度操作回顾</li>
-                                    </ul>
-                                </div>
+                        <div id="monthly-report-content-holder" class="report-content-holder">
+                            <div class="loading-indicator">
+                                <div class="spinner"></div>
+                                <p>加载中...</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- 年度报表 -->
                     <div class="sub-tab-content" id="reports-annual">
-                        <div class="card">
-                            <div class="card-header">
-                                <div class="card-icon">📆</div>
-                                <div class="card-title">年度报表</div>
+                        <div id="yearly-report-content-holder" class="report-content-holder">
+                            <div class="loading-indicator">
+                                <div class="spinner"></div>
+                                <p>加载中...</p>
                             </div>
+                        </div>
+                    </div>
+                    <!-- 原功能简介
                             <div class="feature-placeholder">
                                 <div class="placeholder-icon">🚧</div>
                                 <div class="placeholder-title">功能开发中</div>
@@ -1736,6 +2704,13 @@
             </div>
         </div>
 
+        <!-- 测试元素：用于测试悬浮框功能 -->
+        <div style="position: fixed; bottom: 20px; right: 20px; background: #667eea; color: white; padding: 10px 15px; border-radius: 8px; cursor: pointer; z-index: 1000;"
+             onmouseover="showStockTooltip('000001', '平安银行', event)"
+             onmouseout="setTimeout(() => closeStockTooltip(), 300)">
+            测试悬浮框 (000001)
+        </div>
+
         <!-- 总资金设置模态框 -->
         <div id="capitalModal" class="modal" style="display: none;">
             <div class="modal-content" style="max-width: 500px;">
@@ -1800,6 +2775,10 @@
                         <div class="settings-nav-item" data-section="ai-prompts">
                             <span class="settings-nav-icon">🤖</span>
                             <span class="settings-nav-text">AI提示词管理</span>
+                        </div>
+                        <div class="settings-nav-item" data-section="ai-api">
+                            <span class="settings-nav-icon">🔌</span>
+                            <span class="settings-nav-text">AI API配置</span>
                         </div>
                         <div class="settings-nav-item" data-section="system">
                             <span class="settings-nav-icon">ℹ️</span>
@@ -2170,6 +3149,41 @@
                             </div>
                         </div>
 
+                        <!-- AI API配置 -->
+                        <div class="settings-section" id="settings-ai-api">
+                            <div class="settings-section-header">
+                                <h3>🔌 AI API配置</h3>
+                                <p class="settings-section-desc">管理AI接口配置，支持多种AI服务商</p>
+                            </div>
+                            <div class="settings-section-body">
+                                <!-- 当前激活的配置 -->
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">当前激活配置</span>
+                                        <span class="setting-desc">系统当前使用的AI接口配置</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <div id="activeApiConfig" class="active-api-config">
+                                            <span class="loading-text">正在加载...</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 配置列表 -->
+                                <div class="ai-api-configs-container">
+                                    <div class="ai-api-configs-header">
+                                        <h4>API配置列表</h4>
+                                        <button class="btn btn-primary btn-sm" onclick="AIApiConfigManager.openCreateModal()">
+                                            ➕ 添加新配置
+                                        </button>
+                                    </div>
+                                    <div id="aiApiConfigsList" class="ai-api-configs-list">
+                                        <div class="loading-text">正在加载API配置...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 系统信息 -->
                         <div class="settings-section" id="settings-system">
                             <div class="settings-section-header">
@@ -2236,7 +3250,183 @@
                 </div>
             </div>
         </div>
-        
+
+        <!-- AI API配置模态框 -->
+        <div id="aiApiConfigModal" class="modal" style="display: none;">
+            <div class="modal-content api-config-modal-content">
+                <div class="modal-header api-config-modal-header">
+                    <div class="modal-header-content">
+                        <div class="modal-icon">🔌</div>
+                        <div>
+                            <h2 id="aiApiConfigModalTitle" class="modal-title-text">AI API配置</h2>
+                            <p class="modal-subtitle">配置AI服务接口参数</p>
+                        </div>
+                    </div>
+                    <button class="modal-close" onclick="AIApiConfigManager.closeModal()">&times;</button>
+                </div>
+                <div class="modal-body api-config-modal-body">
+                    <form id="aiApiConfigForm" onsubmit="AIApiConfigManager.saveConfig(event)">
+                        <input type="hidden" id="configId" value="">
+
+                        <!-- 基本信息 -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <span class="section-icon">📋</span>
+                                <h3 class="section-title">基本信息</h3>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configName" class="form-label">
+                                    <span class="label-text">配置名称</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <input type="text" id="configName" class="form-control modern-input" required placeholder="例如: DeepSeek, OpenAI GPT-4">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configProvider" class="form-label">
+                                    <span class="label-text">服务提供商</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <select id="configProvider" class="form-control modern-select" onchange="AIApiConfigManager.onProviderChange()" required>
+                                    <option value="">请选择服务提供商</option>
+                                    <option value="deepseek">🌊 DeepSeek</option>
+                                    <option value="openai">🤖 OpenAI</option>
+                                    <option value="anthropic">🧠 Anthropic Claude</option>
+                                    <option value="gemini">💎 Google Gemini</option>
+                                    <option value="custom">⚙️ 自定义</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configDescription" class="form-label">
+                                    <span class="label-text">配置描述</span>
+                                </label>
+                                <textarea id="configDescription" class="form-control modern-textarea" rows="2" placeholder="简要描述这个配置的用途和应用场景"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- API配置 -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <span class="section-icon">🔗</span>
+                                <h3 class="section-title">API配置</h3>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configApiUrl" class="form-label">
+                                    <span class="label-text">API地址</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <span class="input-icon">🌐</span>
+                                    <input type="url" id="configApiUrl" class="form-control modern-input with-icon" required placeholder="https://api.example.com/v1/chat/completions">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configApiKey" class="form-label">
+                                    <span class="label-text">API密钥</span>
+                                    <span class="label-optional">(可选)</span>
+                                </label>
+                                <div class="input-with-icon">
+                                    <span class="input-icon">🔑</span>
+                                    <input type="password" id="configApiKey" class="form-control modern-input with-icon" placeholder="sk-...">
+                                </div>
+                                <small class="form-hint">💡 本地模型或开放API可以留空</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="configModel" class="form-label">
+                                    <span class="label-text">模型名称</span>
+                                    <span class="label-required">*</span>
+                                </label>
+                                <div class="model-input-group">
+                                    <div class="input-with-icon" style="flex: 1;">
+                                        <span class="input-icon">🎯</span>
+                                        <input type="text" id="configModel" class="form-control modern-input with-icon" required placeholder="例如: deepseek-chat, gpt-4" list="modelList">
+                                        <datalist id="modelList"></datalist>
+                                    </div>
+                                    <button type="button" class="btn btn-fetch-models" onclick="AIApiConfigManager.fetchModels()">
+                                        <span class="btn-icon">📋</span>
+                                        <span class="btn-text">获取模型</span>
+                                    </button>
+                                </div>
+                                <small class="form-hint">💡 点击"获取模型"自动加载可用模型列表</small>
+                            </div>
+                        </div>
+
+                        <!-- 高级参数 -->
+                        <div class="config-section">
+                            <div class="section-header">
+                                <span class="section-icon">⚙️</span>
+                                <h3 class="section-title">高级参数</h3>
+                            </div>
+
+                            <div class="form-row modern-form-row">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="configTemperature" class="form-label">
+                                        <span class="label-text">温度参数</span>
+                                    </label>
+                                    <input type="number" id="configTemperature" class="form-control modern-input" min="0" max="2" step="0.1" value="0.7">
+                                    <small class="form-hint">🌡️ 0-2, 越高越随机</small>
+                                </div>
+
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="configMaxTokens" class="form-label">
+                                        <span class="label-text">最大令牌数</span>
+                                    </label>
+                                    <input type="number" id="configMaxTokens" class="form-control modern-input" min="100" max="10000" step="100" value="2000">
+                                    <small class="form-hint">📝 输出最大长度</small>
+                                </div>
+
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="configTimeout" class="form-label">
+                                        <span class="label-text">超时时间</span>
+                                    </label>
+                                    <input type="number" id="configTimeout" class="form-control modern-input" min="5000" max="300000" step="1000" value="30000">
+                                    <small class="form-hint">⏱️ 毫秒(ms)</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 激活选项 -->
+                        <div class="config-section">
+                            <div class="form-group checkbox-group">
+                                <label class="modern-checkbox">
+                                    <input type="checkbox" id="configSetActive">
+                                    <span class="checkbox-label">
+                                        <span class="checkbox-icon">⚡</span>
+                                        <span class="checkbox-text">
+                                            <strong>设为当前激活配置</strong>
+                                            <small>立即启用此配置用于AI功能</small>
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- 操作按钮 -->
+                        <div class="modal-actions modern-modal-actions">
+                            <button type="button" class="btn btn-test" onclick="AIApiConfigManager.testConfig()">
+                                <span class="btn-icon">🧪</span>
+                                <span class="btn-text">测试配置</span>
+                            </button>
+                            <div class="action-buttons-right">
+                                <button type="button" class="btn btn-secondary" onclick="AIApiConfigManager.closeModal()">
+                                    <span class="btn-text">取消</span>
+                                </button>
+                                <button type="submit" class="btn btn-primary modern-btn-primary">
+                                    <span class="btn-icon">💾</span>
+                                    <span class="btn-text">保存配置</span>
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
          <!-- 成本详情模态框 -->
         <div id="costDetailModal" class="modal" style="display: none;">
             <div class="modal-content" style="max-width: 95%; width: 1200px; max-height: 90vh; overflow-y: auto;">
@@ -2464,8 +3654,8 @@
                 </div>
 
                 <div class="modal-actions">
-                    <button class="action-btn secondary" onclick="TradingLogManager.closeLogModal()">取消</button>
-                    <button class="action-btn" onclick="TradingLogManager.submitLog()">
+                    <button type="button" class="action-btn secondary" onclick="TradingLogManager.closeLogModal()">取消</button>
+                    <button type="button" class="action-btn" onclick="TradingLogManager.submitLog()">
                         <span id="logSubmitBtnText">💾 保存日志</span>
                     </button>
                 </div>
@@ -2642,6 +3832,51 @@
         </div>
     </div>
 
+    <!-- 模块历史记录模态框 -->
+    <div id="historyModuleModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; padding: 20px;">
+        <div class="modal-content" style="background: white; border-radius: 12px; max-width: 1000px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e0e0e0;">
+                <h3 id="historyModuleTitle" style="margin: 0; font-size: 18px; color: #00695c;">📚 历史记录</h3>
+                <button onclick="closeModuleHistoryModal()" class="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div class="history-filters" style="background: #f5f7fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div class="form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px;">
+                        <input type="text" id="historyModuleFilterStock" placeholder="股票代码" class="form-control" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <input type="date" id="historyModuleFilterStartDate" placeholder="开始日期" class="form-control" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <input type="date" id="historyModuleFilterEndDate" placeholder="结束日期" class="form-control" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="loadModuleHistory()" class="btn-primary" style="padding: 8px 20px; background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">🔍 查询</button>
+                        <button onclick="resetModuleHistoryFilters()" class="btn-secondary" style="padding: 8px 20px; background: #e0e0e0; color: #424242; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">🔄 重置</button>
+                        <button onclick="exportModuleHistoryToExcel()" class="btn-success" style="padding: 8px 20px; background: linear-gradient(135deg, #43a047 0%, #388e3c 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">📥 导出Excel</button>
+                    </div>
+                </div>
+                <div id="historyModuleList" style="min-height: 300px;"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-top: 1px solid #e0e0e0;">
+                <span id="historyModuleCount" style="color: #78909c; font-size: 14px;">共 0 条记录</span>
+                <button onclick="closeModuleHistoryModal()" class="btn-secondary" style="padding: 8px 20px; background: #e0e0e0; color: #424242; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详情模态框 -->
+    <div id="historyDetailModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1001; justify-content: center; align-items: center; padding: 20px;">
+        <div class="modal-content" style="background: white; border-radius: 12px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e0e0e0;">
+                <h3 id="historyDetailTitle" style="margin: 0; font-size: 18px; color: #00695c;">预测详情</h3>
+                <button onclick="closeHistoryDetail()" class="modal-close" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <div id="historyDetailContent"></div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; padding: 15px 20px; border-top: 1px solid #e0e0e0;">
+                <button onclick="closeHistoryDetail()" class="btn-secondary" style="padding: 10px 24px; background: #e0e0e0; color: #424242; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 股票图表模块 -->
     <script src="/js/stockChart.js"></script>
 
@@ -2658,6 +3893,8 @@
     <script src="/js/modules/watchlist-manager.js"></script>
     <!-- 分析功能模块 -->
     <script src="/js/modules/analysis-manager.js"></script>
+    <!-- 基本面分析模块 -->
+    <script src="/js/modules/fundamental-analysis.js"></script>
     <!-- 市场数据模块 -->
     <script src="/js/modules/market-data.js"></script>
     <!-- 股票详情模块 -->
@@ -2684,6 +3921,23 @@
     <script src="/js/modules/portfolio-optimization-manager.js"></script>
     <!-- 风险控制管理模块 -->
     <script src="/js/modules/risk-control-manager.js"></script>
+    <!-- AI API配置管理模块 -->
+    <script src="/js/modules/ai-api-config-manager.js"></script>
+    <!-- 六壬排盘工具 -->
+    <script src="/js/modules/liuren-calculator.js"></script>
+    <!-- 预测管理模块 -->
+    <script src="/js/modules/prediction-utils.js"></script>
+    <script src="/js/modules/prediction-manager.js"></script>
+    <!-- 历史记录管理模块 -->
+    <script src="/js/modules/history-manager.js"></script>
+    <!-- 交易计算器模块 -->
+    <script src="/js/modules/trading-calculator.js"></script>
+    <!-- 独立行情分析模块 -->
+    <script src="/js/modules/independent-analysis.js"></script>
+    <!-- 每日复盘模块 -->
+    <script src="/js/modules/recap-manager.js"></script>
+    <!-- 持仓报表模块 -->
+    <script src="/js/modules/report-manager.js"></script>
 
     <!-- 核心初始化模块 -->
     <script src="/js/main-core.js"></script>

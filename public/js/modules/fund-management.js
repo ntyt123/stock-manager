@@ -325,7 +325,10 @@ const FundManagementManager = {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom'
+                        position: 'bottom',
+                        labels: {
+                            color: '#2c3e50'
+                        }
                     },
                     tooltip: {
                         callbacks: {

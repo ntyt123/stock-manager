@@ -219,7 +219,7 @@ async function analyzePortfolio() {
         const result = await response.json();
 
         if (result.success && result.data) {
-            const { analysis, portfolioSummary, timestamp, prompt } = result.data;
+            const { analysis, portfolioSummary, timestamp, prompt, recommendedRiskRules } = result.data;
 
             // 在浏览器控制台输出发送给AI的提示词
             if (prompt) {
@@ -228,11 +228,36 @@ async function analyzePortfolio() {
                 console.log('%c📝 ============================================================', 'color: #4CAF50; font-weight: bold; font-size: 14px;');
             }
 
+            // 在浏览器控制台输出AI推荐的风险规则
+            if (recommendedRiskRules) {
+                console.log('%c🛡️ ==================== AI推荐的风险规则 ====================', 'color: #FF5722; font-weight: bold; font-size: 14px;');
+                console.log(JSON.stringify(recommendedRiskRules, null, 2));
+                console.log('%c🛡️ ============================================================', 'color: #FF5722; font-weight: bold; font-size: 14px;');
+            }
+
             // 显示分析结果
-            displayPortfolioAnalysis(analysis, portfolioSummary, timestamp);
+            displayPortfolioAnalysis(analysis, portfolioSummary, timestamp, recommendedRiskRules);
 
             console.log('✅ 持仓分析完成');
-            showNotification('持仓分析完成', 'success');
+
+            // 如果有AI推荐的风险规则，显示在风险控制模块并切换过去
+            if (recommendedRiskRules) {
+                displayAIRecommendedRules(recommendedRiskRules);
+                showNotification('持仓分析完成，AI已生成风险控制规则建议', 'success');
+
+                // 提示用户查看风险控制页面
+                setTimeout(() => {
+                    if (confirm('AI已生成风险控制规则建议，是否立即查看？')) {
+                        // 找到风险控制子标签按钮并切换
+                        const riskControlBtn = document.querySelector('[data-subtab="analysis-risk-control"]');
+                        if (riskControlBtn && typeof switchSubTab === 'function') {
+                            switchSubTab(riskControlBtn);
+                        }
+                    }
+                }, 500);
+            } else {
+                showNotification('持仓分析完成', 'success');
+            }
 
         } else {
             throw new Error(result.error || '分析失败');
@@ -262,7 +287,7 @@ async function analyzePortfolio() {
 }
 
 // displayPortfolioAnalysis
-function displayPortfolioAnalysis(analysis, summary, timestamp) {
+function displayPortfolioAnalysis(analysis, summary, timestamp, recommendedRiskRules) {
     const container = document.getElementById('portfolioAnalysis');
 
     // 调试日志：检查 summary 对象
@@ -301,13 +326,13 @@ function displayPortfolioAnalysis(analysis, summary, timestamp) {
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">总盈亏</div>
-                        <div class="summary-value" style="color: ${summary.totalProfitLoss >= 0 ? '#ffeb3b' : '#ff9800'}">
+                        <div class="summary-value" style="color: ${summary.totalProfitLoss >= 0 ? '#b50039ff' : '#4CAF50'}">
                             ${summary.totalProfitLoss >= 0 ? '+' : ''}¥${summary.totalProfitLoss.toFixed(2)}
                         </div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">盈亏率</div>
-                        <div class="summary-value" style="color: ${summary.totalProfitLoss >= 0 ? '#ffeb3b' : '#ff9800'}">
+                        <div class="summary-value" style="color: ${summary.totalProfitLoss >= 0 ? '#b50039ff' : '#4CAF50'}">
                             ${summary.totalProfitLoss >= 0 ? '+' : ''}${summary.totalProfitLossRate}%
                         </div>
                     </div>
@@ -329,6 +354,11 @@ function displayPortfolioAnalysis(analysis, summary, timestamp) {
     `;
 
     container.innerHTML = html;
+
+    // 保存推荐的风险规则到全局变量，供后续使用
+    if (recommendedRiskRules) {
+        window.currentRecommendedRiskRules = recommendedRiskRules;
+    }
 }
 
 // viewReportHistory
@@ -1188,5 +1218,527 @@ function generateMockAIResponse(question) {
 
     // 随机返回一个模拟响应
     return responses[Math.floor(Math.random() * responses.length)];
+}
+
+// ==================== 加载风险控制模块 ====================
+async function loadRiskControlModule() {
+    const container = document.getElementById('riskControlContent');
+    if (!container) {
+        console.error('❌ 找不到风险控制内容容器');
+        return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        container.innerHTML = `
+            <div class="analysis-hint" style="color: #2c3e50;">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">请先登录</p>
+                    <p class="hint-desc">登录后即可使用AI风险控制功能</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // 显示加载状态
+    container.innerHTML = `
+        <div class="analysis-loading" style="color: #2c3e50;">
+            <div class="loading-spinner"></div>
+            <div class="loading-message">正在加载风险控制规则...</div>
+        </div>
+    `;
+
+    try {
+        // 第一步：优先检查用户是否已经保存了风险规则
+        const savedRulesResponse = await fetch('/api/risk-control/rules', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const savedRulesResult = await savedRulesResponse.json();
+
+        if (savedRulesResult.success && savedRulesResult.data.rules) {
+            const savedRules = savedRulesResult.data.rules;
+            console.log('📊 发现用户已保存的风险规则:', savedRules);
+
+            // 显示用户已保存的规则（不是AI推荐，而是实际应用的规则）
+            displaySavedRiskRules(savedRules);
+            return; // 有保存的规则，直接返回，不再显示AI推荐
+        }
+
+        console.log('ℹ️ 用户尚未保存风险规则，尝试加载AI推荐规则...');
+
+        // 第二步：如果没有保存的规则，尝试加载AI推荐的规则
+        // 获取今天的日期
+        const today = new Date().toLocaleDateString('zh-CN').replace(/\//g, '-');
+
+        // 获取最新的持仓分析报告
+        const response = await fetch('/api/analysis/reports?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (!result.success || !result.data.reports || result.data.reports.length === 0) {
+            // 没有任何分析报告
+            container.innerHTML = `
+                <div class="analysis-hint" style="color: #2c3e50;">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">AI智能风险控制</p>
+                        <p class="hint-desc">暂无持仓分析报告，请先进行持仓分析</p>
+                        <p class="hint-schedule">💡 AI将基于您的持仓分析生成个性化的风险控制规则</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // 获取最新报告的详情
+        const latestReportId = result.data.reports[0].id;
+        const detailResponse = await fetch(`/api/analysis/reports/${latestReportId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const detailResult = await detailResponse.json();
+
+        console.log('🔍 [DEBUG] 获取到的报告详情:', detailResult);
+
+        // 检查报告日期是否是今天
+        const reportDate = new Date(detailResult.data.timestamp).toLocaleDateString('zh-CN').replace(/\//g, '-');
+        const isToday = reportDate === today;
+
+        console.log('🔍 [DEBUG] 报告日期:', reportDate);
+        console.log('🔍 [DEBUG] 今天日期:', today);
+        console.log('🔍 [DEBUG] 是否是今天:', isToday);
+
+        // 优先从数据库加载AI推荐的风险规则，如果没有则检查全局变量
+        const recommendedRiskRules = detailResult.data.recommendedRiskRules
+            || detailResult.data.recommended_risk_rules
+            || window.currentRecommendedRiskRules;
+
+        console.log('🔍 [DEBUG] 最终的 recommendedRiskRules:', recommendedRiskRules);
+
+        // 检查是否有推荐的风险规则
+        if (recommendedRiskRules && recommendedRiskRules.position) {
+            // 有AI推荐的规则（从数据库或全局变量），直接显示
+            console.log('📊 从数据库加载AI推荐的风险规则:', recommendedRiskRules);
+            displayAIRecommendedRules(recommendedRiskRules);
+        } else if (!isToday) {
+            // 最新报告不是今天的
+            container.innerHTML = `
+                <div class="analysis-hint" style="color: #2c3e50;">
+                    <div class="hint-icon">📅</div>
+                    <div class="hint-content">
+                        <p class="hint-title">今日暂无持仓分析</p>
+                        <p class="hint-desc">最新分析时间：${new Date(detailResult.data.timestamp).toLocaleString('zh-CN')}</p>
+                        <p class="hint-schedule">💡 请点击"持仓分析"进行今日分析，AI将为您生成风险控制规则</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            // 有今天的分析但没有推荐规则
+            container.innerHTML = `
+                <div class="analysis-hint" style="color: #2c3e50;">
+                    <div class="hint-icon">⚠️</div>
+                    <div class="hint-content">
+                        <p class="hint-title">暂无AI推荐规则</p>
+                        <p class="hint-desc">今日已有持仓分析，但未生成风险控制规则建议</p>
+                        <p class="hint-schedule">💡 请重新进行持仓分析以获取AI推荐规则</p>
+                    </div>
+                </div>
+            `;
+        }
+
+    } catch (error) {
+        console.error('❌ 加载风险控制模块错误:', error);
+        container.innerHTML = `
+            <div class="analysis-hint" style="color: #2c3e50;">
+                <div class="hint-icon">⚠️</div>
+                <div class="hint-content">
+                    <p class="hint-title">加载失败</p>
+                    <p class="hint-desc">${error.message || '无法加载风险控制信息'}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// ==================== 显示用户已保存的风险规则 ====================
+function displaySavedRiskRules(savedRules) {
+    const container = document.getElementById('riskControlContent');
+    if (!container) {
+        console.error('❌ 找不到风险控制内容容器');
+        return;
+    }
+
+    console.log('📊 正在风险控制模块中显示已保存的风险规则...');
+
+    // 构建HTML - 显示当前生效的风险规则
+    const html = `
+        <div class="risk-rules-recommendation" style="color: #2c3e50;">
+            <div class="risk-rules-header">
+                <h3 style="margin: 0; color: #2e7d32;">✅ 当前生效的风险控制规则</h3>
+                <span class="risk-rules-badge" style="background: #2e7d32;">已应用</span>
+            </div>
+
+            <div class="risk-rules-details">
+                <div class="rule-category">
+                    <div class="category-title">📍 仓位控制</div>
+                    <div class="rule-items">
+                        <div class="rule-item">
+                            <span class="rule-label">总仓位上限</span>
+                            <span class="rule-value">${savedRules.position.maxTotalPosition}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">单股仓位上限</span>
+                            <span class="rule-value">${savedRules.position.maxSingleStockPosition}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">行业集中度</span>
+                            <span class="rule-value">${savedRules.position.maxIndustryConcentration}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-category">
+                    <div class="category-title">⚠️ 止损止盈</div>
+                    <div class="rule-items">
+                        <div class="rule-item">
+                            <span class="rule-label">账户总止损</span>
+                            <span class="rule-value risk-value">${savedRules.stopLoss.globalStopLoss}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">单股止损</span>
+                            <span class="rule-value risk-value">${savedRules.stopLoss.singleStockStopLoss}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">单股止盈</span>
+                            <span class="rule-value profit-value">${savedRules.stopLoss.singleStockStopProfit}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-category">
+                    <div class="category-title">🔒 交易限制</div>
+                    <div class="rule-items">
+                        <div class="rule-item">
+                            <span class="rule-label">单笔最大交易</span>
+                            <span class="rule-value">¥${savedRules.tradingLimits.maxSingleTradeAmount.toLocaleString()}</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">日内最大次数</span>
+                            <span class="rule-value">${savedRules.tradingLimits.maxDailyTrades}次</span>
+                        </div>
+                        ${savedRules.tradingLimits.blacklist && savedRules.tradingLimits.blacklist.length > 0 ? `
+                        <div class="rule-item">
+                            <span class="rule-label">黑名单股票</span>
+                            <span class="rule-value">${savedRules.tradingLimits.blacklist.join(', ')}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+
+            <div class="risk-rules-actions">
+                <button onclick="editSavedRules()" class="apply-rules-btn">
+                    ⚙️ 修改规则
+                </button>
+                <button onclick="checkForNewAIRecommendations()" class="view-rules-btn">
+                    🤖 查看AI新建议
+                </button>
+            </div>
+
+            <div class="risk-rules-hint" style="margin-top: 15px; padding: 10px; background: #e8f5e9; border-radius: 4px; font-size: 13px; color: #2e7d32;">
+                💡 提示：这些规则已生效，系统将基于这些规则进行风险检查和预警
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+    console.log('✅ 已保存的风险规则已显示在风险控制模块');
+}
+
+// ==================== 修改已保存的规则 ====================
+async function editSavedRules() {
+    // 调用RiskControlManager的openRulesModal方法打开规则配置弹窗
+    if (typeof RiskControlManager !== 'undefined' && typeof RiskControlManager.openRulesModal === 'function') {
+        RiskControlManager.openRulesModal();
+    } else {
+        showNotification('规则配置功能暂不可用', 'error');
+    }
+}
+
+// ==================== 查看AI新建议 ====================
+async function checkForNewAIRecommendations() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        showNotification('请先登录', 'error');
+        return;
+    }
+
+    const container = document.getElementById('riskControlContent');
+    if (!container) return;
+
+    // 显示加载状态
+    container.innerHTML = `
+        <div class="analysis-loading" style="color: #2c3e50;">
+            <div class="loading-spinner"></div>
+            <div class="loading-message">正在检查AI最新建议...</div>
+        </div>
+    `;
+
+    try {
+        // 获取最新的持仓分析报告
+        const response = await fetch('/api/analysis/reports?limit=1', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (!result.success || !result.data.reports || result.data.reports.length === 0) {
+            container.innerHTML = `
+                <div class="analysis-hint" style="color: #2c3e50;">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">暂无AI建议</p>
+                        <p class="hint-desc">请先进行持仓分析，AI将生成新的风险规则建议</p>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => loadRiskControlModule(), 3000);
+            return;
+        }
+
+        // 获取最新报告的详情
+        const latestReportId = result.data.reports[0].id;
+        const detailResponse = await fetch(`/api/analysis/reports/${latestReportId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const detailResult = await detailResponse.json();
+
+        const recommendedRiskRules = detailResult.data.recommendedRiskRules
+            || detailResult.data.recommended_risk_rules;
+
+        if (recommendedRiskRules && recommendedRiskRules.position) {
+            console.log('📊 找到AI推荐的风险规则');
+            displayAIRecommendedRules(recommendedRiskRules);
+        } else {
+            container.innerHTML = `
+                <div class="analysis-hint" style="color: #2c3e50;">
+                    <div class="hint-icon">💡</div>
+                    <div class="hint-content">
+                        <p class="hint-title">暂无AI新建议</p>
+                        <p class="hint-desc">最新的持仓分析中未包含风险规则建议</p>
+                        <p class="hint-schedule">💡 请重新进行持仓分析以获取AI最新建议</p>
+                    </div>
+                </div>
+            `;
+            setTimeout(() => loadRiskControlModule(), 3000);
+        }
+
+    } catch (error) {
+        console.error('❌ 检查AI新建议错误:', error);
+        showNotification('检查失败: ' + error.message, 'error');
+        setTimeout(() => loadRiskControlModule(), 2000);
+    }
+}
+
+// ==================== 在风险控制模块显示AI推荐的规则 ====================
+function displayAIRecommendedRules(recommendedRiskRules) {
+    const container = document.getElementById('riskControlContent');
+    if (!container) {
+        console.error('❌ 找不到风险控制内容容器');
+        return;
+    }
+
+    if (!recommendedRiskRules || !recommendedRiskRules.position) {
+        console.log('ℹ️ 没有AI推荐的风险规则');
+        return;
+    }
+
+    console.log('📊 正在风险控制模块中显示AI推荐的规则...');
+
+    // 保存到全局变量
+    window.currentRecommendedRiskRules = recommendedRiskRules;
+
+    // 构建HTML
+    const html = `
+        <div class="risk-rules-recommendation" style="color: #2c3e50;">
+            <div class="risk-rules-header">
+                <h3 style="margin: 0; color: #e65100;">🛡️ AI推荐的风险控制规则</h3>
+                <span class="risk-rules-badge">智能推荐</span>
+            </div>
+
+            <div class="risk-rules-reason">
+                <strong>推荐理由：</strong>${recommendedRiskRules.reason || '基于当前持仓分析'}
+            </div>
+
+            <div class="risk-rules-highlights">
+                ${(recommendedRiskRules.highlights || []).map(h => `<div class="highlight-item">✓ ${h}</div>`).join('')}
+            </div>
+
+            <div class="risk-rules-details">
+                <div class="rule-category">
+                    <div class="category-title">📍 仓位控制</div>
+                    <div class="rule-items">
+                        <div class="rule-item">
+                            <span class="rule-label">总仓位上限</span>
+                            <span class="rule-value">${recommendedRiskRules.position.maxTotalPosition}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">单股仓位上限</span>
+                            <span class="rule-value">${recommendedRiskRules.position.maxSingleStockPosition}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">行业集中度</span>
+                            <span class="rule-value">${recommendedRiskRules.position.maxIndustryConcentration}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-category">
+                    <div class="category-title">⚠️ 止损止盈</div>
+                    <div class="rule-items">
+                        <div class="rule-item">
+                            <span class="rule-label">账户总止损</span>
+                            <span class="rule-value risk-value">${recommendedRiskRules.stopLoss.globalStopLoss}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">单股止损</span>
+                            <span class="rule-value risk-value">${recommendedRiskRules.stopLoss.singleStockStopLoss}%</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">单股止盈</span>
+                            <span class="rule-value profit-value">${recommendedRiskRules.stopLoss.singleStockStopProfit}%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rule-category">
+                    <div class="category-title">🔒 交易限制</div>
+                    <div class="rule-items">
+                        <div class="rule-item">
+                            <span class="rule-label">单笔最大交易</span>
+                            <span class="rule-value">¥${recommendedRiskRules.tradingLimits.maxSingleTradeAmount.toLocaleString()}</span>
+                        </div>
+                        <div class="rule-item">
+                            <span class="rule-label">日内最大次数</span>
+                            <span class="rule-value">${recommendedRiskRules.tradingLimits.maxDailyTrades}次</span>
+                        </div>
+                        ${recommendedRiskRules.tradingLimits.blacklist && recommendedRiskRules.tradingLimits.blacklist.length > 0 ? `
+                        <div class="rule-item">
+                            <span class="rule-label">黑名单股票</span>
+                            <span class="rule-value">${recommendedRiskRules.tradingLimits.blacklist.join(', ')}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+
+            <div class="risk-rules-actions">
+                <button onclick="applyRecommendedRules()" class="apply-rules-btn">
+                    ✅ 应用这些规则
+                </button>
+                <button onclick="loadRiskControlModule()" class="view-rules-btn">
+                    🔙 返回已保存规则
+                </button>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+    console.log('✅ AI推荐规则已显示在风险控制模块');
+}
+
+// ==================== 全局函数：应用AI推荐的风险规则 ====================
+async function applyRecommendedRules() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    const rules = window.currentRecommendedRiskRules;
+    if (!rules) {
+        alert('未找到推荐的风险规则');
+        return;
+    }
+
+    if (!confirm('确定要应用AI推荐的风险控制规则吗？\n\n这将覆盖您当前的风险控制设置。')) {
+        return;
+    }
+
+    console.log('🛡️ 正在应用AI推荐的风险规则...');
+
+    try {
+        const response = await fetch('/api/risk-control/rules', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ rules: rules })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            console.log('✅ 风险规则应用成功');
+            showNotification('风险规则已成功应用！', 'success');
+
+            // 刷新风险控制模块，显示已保存的规则
+            setTimeout(() => {
+                loadRiskControlModule();
+            }, 500);
+        } else {
+            throw new Error(result.error || '应用失败');
+        }
+    } catch (error) {
+        console.error('❌ 应用风险规则错误:', error);
+        showNotification('应用风险规则失败: ' + error.message, 'error');
+    }
+}
+
+// ==================== 全局函数：查看当前风险规则 ====================
+async function viewCurrentRiskRules() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/risk-control/rules', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data.rules) {
+            alert(`当前风险控制规则：\n\n${JSON.stringify(result.data.rules, null, 2)}`);
+            console.log('📋 当前风险控制规则:', result.data.rules);
+        } else {
+            alert('暂无风险控制规则');
+        }
+    } catch (error) {
+        console.error('❌ 获取当前规则错误:', error);
+        alert('获取当前规则失败: ' + error.message);
+    }
 }
 

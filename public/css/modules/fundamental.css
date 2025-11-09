@@ -1,0 +1,406 @@
+/* ==================== fundamental.css ==================== */
+/* 基本面分析模块样式 */
+
+/* 搜索区域 */
+.fundamental-search-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.search-input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.search-input-group .search-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 20px;
+    font-size: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #2c3e50;
+    transition: all 0.3s ease;
+}
+
+.search-input-group .watchlist-select {
+    flex: 0 0 auto;
+    min-width: 180px;
+    padding: 12px 15px;
+    font-size: 15px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #2c3e50;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-input-group .watchlist-select:focus {
+    outline: none;
+    border-color: #fff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.search-input-group .search-input:focus {
+    outline: none;
+    border-color: #fff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.search-input-group .primary-btn,
+.search-input-group .secondary-btn {
+    padding: 12px 25px;
+    font-size: 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.search-input-group .primary-btn {
+    background: #fff;
+    color: #667eea;
+}
+
+.search-input-group .primary-btn:hover {
+    background: #f8f9fa;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.search-input-group .secondary-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border: 2px solid #fff;
+}
+
+.search-input-group .secondary-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.search-tips {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* 股票基本信息 */
+.fundamental-stock-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.fundamental-stock-info h3 {
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.stock-price-info {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.price-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.price-item .label {
+    font-size: 13px;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.price-item .value {
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.price-item .value.up {
+    color: #ffeb3b;
+}
+
+.price-item .value.down {
+    color: #ff9800;
+}
+
+/* 基本面数据区域 */
+#fundamentalDataContainer {
+    animation: fadeInUp 0.5s ease;
+}
+
+.fundamental-section {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fundamental-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.fundamental-section .section-title {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+/* 数据网格 */
+.data-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.data-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.data-item:hover {
+    background: #e9ecef;
+    transform: translateY(-2px);
+}
+
+.data-label {
+    font-size: 13px;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.data-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.data-value.up {
+    color: #e74c3c;
+}
+
+.data-value.down {
+    color: #27ae60;
+}
+
+/* AI分析结果区域 */
+#fundamentalAnalysisContainer {
+    animation: fadeInUp 0.5s ease;
+}
+
+#fundamentalAnalysisContainer .analysis-result {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#fundamentalAnalysisContainer .section-title {
+    margin: 0 0 20px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2c3e50;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #ecf0f1;
+}
+
+#fundamentalAnalysisContainer .analysis-content {
+    color: #2c3e50;
+    line-height: 1.8;
+    font-size: 15px;
+}
+
+#fundamentalAnalysisContainer .analysis-content h1,
+#fundamentalAnalysisContainer .analysis-content h2,
+#fundamentalAnalysisContainer .analysis-content h3,
+#fundamentalAnalysisContainer .analysis-content h4 {
+    margin-top: 25px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+}
+
+#fundamentalAnalysisContainer .analysis-content ul,
+#fundamentalAnalysisContainer .analysis-content ol {
+    margin: 15px 0;
+    padding-left: 25px;
+}
+
+#fundamentalAnalysisContainer .analysis-content li {
+    margin: 8px 0;
+}
+
+#fundamentalAnalysisContainer .analysis-content strong {
+    color: #667eea;
+    font-weight: 700;
+}
+
+#fundamentalAnalysisContainer .analysis-content code {
+    background: #f8f9fa;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: #e74c3c;
+}
+
+#fundamentalAnalysisContainer .analysis-content pre {
+    background: #2c3e50;
+    color: #ecf0f1;
+    padding: 15px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 15px 0;
+}
+
+#fundamentalAnalysisContainer .analysis-timestamp {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ecf0f1;
+    color: #95a5a6;
+    font-size: 14px;
+    text-align: right;
+}
+
+/* 操作按钮 */
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.action-buttons .secondary-btn {
+    padding: 12px 25px;
+    background: white;
+    color: #667eea;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-buttons .secondary-btn:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* 加载动画 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .search-input-group {
+        flex-direction: column;
+    }
+
+    .search-input-group .search-input,
+    .search-input-group .watchlist-select {
+        min-width: 100%;
+    }
+
+    .stock-price-info {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .data-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fundamental-stock-info h3 {
+        font-size: 20px;
+    }
+
+    .price-item .value {
+        font-size: 18px;
+    }
+}
+
+/* 深色模式兼容 */
+@media (prefers-color-scheme: dark) {
+    .fundamental-section {
+        background: #1e2732;
+        color: #ecf0f1;
+    }
+
+    .fundamental-section .section-title {
+        color: #ecf0f1;
+        border-bottom-color: #34495e;
+    }
+
+    .data-item {
+        background: #2c3e50;
+    }
+
+    .data-item:hover {
+        background: #34495e;
+    }
+
+    .data-label {
+        color: #95a5a6;
+    }
+
+    .data-value {
+        color: #ecf0f1;
+    }
+
+    #fundamentalAnalysisContainer .analysis-result {
+        background: #1e2732;
+    }
+
+    #fundamentalAnalysisContainer .section-title {
+        color: #ecf0f1;
+        border-bottom-color: #34495e;
+    }
+
+    #fundamentalAnalysisContainer .analysis-content {
+        color: #ecf0f1;
+    }
+
+    #fundamentalAnalysisContainer .analysis-content code {
+        background: #2c3e50;
+        color: #e74c3c;
+    }
+}

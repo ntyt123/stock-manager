@@ -297,6 +297,18 @@ function initDatabase() {
                 console.log('⚠️ 添加 added_price 字段时出错（可能已存在）:', err.message);
             }
 
+            // 为现有analysis_reports表添加recommended_risk_rules字段（如果不存在）
+            try {
+                const columns = db.prepare(`PRAGMA table_info(analysis_reports)`).all();
+                const hasRecommendedRiskRules = columns.some(col => col.name === 'recommended_risk_rules');
+                if (!hasRecommendedRiskRules) {
+                    db.prepare(`ALTER TABLE analysis_reports ADD COLUMN recommended_risk_rules TEXT`).run();
+                    console.log('✅ 已添加 recommended_risk_rules 字段到 analysis_reports 表');
+                }
+            } catch (err) {
+                console.log('⚠️ 添加 recommended_risk_rules 字段时出错（可能已存在）:', err.message);
+            }
+
             // 创建AI提示词模板表 (用于管理各种AI场景的提示词)
             db.prepare(`CREATE TABLE IF NOT EXISTS ai_prompt_templates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -361,6 +373,19 @@ function initDatabase() {
                 related_stock_code TEXT,
                 related_stock_name TEXT,
                 event_data TEXT,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+            )`).run();
+
+            // 创建基本面分析表 (用于记录股票基本面分析)
+            db.prepare(`CREATE TABLE IF NOT EXISTS fundamental_analysis (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                stock_code TEXT NOT NULL,
+                stock_name TEXT NOT NULL,
+                fundamental_data TEXT NOT NULL,
+                analysis_content TEXT NOT NULL,
+                analysis_type TEXT NOT NULL DEFAULT 'manual',
                 created_at TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
             )`).run();

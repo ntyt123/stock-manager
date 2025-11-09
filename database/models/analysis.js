@@ -3,11 +3,12 @@ const { db } = require('../connection');
 // 持仓分析报告相关数据库操作
 const analysisReportModel = {
     // 保存分析报告（自动删除同一天的旧报告）
-    save: (userId, analysisContent, portfolioSummary, reportType = 'manual') => {
+    save: (userId, analysisContent, portfolioSummary, reportType = 'manual', recommendedRiskRules = null) => {
         return new Promise((resolve, reject) => {
             try {
                 const currentTime = new Date().toISOString();
                 const summaryJson = JSON.stringify(portfolioSummary);
+                const rulesJson = recommendedRiskRules ? JSON.stringify(recommendedRiskRules) : null;
                 const today = currentTime.split('T')[0]; // 获取日期部分 YYYY-MM-DD
 
                 // 使用事务：先删除当天的旧报告，再插入新报告
@@ -21,11 +22,11 @@ const analysisReportModel = {
                         console.log(`🗑️ 删除了用户 ${userId} 在 ${today} 的 ${deleteResult.changes} 份旧报告`);
                     }
 
-                    // 插入新报告
+                    // 插入新报告（包含推荐的风险规则）
                     const insertStmt = db.prepare(`INSERT INTO analysis_reports
-                        (user_id, analysis_content, portfolio_summary, report_type, created_at)
-                        VALUES (?, ?, ?, ?, ?)`);
-                    const info = insertStmt.run(userId, analysisContent, summaryJson, reportType, currentTime);
+                        (user_id, analysis_content, portfolio_summary, report_type, recommended_risk_rules, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?)`);
+                    const info = insertStmt.run(userId, analysisContent, summaryJson, reportType, rulesJson, currentTime);
 
                     return { id: info.lastInsertRowid, created_at: currentTime, deletedCount: deleteResult.changes };
                 });
@@ -60,9 +61,14 @@ const analysisReportModel = {
             try {
                 const row = db.prepare(`SELECT * FROM analysis_reports WHERE id = ?`).get(reportId);
 
-                if (row && row.portfolio_summary) {
+                if (row) {
                     // 将JSON字符串转换为对象
-                    row.portfolio_summary = JSON.parse(row.portfolio_summary);
+                    if (row.portfolio_summary) {
+                        row.portfolio_summary = JSON.parse(row.portfolio_summary);
+                    }
+                    if (row.recommended_risk_rules) {
+                        row.recommended_risk_rules = JSON.parse(row.recommended_risk_rules);
+                    }
                 }
 
                 resolve(row);
@@ -81,8 +87,13 @@ const analysisReportModel = {
                     ORDER BY created_at DESC
                     LIMIT 1`).get(userId);
 
-                if (row && row.portfolio_summary) {
-                    row.portfolio_summary = JSON.parse(row.portfolio_summary);
+                if (row) {
+                    if (row.portfolio_summary) {
+                        row.portfolio_summary = JSON.parse(row.portfolio_summary);
+                    }
+                    if (row.recommended_risk_rules) {
+                        row.recommended_risk_rules = JSON.parse(row.recommended_risk_rules);
+                    }
                 }
 
                 resolve(row);

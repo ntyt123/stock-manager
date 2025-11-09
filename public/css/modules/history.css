@@ -1,0 +1,247 @@
+/* 历史记录模块样式 */
+
+/* 历史记录列表项 */
+.history-record-item {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.history-record-item:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+/* 历史记录详情模态框 */
+#historyDetailModal.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+#historyDetailModal .modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+#historyDetailModal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+#historyDetailModal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+#historyDetailModal .modal-close:hover {
+    background: #f5f5f5;
+    color: #333;
+}
+
+#historyDetailModal .modal-body {
+    padding: 20px;
+}
+
+#historyDetailModal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* 排盘显示区域样式 */
+.paipan-display-area {
+    background: #f5f7fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+}
+
+/* 预测内容Markdown样式 */
+.prediction-markdown-content {
+    line-height: 1.8;
+    font-size: 14px;
+}
+
+.prediction-markdown-content h1,
+.prediction-markdown-content h2,
+.prediction-markdown-content h3,
+.prediction-markdown-content h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #00695c;
+}
+
+.prediction-markdown-content h1 {
+    font-size: 22px;
+    border-bottom: 2px solid #00695c;
+    padding-bottom: 8px;
+}
+
+.prediction-markdown-content h2 {
+    font-size: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+}
+
+.prediction-markdown-content h3 {
+    font-size: 18px;
+}
+
+.prediction-markdown-content h4 {
+    font-size: 16px;
+}
+
+.prediction-markdown-content p {
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.prediction-markdown-content ul,
+.prediction-markdown-content ol {
+    margin-bottom: 12px;
+    padding-left: 25px;
+}
+
+.prediction-markdown-content li {
+    margin-bottom: 6px;
+}
+
+.prediction-markdown-content strong {
+    color: #00695c;
+    font-weight: 600;
+}
+
+.prediction-markdown-content code {
+    background: #f5f5f5;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.prediction-markdown-content pre {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+
+.prediction-markdown-content pre code {
+    background: none;
+    padding: 0;
+}
+
+.prediction-markdown-content blockquote {
+    border-left: 4px solid #00695c;
+    padding-left: 15px;
+    color: #666;
+    margin: 12px 0;
+    font-style: italic;
+}
+
+.prediction-markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+}
+
+.prediction-markdown-content table th,
+.prediction-markdown-content table td {
+    border: 1px solid #e0e0e0;
+    padding: 8px 12px;
+    text-align: left;
+}
+
+.prediction-markdown-content table th {
+    background: #f5f7fa;
+    font-weight: 600;
+    color: #00695c;
+}
+
+.prediction-markdown-content table tr:nth-child(even) {
+    background: #fafafa;
+}
+
+/* 历史记录按钮样式 */
+.history-filters .btn-primary {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.history-filters .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.history-filters .btn-secondary {
+    padding: 10px 24px;
+    background: #e0e0e0;
+    color: #424242;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.history-filters .btn-secondary:hover {
+    background: #d0d0d0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    #historyDetailModal .modal-content {
+        max-width: 95%;
+        margin: 10px;
+    }
+
+    .history-record-item {
+        padding: 12px;
+    }
+
+    .history-filters .form-row {
+        grid-template-columns: 1fr !important;
+    }
+}

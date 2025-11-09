@@ -16,6 +16,7 @@ const path = require('path');
 const fileUpload = require('express-fileupload');
 const cron = require('node-cron');
 const { initDatabase, closeDatabase } = require('./database');
+const migrator = require('./database/migrator');
 const stockCache = require('./stockCache');
 const { isTradingDay, getTodayString } = require('./utils/tradingCalendar');
 
@@ -75,6 +76,11 @@ const stockPoolRoutes = require('./routes/stock-pool')(authenticateToken);
 const marketSentimentRoutes = require('./routes/market-sentiment')(authenticateToken);
 const aiPromptsRoutes = require('./routes/ai-prompts')(authenticateToken);
 const riskControlRoutes = require('./routes/risk-control')(authenticateToken);
+const fundamentalRoutes = require('./routes/fundamental')(authenticateToken);
+const predictionRoutes = require('./routes/prediction')(authenticateToken);
+const aiApiConfigRoutes = require('./routes/ai-api-config')(authenticateToken);
+const recapRoutes = require('./routes/recap')(authenticateToken);
+const reportRoutes = require('./routes/report')(authenticateToken);
 
 // 挂载路由
 app.use('/api/auth', authRoutes);
@@ -96,6 +102,11 @@ app.use('/api/stock-pool', stockPoolRoutes);
 app.use('/api/market-sentiment', marketSentimentRoutes);
 app.use('/api/ai-prompts', aiPromptsRoutes);
 app.use('/api/risk-control', riskControlRoutes);
+app.use('/api/fundamental', fundamentalRoutes);
+app.use('/api/prediction', predictionRoutes);
+app.use('/api/ai-api', aiApiConfigRoutes);
+app.use('/api/recap', recapRoutes);
+app.use('/api/report', reportRoutes);
 
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）
@@ -140,7 +151,11 @@ cron.schedule('30 9 * * 1-5', async () => {
 // ==================== 数据库初始化和服务器启动 ====================
 (async () => {
     try {
-        // 初始化数据库
+        // 执行数据库迁移
+        console.log('📦 检查数据库迁移...');
+        await migrator.runPendingMigrations();
+
+        // 初始化数据库（包含默认数据和AI提示词）
         await initDatabase();
 
         // 启动服务器 - 监听所有网络接口

@@ -74,6 +74,11 @@ const SettingsManager = {
                 if (item.dataset.section === 'ai-prompts' && window.AIPromptManager) {
                     await window.AIPromptManager.init();
                 }
+
+                // 如果切换到AI API配置，初始化AIApiConfigManager
+                if (item.dataset.section === 'ai-api' && window.AIApiConfigManager) {
+                    await window.AIApiConfigManager.init();
+                }
             });
         });
 

@@ -1,0 +1,865 @@
+/* ==================== 预测模块样式 ====================
+ * AI预测相关功能的样式定义
+ * ========================================================== */
+
+/* 预测占位容器 */
+.prediction-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 40px;
+    text-align: center;
+    min-height: 450px;
+    background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.prediction-placeholder::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 255, 255, 0.15) 10px,
+        rgba(255, 255, 255, 0.15) 20px
+    );
+    animation: moveStripes 20s linear infinite;
+}
+
+@keyframes moveStripes {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(50px, 50px);
+    }
+}
+
+/* 占位图标 */
+.prediction-placeholder .placeholder-icon {
+    font-size: 90px;
+    margin-bottom: 25px;
+    animation: float 3s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 4px 12px rgba(0, 150, 136, 0.3));
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    25% {
+        transform: translateY(-10px) rotate(-2deg);
+    }
+    75% {
+        transform: translateY(-5px) rotate(2deg);
+    }
+}
+
+/* 占位文本 */
+.prediction-placeholder .placeholder-text {
+    font-size: 20px;
+    font-weight: 600;
+    color: #00695c;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 预测卡片容器 */
+.prediction-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.prediction-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* 预测标题 */
+.prediction-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #00695c;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 预测内容 */
+.prediction-content {
+    font-size: 14px;
+    color: #546e7a;
+    line-height: 1.6;
+}
+
+/* 预测指标 */
+.prediction-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.prediction-metric {
+    background: #f5f5f5;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.metric-label {
+    font-size: 12px;
+    color: #78909c;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #00695c;
+}
+
+/* 预测图表容器 */
+.prediction-chart {
+    margin-top: 24px;
+    padding: 20px;
+    background: #fafafa;
+    border-radius: 8px;
+    min-height: 300px;
+}
+
+/* 预测按钮组 */
+.prediction-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+
+.prediction-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.prediction-btn-primary {
+    background: linear-gradient(135deg, #00897b 0%, #00695c 100%);
+    color: white;
+}
+
+.prediction-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 137, 123, 0.4);
+}
+
+.prediction-btn-secondary {
+    background: white;
+    color: #00695c;
+    border: 1px solid #00695c;
+}
+
+.prediction-btn-secondary:hover {
+    background: #e0f2f1;
+}
+
+/* 预测状态标签 */
+.prediction-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.prediction-status.accurate {
+    background: #c8e6c9;
+    color: #2e7d32;
+}
+
+.prediction-status.uncertain {
+    background: #fff9c4;
+    color: #f57f17;
+}
+
+.prediction-status.pending {
+    background: #e1f5fe;
+    color: #0277bd;
+}
+
+/* ==================== 六壬排盘专用样式 ====================  */
+
+.paipan-display-area {
+    background: #ffffff;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.liuren-paipan-result {
+    font-family: 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+}
+
+.paipan-section {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.paipan-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    margin: 0 0 15px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #00695c;
+    border-bottom: 2px solid #00897b;
+    padding-bottom: 8px;
+}
+
+/* 基本信息网格 */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.info-item {
+    background: white;
+    padding: 12px 15px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.info-item .label {
+    font-size: 13px;
+    color: #546e7a;
+    font-weight: 600;
+}
+
+.info-item .value {
+    font-size: 15px;
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.info-item .value.highlight {
+    color: #00695c;
+    font-size: 18px;
+}
+
+.info-item .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 11px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+/* 四课网格 */
+.sike-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.ke-item {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+}
+
+.ke-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.ke-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #1976d2;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.ke-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.ke-part {
+    font-size: 13px;
+    color: #424242;
+}
+
+.ke-part .label-sm {
+    color: #757575;
+    font-weight: 600;
+    margin-right: 5px;
+}
+
+/* 三传流程 */
+.sanchuan-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.chuan-item {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 120px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.chuan-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(0, 137, 123, 0.3);
+}
+
+.chuan-label {
+    font-size: 12px;
+    color: #78909c;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.chuan-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #00695c;
+    margin-bottom: 8px;
+}
+
+.chuan-wuxing {
+    font-size: 13px;
+    color: #546e7a;
+    background: #e0f2f1;
+    padding: 4px 12px;
+    border-radius: 12px;
+    display: inline-block;
+}
+
+.flow-arrow {
+    font-size: 24px;
+    color: #00897b;
+    font-weight: 700;
+}
+
+/* 十二神将网格 */
+.gods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 10px;
+}
+
+.god-item {
+    background: white;
+    padding: 12px 8px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+}
+
+.god-item:hover {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.god-position {
+    font-size: 16px;
+    font-weight: 700;
+    color: #00695c;
+    margin-bottom: 5px;
+}
+
+.god-item:hover .god-position {
+    color: white;
+}
+
+.god-name {
+    font-size: 12px;
+    color: #546e7a;
+    font-weight: 500;
+}
+
+.god-item:hover .god-name {
+    color: white;
+}
+
+/* 神煞列表 */
+.shensha-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.shensha-item {
+    background: white;
+    padding: 10px 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.shensha-name {
+    font-weight: 600;
+    color: #e65100;
+    margin-right: 5px;
+}
+
+.shensha-value {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 15px;
+}
+
+/* 五行总结 */
+.wuxing-summary {
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 14px;
+    line-height: 1.8;
+    color: #2c3e50;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* ==================== AI预测结果样式 ====================  */
+
+.prediction-result-container {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 3px;
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 预测结果头部 */
+.prediction-result-header {
+    background: white;
+    padding: 20px 25px;
+    border-radius: 14px 14px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-bottom: 3px solid #f0f0f0;
+}
+
+.result-header-icon {
+    font-size: 32px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.result-header-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1565c0;
+    flex: 1;
+}
+
+.result-header-badge {
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 12px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+/* Markdown内容区域 */
+.prediction-markdown-content {
+    background: white;
+    padding: 30px;
+    min-height: 200px;
+    color: #2c3e50;
+    line-height: 1.8;
+}
+
+/* Markdown标题样式 */
+.prediction-markdown-content h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1565c0;
+    margin: 30px 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 3px solid #667eea;
+}
+
+.prediction-markdown-content h1:first-child {
+    margin-top: 0;
+}
+
+.prediction-markdown-content h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1976d2;
+    margin: 28px 0 18px 0;
+    padding-left: 12px;
+    border-left: 4px solid #667eea;
+}
+
+.prediction-markdown-content h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e88e5;
+    margin: 24px 0 15px 0;
+}
+
+.prediction-markdown-content h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #42a5f5;
+    margin: 20px 0 12px 0;
+}
+
+.prediction-markdown-content h5 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #64b5f6;
+    margin: 18px 0 10px 0;
+}
+
+.prediction-markdown-content h6 {
+    font-size: 14px;
+    font-weight: 600;
+    color: #90caf9;
+    margin: 16px 0 8px 0;
+}
+
+/* 段落样式 */
+.prediction-markdown-content p {
+    margin: 12px 0;
+    line-height: 1.8;
+    color: #34495e;
+}
+
+/* 列表样式 */
+.prediction-markdown-content ul,
+.prediction-markdown-content ol {
+    margin: 15px 0;
+    padding-left: 30px;
+}
+
+.prediction-markdown-content ul {
+    list-style-type: none;
+}
+
+.prediction-markdown-content ul li {
+    position: relative;
+    margin: 10px 0;
+    padding-left: 10px;
+}
+
+.prediction-markdown-content ul li::before {
+    content: '▸';
+    position: absolute;
+    left: -20px;
+    color: #667eea;
+    font-weight: 700;
+}
+
+.prediction-markdown-content ol {
+    counter-reset: item;
+}
+
+.prediction-markdown-content ol li {
+    margin: 10px 0;
+    padding-left: 10px;
+    counter-increment: item;
+    position: relative;
+}
+
+.prediction-markdown-content ol li::marker {
+    color: #667eea;
+    font-weight: 700;
+}
+
+/* 强调样式 */
+.prediction-markdown-content strong,
+.prediction-markdown-content b {
+    font-weight: 700;
+    color: #e65100;
+}
+
+.prediction-markdown-content em,
+.prediction-markdown-content i {
+    font-style: italic;
+    color: #5e35b1;
+}
+
+/* 代码样式 */
+.prediction-markdown-content code {
+    background: #f5f7fa;
+    color: #e65100;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.9em;
+    border: 1px solid #e0e0e0;
+}
+
+.prediction-markdown-content pre {
+    background: #2c3e50;
+    color: #ecf0f1;
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prediction-markdown-content pre code {
+    background: transparent;
+    color: #ecf0f1;
+    border: none;
+    padding: 0;
+    font-size: 0.95em;
+}
+
+/* 引用样式 */
+.prediction-markdown-content blockquote {
+    background: linear-gradient(to right, #e8f5e9, #f1f8e9);
+    border-left: 5px solid #66bb6a;
+    margin: 20px 0;
+    padding: 15px 20px;
+    border-radius: 0 8px 8px 0;
+    color: #2e7d32;
+    font-style: italic;
+}
+
+.prediction-markdown-content blockquote p {
+    margin: 5px 0;
+}
+
+/* 表格样式 */
+.prediction-markdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.prediction-markdown-content table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.prediction-markdown-content table th {
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.prediction-markdown-content table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.prediction-markdown-content table tbody tr:hover {
+    background: #f5f7fa;
+}
+
+.prediction-markdown-content table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* 水平线样式 */
+.prediction-markdown-content hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #667eea, transparent);
+    margin: 30px 0;
+}
+
+/* 链接样式 */
+.prediction-markdown-content a {
+    color: #1976d2;
+    text-decoration: none;
+    border-bottom: 1px solid #bbdefb;
+    transition: all 0.3s ease;
+}
+
+.prediction-markdown-content a:hover {
+    color: #0d47a1;
+    border-bottom-color: #1976d2;
+}
+
+/* 图片样式 */
+.prediction-markdown-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin: 20px 0;
+}
+
+/* 预测结果底部 */
+.prediction-result-footer {
+    background: white;
+    padding: 15px 25px;
+    border-radius: 0 0 14px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.result-footer-icon {
+    font-size: 18px;
+    color: #78909c;
+}
+
+.result-footer-time {
+    font-size: 14px;
+    color: #78909c;
+    font-weight: 500;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .prediction-placeholder {
+        padding: 60px 20px;
+        min-height: 350px;
+    }
+
+    .prediction-placeholder .placeholder-icon {
+        font-size: 70px;
+    }
+
+    .prediction-placeholder .placeholder-text {
+        font-size: 18px;
+    }
+
+    .prediction-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .prediction-actions {
+        flex-direction: column;
+    }
+
+    .prediction-btn {
+        width: 100%;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sike-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sanchuan-flow {
+        flex-direction: column;
+    }
+
+    .flow-arrow {
+        transform: rotate(90deg);
+    }
+
+    .gods-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* 预测结果响应式 */
+    .prediction-result-header {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .result-header-title {
+        font-size: 18px;
+    }
+
+    .result-header-badge {
+        order: 3;
+        width: 100%;
+        text-align: center;
+    }
+
+    .prediction-markdown-content {
+        padding: 20px 15px;
+    }
+
+    .prediction-markdown-content h1 {
+        font-size: 22px;
+    }
+
+    .prediction-markdown-content h2 {
+        font-size: 20px;
+    }
+
+    .prediction-markdown-content h3 {
+        font-size: 18px;
+    }
+
+    .prediction-markdown-content table {
+        font-size: 13px;
+    }
+
+    .prediction-markdown-content table th,
+    .prediction-markdown-content table td {
+        padding: 8px 10px;
+    }
+}

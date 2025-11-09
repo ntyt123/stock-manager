@@ -2,6 +2,11 @@
 const { db, closeDatabase } = require('./connection');
 const { initDatabase } = require('./init');
 
+// 导出数据库连接获取函数
+function getDatabase() {
+    return db;
+}
+
 // 导入所有模型
 const { userModel } = require('./models/user');
 const { positionModel, positionUpdateModel } = require('./models/position');
@@ -16,10 +21,13 @@ const { stockPoolModel, stockPoolItemModel } = require('./models/stock-pool');
 const { aiPromptTemplateModel } = require('./models/ai-prompt');
 const { portfolioOptimizationModel } = require('./models/portfolio-optimization');
 const { riskControlRuleModel, riskWarningModel, riskEventModel } = require('./models/risk-control');
+const { fundamentalAnalysisModel } = require('./models/fundamental');
+const aiApiConfigModel = require('./models/ai-api-config');
 
 // 导出所有模型和工具函数
 module.exports = {
     db,
+    getDatabase,
     initDatabase,
     closeDatabase,
     userModel,
@@ -44,5 +52,7 @@ module.exports = {
     portfolioOptimizationModel,
     riskControlRuleModel,
     riskWarningModel,
-    riskEventModel
+    riskEventModel,
+    fundamentalAnalysisModel,
+    aiApiConfigModel
 };

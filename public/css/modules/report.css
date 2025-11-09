@@ -1,0 +1,783 @@
+/**
+ * 持仓报表样式
+ */
+
+/* ========== 遮罩层和面板容器 ========== */
+.report-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.report-overlay.active {
+    opacity: 1;
+}
+
+.report-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.95);
+    width: 95%;
+    max-width: 1400px;
+    max-height: 90vh;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    display: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-panel.active {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+}
+
+/* ========== 报表头部 ========== */
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+}
+
+.report-header h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.report-close-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.report-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+/* ========== 标签页 ========== */
+.report-tabs {
+    display: flex;
+    padding: 0 30px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    gap: 8px;
+}
+
+.report-tab {
+    padding: 14px 24px;
+    background: none;
+    border: none;
+    color: #6c757d;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.report-tab:hover {
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.report-tab.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: white;
+}
+
+/* ========== 报表内容区域 ========== */
+.report-content {
+    flex: 1;
+    min-height: 0; /* 允许flex子元素收缩并启用滚动 */
+    max-height: calc(90vh - 200px); /* 确保有明确的最大高度 */
+    overflow-y: auto !important; /* 强制启用垂直滚动 */
+    overflow-x: hidden; /* 禁用水平滚动 */
+    padding: 30px;
+    background: #f8f9fa;
+}
+
+.report-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+/* ========== 加载和错误状态 ========== */
+.report-loading,
+.report-error,
+.report-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.report-loading p {
+    margin-top: 20px;
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.error-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+}
+
+.error-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #dc3545;
+    margin-bottom: 12px;
+}
+
+.error-message {
+    color: #6c757d;
+    margin-bottom: 24px;
+}
+
+/* ========== 汇总卡片 ========== */
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.3s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card.profit {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+}
+
+.summary-card.loss {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+}
+
+.card-icon {
+    font-size: 36px;
+    min-width: 48px;
+    text-align: center;
+    filter: grayscale(30%);
+}
+
+/* 盈利卡片的图标显示红色 */
+.summary-card.profit .card-icon {
+    filter: grayscale(0%) hue-rotate(350deg) saturate(150%) brightness(1.1);
+}
+
+/* 亏损卡片的图标显示绿色 */
+.summary-card.loss .card-icon {
+    filter: grayscale(0%) hue-rotate(90deg) saturate(120%) brightness(0.9);
+}
+
+.card-content {
+    flex: 1;
+    text-align: left;
+}
+
+.card-label {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.card-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 4px;
+}
+
+.card-sub {
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.summary-card.profit .card-value,
+.summary-card.profit .card-sub {
+    color: #28a745;
+}
+
+.summary-card.loss .card-value,
+.summary-card.loss .card-sub {
+    color: #dc3545;
+}
+
+/* ========== 表格样式 ========== */
+.report-table-container {
+    overflow-x: auto;
+    margin-top: 16px;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.report-table thead {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.report-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.report-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.report-table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.stock-code {
+    display: inline-block;
+    padding: 2px 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.profit {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.loss {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+/* ========== 行业分布图表 ========== */
+.industry-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.industry-item {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.industry-item:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+}
+
+.industry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.industry-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.industry-ratio {
+    font-size: 18px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.industry-bar {
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.industry-bar-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+}
+
+.industry-bar-fill.profit {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+}
+
+.industry-bar-fill.loss {
+    background: linear-gradient(90deg, #dc3545 0%, #fd7e14 100%);
+}
+
+.industry-stats {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.industry-positions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.position-badge {
+    padding: 4px 10px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #495057;
+}
+
+/* ========== 仓位占比 ========== */
+.position-ratio-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ratio-item {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.ratio-item:hover {
+    background: #e9ecef;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ratio-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.ratio-stock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stock-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.stock-industry {
+    font-size: 12px;
+    color: #6c757d;
+    padding: 2px 8px;
+    background: white;
+    border-radius: 4px;
+}
+
+.ratio-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.ratio-bar {
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.ratio-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.5s ease;
+}
+
+.ratio-bar-fill.profit {
+    background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+}
+
+.ratio-bar-fill.loss {
+    background: linear-gradient(90deg, #dc3545 0%, #fd7e14 100%);
+}
+
+.ratio-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #6c757d;
+}
+
+/* ========== 盈亏统计 ========== */
+.profit-loss-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.summary-item {
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.summary-item.profit {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+}
+
+.summary-item.loss {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+}
+
+.item-label {
+    font-size: 13px;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.item-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.summary-item.profit .item-value {
+    color: #28a745;
+}
+
+.summary-item.loss .item-value {
+    color: #dc3545;
+}
+
+.highlight-section {
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.profit-highlight {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-left: 4px solid #28a745;
+}
+
+.loss-highlight {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-left: 4px solid #dc3545;
+}
+
+.highlight-section h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.highlight-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.highlight-stock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.highlight-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.profit-loss-lists {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+.profit-loss-list {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.list-title {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.list-title.profit {
+    color: #28a745;
+}
+
+.list-title.loss {
+    color: #dc3545;
+}
+
+.list-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: white;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.list-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.item-stock {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.item-profit {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ========== 成本分析特殊样式 ========== */
+.stock-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 768px) {
+    .report-panel {
+        width: 100%;
+        max-width: 100%;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    .report-header {
+        padding: 16px 20px;
+    }
+
+    .report-header h2 {
+        font-size: 20px;
+    }
+
+    .report-tabs {
+        padding: 0 10px;
+        overflow-x: auto;
+    }
+
+    .report-tab {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .report-content {
+        padding: 16px;
+    }
+
+    .report-section {
+        padding: 16px;
+    }
+
+    .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .profit-loss-lists {
+        grid-template-columns: 1fr;
+    }
+
+    .report-table {
+        font-size: 12px;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 8px 10px;
+    }
+}
+
+/* ========== 打印样式 ========== */
+@media print {
+    .report-overlay,
+    .report-header,
+    .report-tabs,
+    .report-close-btn {
+        display: none !important;
+    }
+
+    .report-panel {
+        position: static;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        max-height: none;
+        box-shadow: none;
+    }
+
+    .report-content {
+        overflow: visible;
+    }
+}
+
+/* ========== 内联报表样式 ========== */
+.report-content-holder {
+    min-height: 400px;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.inline-report-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-header-inline {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.report-header-inline h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.loading-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 20px;
+    text-align: center;
+}
+
+.loading-indicator .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f0f0f0;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.loading-indicator p {
+    margin-top: 20px;
+    color: #6c757d;
+    font-size: 16px;
+}

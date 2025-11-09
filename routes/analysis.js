@@ -156,6 +156,62 @@ ${portfolioSummary.detailedPositions}
    - 分析对持仓的影响
    - 提出应对策略
 
+6. **风险控制规则建议** 🛡️ **【关键】此部分必须包含且格式必须严格遵守！**
+
+   基于当前持仓分析，请在分析的最后以JSON格式提供智能的风险控制规则建议。
+
+   **重要格式要求：**
+   - 必须以"## 【风险控制规则建议】"作为独立标题（独占一行）
+   - 在标题下方使用代码块格式输出JSON规则
+   - JSON必须包含完整的三个部分：position、stopLoss、tradingLimits
+   - reason字段必须详细说明推荐这些规则的原因
+
+   **标准格式示例（请严格遵守此格式）：**
+
+   ## 【风险控制规则建议】
+
+   基于您当前的持仓结构和市场环境，AI推荐以下风险控制规则：
+
+   \`\`\`json
+   {
+     "position": {
+       "maxTotalPosition": 70,
+       "maxSingleStockPosition": 15,
+       "maxIndustryConcentration": 35
+     },
+     "stopLoss": {
+       "globalStopLoss": -8,
+       "singleStockStopLoss": -12,
+       "singleStockStopProfit": 25
+     },
+     "tradingLimits": {
+       "maxSingleTradeAmount": 50000,
+       "maxDailyTrades": 8,
+       "blacklist": []
+     },
+     "reason": "基于当前持仓分析的具体理由：1) 当前仓位占比XX%，建议降至70%以应对市场波动；2) XX行业占比过高（XX%），建议将行业集中度控制在35%以内；3) 部分个股亏损较大，建议设置止损线为-12%；4) 当前市场环境建议稳健操作，单笔交易控制在5万元以内。",
+     "highlights": [
+       "总仓位建议从当前XX%降至70%",
+       "单股仓位不超过15%",
+       "XX行业集中度过高，建议分散配置",
+       "设置账户总止损-8%，单股止损-12%"
+     ]
+   }
+   \`\`\`
+
+   **参数说明：**
+   - maxTotalPosition: 建议的最大总仓位百分比（0-100）
+   - maxSingleStockPosition: 建议的单只股票最大仓位百分比（0-100）
+   - maxIndustryConcentration: 建议的单个行业最大集中度百分比（0-100）
+   - globalStopLoss: 建议的账户总止损线（负数，如-8表示-8%）
+   - singleStockStopLoss: 建议的单只股票止损线（负数）
+   - singleStockStopProfit: 建议的单只股票止盈线（正数）
+   - maxSingleTradeAmount: 建议的单笔最大交易金额（元）
+   - maxDailyTrades: 建议的每日最大交易次数
+   - blacklist: 建议加入黑名单的股票代码数组（如果有）
+   - reason: 详细说明推荐这些规则的理由（必须结合当前持仓的具体数据）
+   - highlights: 关键推荐点的简要列表（3-5条）
+
 请提供详细、专业、可执行的分析建议。注意：以上建议仅供参考，不构成具体投资建议。`;
 
             // 打印提示词
@@ -167,11 +223,32 @@ ${portfolioSummary.detailedPositions}
 
             console.log('✅ 持仓分析完成');
 
-            // 5. 保存分析报告到数据库
-            const savedReport = await analysisReportModel.save(userId, aiResponse, portfolioSummary, 'manual');
-            console.log(`📄 分析报告已保存，ID: ${savedReport.id}`);
+            // 5. 从AI响应中提取风险控制规则建议
+            let recommendedRiskRules = null;
+            try {
+                // 匹配```json...```格式的JSON代码块
+                const jsonMatch = aiResponse.match(/```json\s*\n([\s\S]*?)\n```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    const jsonString = jsonMatch[1].trim();
+                    recommendedRiskRules = JSON.parse(jsonString);
+                    console.log('✅ 成功解析AI推荐的风险规则');
+                    console.log('📋 推荐规则:', JSON.stringify(recommendedRiskRules, null, 2));
+                } else {
+                    console.log('ℹ️ AI响应中未找到风险规则建议');
+                }
+            } catch (parseError) {
+                console.error('⚠️ 解析风险规则建议失败:', parseError.message);
+                // 解析失败不影响整体流程，继续执行
+            }
 
-            // 6. 返回分析结果（包含提示词供前端输出）
+            // 6. 保存分析报告到数据库（包含推荐的风险规则）
+            const savedReport = await analysisReportModel.save(userId, aiResponse, portfolioSummary, 'manual', recommendedRiskRules);
+            console.log(`📄 分析报告已保存，ID: ${savedReport.id}`);
+            if (recommendedRiskRules) {
+                console.log('📋 推荐的风险规则已随报告一起保存');
+            }
+
+            // 7. 返回分析结果（包含提示词和推荐的风险规则）
             res.json({
                 success: true,
                 data: {
@@ -180,7 +257,8 @@ ${portfolioSummary.detailedPositions}
                     portfolioSummary: portfolioSummary,
                     timestamp: savedReport.created_at,
                     positions: positions,
-                    prompt: analysisPrompt  // 包含提示词
+                    prompt: analysisPrompt,  // 包含提示词
+                    recommendedRiskRules: recommendedRiskRules  // 新增：AI推荐的风险规则
                 }
             });
 
@@ -250,6 +328,7 @@ ${portfolioSummary.detailedPositions}
                     analysis: report.analysis_content,
                     portfolioSummary: report.portfolio_summary,
                     reportType: report.report_type,
+                    recommendedRiskRules: report.recommended_risk_rules,  // 包含AI推荐的风险规则
                     timestamp: report.created_at
                 }
             });

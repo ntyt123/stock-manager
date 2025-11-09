@@ -1,0 +1,414 @@
+/**
+ * 独立行情分析模块样式
+ */
+
+/* ==================== 搜索区域 ==================== */
+.independent-search-section {
+    margin-bottom: 24px;
+}
+
+.search-input-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.independent-stock-input {
+    flex: 1;
+    padding: 14px 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: all 0.3s;
+    background: white;
+}
+
+.independent-stock-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.btn-analyze {
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    white-space: nowrap;
+}
+
+.btn-analyze:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-analyze:active {
+    transform: translateY(0);
+}
+
+/* 搜索建议下拉 */
+.stock-suggestions {
+    margin-top: 8px;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.stock-suggestions.show {
+    display: block;
+}
+
+.suggestion-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover {
+    background: #f5f7ff;
+}
+
+.suggestion-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.suggestion-code {
+    color: #666;
+    font-size: 13px;
+    margin-left: 12px;
+}
+
+/* ==================== 股票信息卡片 ==================== */
+.stock-info-section {
+    margin-bottom: 24px;
+}
+
+.stock-info-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 24px;
+    color: white;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.stock-info-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stock-info-header h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.stock-code-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.stock-info-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.info-label {
+    font-size: 14px;
+    opacity: 0.9;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.info-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.info-tag {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1a1a1a;
+    backdrop-filter: blur(10px);
+}
+
+/* ==================== 图表对比区域 ==================== */
+.charts-comparison-area {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 24px;
+    margin-top: 24px;
+}
+
+/* 左侧参考图表列 */
+.reference-charts-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* 右侧独立分析列 */
+.independent-chart-column {
+    display: flex;
+    flex-direction: column;
+}
+
+/* 图表卡片 */
+.chart-card {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s;
+}
+
+.chart-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #667eea;
+}
+
+.independent-chart-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom, #ffffff 0%, #f8f9ff 100%);
+}
+
+.chart-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.chart-icon {
+    font-size: 18px;
+}
+
+.chart-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+.chart-subtitle {
+    margin-left: auto;
+    font-size: 12px;
+    color: #666;
+    font-weight: 400;
+}
+
+/* 图表容器 */
+.chart-container {
+    position: relative;
+    height: 200px;
+    width: 100%;
+}
+
+.chart-container.large {
+    height: 400px;
+    flex: 1;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* 独立分析图表增强 */
+#independentChart {
+    border-radius: 8px;
+}
+
+/* 确保图例文字可见 */
+.independent-chart-card {
+    background: #ffffff !important;
+}
+
+/* Chart.js 图例样式覆盖 */
+.chart-container.large canvas {
+    background: #ffffff;
+}
+
+/* ==================== 独立分析统计 ==================== */
+.independent-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #e8f4ff;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stat-label {
+    font-size: 13px;
+    color: #666;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.stat-value.positive {
+    color: #f44336;
+}
+
+.stat-value.negative {
+    color: #4caf50;
+}
+
+/* ==================== 分析说明 ==================== */
+.independent-analysis-text {
+    margin-top: 20px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #e8f4ff;
+}
+
+.analysis-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.analysis-content {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #666;
+}
+
+/* ==================== 加载提示 ==================== */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: 20px;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 1400px) {
+    .charts-comparison-area {
+        grid-template-columns: 350px 1fr;
+    }
+}
+
+@media (max-width: 1024px) {
+    .charts-comparison-area {
+        grid-template-columns: 1fr;
+    }
+
+    .reference-charts-column {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .chart-card {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 250px;
+    }
+}
+
+@media (max-width: 768px) {
+    .search-input-wrapper {
+        flex-direction: column;
+    }
+
+    .btn-analyze {
+        width: 100%;
+    }
+
+    .reference-charts-column {
+        flex-direction: column;
+    }
+
+    .chart-card {
+        flex: 1 1 100%;
+    }
+
+    .independent-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .stock-info-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

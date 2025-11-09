@@ -1,6 +1,6 @@
 const axios = require('axios');
 const iconv = require('iconv-lite');
-const { userModel, positionModel, analysisReportModel, callAuctionAnalysisModel, aiPromptTemplateModel } = require('../database');
+const { userModel, positionModel, analysisReportModel, callAuctionAnalysisModel, aiPromptTemplateModel, aiApiConfigModel } = require('../database');
 
 // 股票代码到行业的映射表
 const STOCK_INDUSTRY_MAP = {
@@ -126,13 +126,23 @@ function buildPortfolioSummary(positions) {
 }
 
 /**
- * 调用DeepSeek API的通用函数
+ * 调用AI API的通用函数（支持多种AI服务商）
  * @param {string} userMessage - 用户消息内容
  * @param {string} systemMessage - 默认系统提示词
  * @param {string} sceneType - 场景类型，用于从数据库获取自定义提示词
  */
 async function callDeepSeekAPI(userMessage, systemMessage = '你是一位专业的股票投资顾问助手。', sceneType = null) {
     try {
+        // 获取当前激活的API配置
+        const apiConfig = aiApiConfigModel.getActiveConfig();
+
+        if (!apiConfig) {
+            console.error('❌ 没有激活的AI API配置');
+            throw new Error('系统未配置AI接口，请联系管理员');
+        }
+
+        console.log(`✅ 使用AI配置: ${apiConfig.name} (${apiConfig.provider})`);
+
         // 如果提供了场景类型，尝试从数据库获取自定义提示词
         let finalSystemMessage = systemMessage;
 
@@ -150,47 +160,129 @@ async function callDeepSeekAPI(userMessage, systemMessage = '你是一位专业�
             }
         }
 
-        const response = await axios.post('https://api.deepseek.com/chat/completions', {
-            model: 'deepseek-chat',
-            messages: [
-                {
-                    role: 'system',
-                    content: finalSystemMessage
-                },
-                {
-                    role: 'user',
-                    content: userMessage
-                }
-            ],
-            stream: false,
-            temperature: 0.7,
-            max_tokens: 3000
-        }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer sk-4196cd3ad726465581d70a9791fcbb23'
-            },
-            timeout: 120000,  // 增加到120秒（2分钟）
-            httpsAgent: new (require('https').Agent)({
-                keepAlive: true,
-                timeout: 120000
-            })
-        });
+        // 判断是否是Gemini API (通过URL或provider判断)
+        const isGemini = apiConfig.api_url.includes('generativelanguage.googleapis.com') ||
+                        apiConfig.provider === 'gemini';
 
-        if (response.data && response.data.choices && response.data.choices.length > 0) {
-            return response.data.choices[0].message.content;
+        let response;
+
+        if (isGemini) {
+            // ==================== Gemini API 格式 ====================
+            console.log('🔷 使用Gemini API格式');
+
+            // Gemini通过URL参数传递API Key
+            const apiUrl = apiConfig.api_key
+                ? `${apiConfig.api_url}?key=${apiConfig.api_key}`
+                : apiConfig.api_url;
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            // 添加自定义请求头
+            if (apiConfig.custom_headers) {
+                const customHeaders = typeof apiConfig.custom_headers === 'string'
+                    ? JSON.parse(apiConfig.custom_headers)
+                    : apiConfig.custom_headers;
+                Object.assign(headers, customHeaders);
+            }
+
+            // Gemini请求体格式
+            const requestBody = {
+                contents: [{
+                    parts: [{
+                        text: `${finalSystemMessage}\n\n用户问题：${userMessage}`
+                    }]
+                }],
+                generationConfig: {
+                    temperature: apiConfig.temperature || 0.7,
+                    maxOutputTokens: apiConfig.max_tokens || 2000,
+                    topK: 40,
+                    topP: 0.95
+                }
+            };
+
+            response = await axios.post(apiUrl, requestBody, {
+                headers,
+                timeout: apiConfig.timeout || 120000,
+                httpsAgent: new (require('https').Agent)({
+                    keepAlive: true,
+                    timeout: apiConfig.timeout || 120000
+                })
+            });
+
+            // 解析Gemini响应
+            if (response.data && response.data.candidates && response.data.candidates.length > 0) {
+                const candidate = response.data.candidates[0];
+                if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+                    return candidate.content.parts[0].text;
+                }
+            }
+            throw new Error('Gemini API响应格式异常');
+
         } else {
+            // ==================== OpenAI/DeepSeek 标准格式 ====================
+            console.log('🔶 使用OpenAI标准API格式');
+
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+
+            // 添加API密钥
+            if (apiConfig.api_key) {
+                headers['Authorization'] = `Bearer ${apiConfig.api_key}`;
+            }
+
+            // 添加自定义请求头
+            if (apiConfig.custom_headers) {
+                const customHeaders = typeof apiConfig.custom_headers === 'string'
+                    ? JSON.parse(apiConfig.custom_headers)
+                    : apiConfig.custom_headers;
+                Object.assign(headers, customHeaders);
+            }
+
+            // 构建请求体
+            const requestBody = {
+                model: apiConfig.model,
+                messages: [
+                    {
+                        role: 'system',
+                        content: finalSystemMessage
+                    },
+                    {
+                        role: 'user',
+                        content: userMessage
+                    }
+                ],
+                stream: false,
+                temperature: apiConfig.temperature || 0.7,
+                max_tokens: apiConfig.max_tokens || 3000
+            };
+
+            response = await axios.post(apiConfig.api_url, requestBody, {
+                headers,
+                timeout: apiConfig.timeout || 120000,
+                httpsAgent: new (require('https').Agent)({
+                    keepAlive: true,
+                    timeout: apiConfig.timeout || 120000
+                })
+            });
+
+            // 解析OpenAI格式响应
+            if (response.data && response.data.choices && response.data.choices.length > 0) {
+                return response.data.choices[0].message.content;
+            }
             throw new Error('AI响应格式异常');
         }
     } catch (error) {
         if (error.code === 'ECONNABORTED' || error.message === 'aborted') {
-            console.error('DeepSeek API请求超时，建议检查网络连接或增加超时时间');
+            console.error('AI API请求超时，建议检查网络连接或增加超时时间');
             throw new Error('AI服务请求超时，请稍后重试');
         } else if (error.response) {
-            console.error('DeepSeek API返回错误:', error.response.status, error.response.data);
+            console.error('AI API返回错误:', error.response.status, error.response.data);
             throw new Error(`AI服务错误: ${error.response.status}`);
         } else {
-            console.error('DeepSeek API调用失败:', error.message);
+            console.error('AI API调用失败:', error.message);
             throw new Error('AI服务暂时不可用，请稍后重试');
         }
     }

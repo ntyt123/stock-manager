@@ -97,6 +97,98 @@ const AIPromptManager = {
             category: '交易',
             description: '最近的交易记录（买入、卖出操作）',
             recommendedFor: ['portfolio_analysis']
+        },
+
+        // 六壬排盘相关
+        {
+            name: '预测时间',
+            key: 'prediction_time',
+            type: 'text',
+            category: '六壬排盘',
+            description: '六壬排盘的预测时间',
+            recommendedFor: ['market_prediction']
+        },
+        {
+            name: '日干支',
+            key: 'day_ganzhi',
+            type: 'text',
+            category: '六壬排盘',
+            description: '日干支（天干地支）',
+            recommendedFor: ['market_prediction']
+        },
+        {
+            name: '时干支',
+            key: 'hour_ganzhi',
+            type: 'text',
+            category: '六壬排盘',
+            description: '时干支（天干地支）',
+            recommendedFor: ['market_prediction']
+        },
+        {
+            name: '月将',
+            key: 'month_jiang',
+            type: 'text',
+            category: '六壬排盘',
+            description: '月将信息',
+            recommendedFor: ['market_prediction']
+        },
+        {
+            name: '四课',
+            key: 'sike',
+            type: 'text',
+            category: '六壬排盘',
+            description: '四课信息（第一课至第四课）',
+            recommendedFor: ['market_prediction']
+        },
+        {
+            name: '三传',
+            key: 'sanchuan',
+            type: 'text',
+            category: '六壬排盘',
+            description: '三传信息（初传、中传、末传）',
+            recommendedFor: ['market_prediction']
+        },
+        {
+            name: '十二神',
+            key: 'twelve_gods',
+            type: 'text',
+            category: '六壬排盘',
+            description: '十二神信息（六合、勾陈等）',
+            recommendedFor: ['market_prediction', 'stock_trend_prediction']
+        },
+
+        // 趋势分析相关
+        {
+            name: '股票代码',
+            key: 'stock_code',
+            type: 'text',
+            category: '股票信息',
+            description: '股票代码（如: 600036）',
+            recommendedFor: ['trend_prediction', 'stock_trend_prediction']
+        },
+        {
+            name: '股票名称',
+            key: 'stock_name',
+            type: 'text',
+            category: '股票信息',
+            description: '股票名称（如: 招商银行）',
+            recommendedFor: ['trend_prediction', 'stock_trend_prediction']
+        },
+        {
+            name: '预测日期',
+            key: 'prediction_date',
+            type: 'text',
+            category: '时间',
+            description: '预测的目标日期',
+            recommendedFor: ['trend_prediction']
+        },
+        {
+            name: '交易日状态',
+            key: 'trading_day_status',
+            type: 'text',
+            category: '时间',
+            description: '当前是否为交易日的状态描述',
+            recommendedFor: ['trend_prediction']
         }
     ],
 
@@ -105,7 +197,10 @@ const AIPromptManager = {
         'ai_chat': ['message'],
         'portfolio_analysis': ['positions', 'total_capital', 'profit_loss', 'date', 'time'],
         'call_auction_analysis': ['date', 'indices', 'market_data'],
-        'stock_recommendation': ['date', 'indices', 'positions', 'total_capital', 'watchlist']
+        'stock_recommendation': ['date', 'indices', 'positions', 'total_capital', 'watchlist'],
+        'market_prediction': ['prediction_time', 'day_ganzhi', 'hour_ganzhi', 'month_jiang', 'sike', 'sanchuan', 'twelve_gods'],
+        'trend_prediction': ['stock_code', 'stock_name', 'prediction_date', 'trading_day_status'],
+        'stock_trend_prediction': ['stock_code', 'stock_name', 'prediction_time', 'day_ganzhi', 'hour_ganzhi', 'month_jiang', 'sike', 'sanchuan', 'twelve_gods']
     },
 
     // 初始化（由SettingsManager调用）
@@ -211,7 +306,8 @@ const AIPromptManager = {
         const categoryNames = {
             'chat': '💬 对话分析',
             'analysis': '📊 数据分析',
-            'recommendation': '💡 推荐建议'
+            'recommendation': '💡 推荐建议',
+            'prediction': '🔮 预测分析'
         };
         return categoryNames[category] || category;
     },
@@ -425,7 +521,8 @@ const AIPromptManager = {
             '持仓': '📊',
             '市场': '📈',
             '自选股': '⭐',
-            '交易': '💰'
+            '交易': '💰',
+            '六壬排盘': '🔮'
         };
         return icons[category] || '📋';
     },

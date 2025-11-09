@@ -46,6 +46,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // 下一交易日计划只在交易计划模块显示，首页不显示
             }
         }
+
+        // 初始化独立行情分析模块
+        if (typeof IndependentAnalysisManager !== 'undefined') {
+            IndependentAnalysisManager.init();
+        }
+
+        // 初始化每日复盘模块
+        if (typeof RecapManager !== 'undefined') {
+            RecapManager.init();
+        }
     }, 500);
 
     // 启动自动刷新行情（使用设置中的配置）
@@ -110,14 +120,20 @@ async function checkAuth() {
                 }));
 
                 return;
+            } else {
+                // Token无效，清除本地存储
+                console.warn('认证token无效，重定向到登录页');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
             }
         } catch (error) {
             console.error('认证检查失败:', error);
         }
     }
 
-    // 未登录状态
-    updateNavbar(null);
+    // 未登录状态 - 强制重定向到登录页
+    console.log('用户未登录，重定向到登录页...');
+    window.location.href = '/login.html';
 }
 
 // 导出全局函数供HTML调用

@@ -10,12 +10,44 @@ function openTradeRecordModal() {
     }
 
     const modal = document.getElementById('tradeRecordModal');
-    modal.style.display = 'block';
+    if (!modal) {
+        console.error('❌ 找不到tradeRecordModal元素');
+        alert('模态框元素未找到，请刷新页面重试');
+        return;
+    }
+
+    // 将模态框移动到body最外层，避免被父元素的display:none影响
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    // 强制设置显示样式
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '10000';
+    modal.style.left = '0';
+    modal.style.top = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+
+    // 确保模态框内容也可见
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.display = 'block';
+        modalContent.style.position = 'relative';
+    }
 
     // 清空表单
     document.getElementById('tradeRecordForm').reset();
     document.getElementById('tradeFormStatus').textContent = '';
     document.getElementById('tradeFormStatus').className = 'form-status';
+
+    // 设置交易日期默认为今天
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('tradeDate').value = today;
 
     // 绑定实时计算事件
     bindTradeAmountCalculation();
@@ -23,7 +55,7 @@ function openTradeRecordModal() {
     // 绑定股票代码自动获取名称功能
     bindStockCodeAutoFill('tradeStockCode', 'tradeStockName');
 
-    console.log('📝 打开交易记录录入模态框');
+    console.log('📝 打开交易记录录入模态框, display:', modal.style.display);
 }
 
 // closeTradeRecordModal
@@ -40,12 +72,6 @@ function closeTradeRecordModal() {
 
 // bindTradeAmountCalculation
 function bindTradeAmountCalculation() {
-    const tradeType = document.getElementById('tradeType');
-    const quantity = document.getElementById('tradeQuantity');
-    const price = document.getElementById('tradePrice');
-    const fee = document.getElementById('tradeFee');
-    const amount = document.getElementById('tradeAmount');
-
     // 获取默认手续费率
     const getDefaultFeeRate = () => {
         if (window.SettingsManager) {
@@ -55,21 +81,51 @@ function bindTradeAmountCalculation() {
         return 0.0003; // 默认万三
     };
 
-    // 计算手续费函数
+    // 计算手续费函数（符合A股交易规则）
     const calculateFee = () => {
+        const tradeType = document.getElementById('tradeType');
+        const quantity = document.getElementById('tradeQuantity');
+        const price = document.getElementById('tradePrice');
+        const fee = document.getElementById('tradeFee');
+
+        const type = tradeType.value;
         const qty = parseFloat(quantity.value) || 0;
         const prc = parseFloat(price.value) || 0;
 
         if (qty > 0 && prc > 0) {
-            const feeRate = getDefaultFeeRate();
-            const calculatedFee = (qty * prc * feeRate).toFixed(2);
-            fee.value = calculatedFee;
-            console.log(`💰 自动计算手续费: ${calculatedFee} (费率: ${(feeRate * 100).toFixed(2)}%)`);
+            const feeRate = getDefaultFeeRate(); // 佣金费率（默认万三）
+            const tradeAmount = qty * prc; // 交易金额
+
+            let totalFee = 0;
+
+            // 1. 佣金（买卖都有，最低5元）
+            let commission = tradeAmount * feeRate;
+            if (commission < 5) {
+                commission = 5; // 佣金不足5元按5元收取
+            }
+            totalFee += commission;
+
+            // 2. 印花税（仅卖出收取，千分之一）
+            if (type === 'sell' || type === 'reduce') {
+                const stampDuty = tradeAmount * 0.001; // 印花税千分之一
+                totalFee += stampDuty;
+                console.log(`💰 手续费明细: 佣金${commission.toFixed(2)}元 + 印花税${stampDuty.toFixed(2)}元 = ${totalFee.toFixed(2)}元`);
+            } else {
+                console.log(`💰 手续费明细: 佣金${commission.toFixed(2)}元`);
+            }
+
+            fee.value = totalFee.toFixed(2);
         }
     };
 
     // 计算金额函数
     const calculateAmount = () => {
+        const tradeType = document.getElementById('tradeType');
+        const quantity = document.getElementById('tradeQuantity');
+        const price = document.getElementById('tradePrice');
+        const fee = document.getElementById('tradeFee');
+        const amount = document.getElementById('tradeAmount');
+
         const type = tradeType.value;
         const qty = parseFloat(quantity.value) || 0;
         const prc = parseFloat(price.value) || 0;
@@ -93,30 +149,38 @@ function bindTradeAmountCalculation() {
         }
     };
 
-    // 移除旧的事件监听器并添加新的
-    const newTradeType = tradeType.cloneNode(true);
-    tradeType.parentNode.replaceChild(newTradeType, tradeType);
+    // 绑定事件（使用事件委托，避免重复绑定）
+    const tradeType = document.getElementById('tradeType');
+    const quantity = document.getElementById('tradeQuantity');
+    const price = document.getElementById('tradePrice');
+    const fee = document.getElementById('tradeFee');
 
-    const newQuantity = quantity.cloneNode(true);
-    quantity.parentNode.replaceChild(newQuantity, quantity);
+    // 移除旧的事件监听器（如果存在）
+    tradeType.removeEventListener('change', tradeType._calcHandler);
+    quantity.removeEventListener('input', quantity._calcHandler);
+    price.removeEventListener('input', price._calcHandler);
+    fee.removeEventListener('input', fee._calcHandler);
 
-    const newPrice = price.cloneNode(true);
-    price.parentNode.replaceChild(newPrice, price);
+    // 定义新的事件处理器并保存引用
+    tradeType._calcHandler = () => {
+        calculateFee();
+        calculateAmount();
+    };
+    quantity._calcHandler = () => {
+        calculateFee();
+        calculateAmount();
+    };
+    price._calcHandler = () => {
+        calculateFee();
+        calculateAmount();
+    };
+    fee._calcHandler = calculateAmount;
 
-    const newFee = fee.cloneNode(true);
-    fee.parentNode.replaceChild(newFee, fee);
-
-    // 重新获取元素并绑定事件
-    document.getElementById('tradeType').addEventListener('change', calculateAmount);
-    document.getElementById('tradeQuantity').addEventListener('input', () => {
-        calculateFee();  // 先计算手续费
-        calculateAmount(); // 再计算总金额
-    });
-    document.getElementById('tradePrice').addEventListener('input', () => {
-        calculateFee();  // 先计算手续费
-        calculateAmount(); // 再计算总金额
-    });
-    document.getElementById('tradeFee').addEventListener('input', calculateAmount);
+    // 添加事件监听器
+    tradeType.addEventListener('change', tradeType._calcHandler);
+    quantity.addEventListener('input', quantity._calcHandler);
+    price.addEventListener('input', price._calcHandler);
+    fee.addEventListener('input', fee._calcHandler);
 
     console.log('🔢 交易金额和手续费自动计算已绑定');
 }
@@ -141,9 +205,34 @@ async function submitTradeRecord() {
 
     const statusDiv = document.getElementById('tradeFormStatus');
 
-    // 验证必填字段
-    if (!tradeType || !tradeDate || !stockCode || !stockName || !quantity || !price) {
-        statusDiv.textContent = '❌ 请填写所有必填字段';
+    // 验证必填字段（逐个检查并给出明确提示）
+    if (!tradeType) {
+        statusDiv.textContent = '❌ 请选择交易类型（买入/卖出/加仓/减仓）';
+        statusDiv.className = 'form-status error';
+        return;
+    }
+    if (!tradeDate) {
+        statusDiv.textContent = '❌ 请选择交易日期';
+        statusDiv.className = 'form-status error';
+        return;
+    }
+    if (!stockCode) {
+        statusDiv.textContent = '❌ 请输入股票代码';
+        statusDiv.className = 'form-status error';
+        return;
+    }
+    if (!stockName) {
+        statusDiv.textContent = '❌ 请输入股票名称';
+        statusDiv.className = 'form-status error';
+        return;
+    }
+    if (!quantity) {
+        statusDiv.textContent = '❌ 请输入交易数量';
+        statusDiv.className = 'form-status error';
+        return;
+    }
+    if (!price) {
+        statusDiv.textContent = '❌ 请输入交易价格';
         statusDiv.className = 'form-status error';
         return;
     }
@@ -222,11 +311,39 @@ async function viewTradeHistory() {
     const modal = document.getElementById('tradeHistoryModal');
     const content = document.getElementById('tradeHistoryContent');
 
-    // 显示模态框
-    modal.style.display = 'block';
+    if (!modal) {
+        console.error('❌ 找不到tradeHistoryModal元素');
+        alert('模态框元素未找到，请刷新页面重试');
+        return;
+    }
+
+    // 将模态框移动到body最外层，避免被父元素的display:none影响
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+
+    // 强制设置显示样式
+    modal.style.display = 'flex';
+    modal.style.alignItems = 'center';
+    modal.style.justifyContent = 'center';
+    modal.style.position = 'fixed';
+    modal.style.zIndex = '10000';
+    modal.style.left = '0';
+    modal.style.top = '0';
+    modal.style.width = '100%';
+    modal.style.height = '100%';
+    modal.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+
+    // 确保模态框内容也可见
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.display = 'block';
+        modalContent.style.position = 'relative';
+    }
+
     content.innerHTML = '<div class="loading-text">正在加载交易历史...</div>';
 
-    console.log('📊 开始加载交易历史...');
+    console.log('📊 开始加载交易历史, display:', modal.style.display);
 
     try {
         const response = await fetch('/api/trade-operations', {
@@ -236,10 +353,12 @@ async function viewTradeHistory() {
         });
 
         const result = await response.json();
+        console.log('API响应:', result);
 
-        if (result.success && result.data && result.data.length > 0) {
-            const operations = result.data;
-            console.log(`✅ 成功加载 ${operations.length} 条交易记录`);
+        if (result.success) {
+            if (result.data && result.data.length > 0) {
+                const operations = result.data;
+                console.log(`✅ 成功加载 ${operations.length} 条交易记录`);
 
             // 按交易类型分类
             const tradeTypeMap = {
@@ -302,15 +421,40 @@ async function viewTradeHistory() {
                 `;
             });
 
-            html += '</div>';
-            content.innerHTML = html;
+                html += '</div>';
+                content.innerHTML = html;
+            } else {
+                // 成功但没有数据
+                console.log('✅ 加载成功，但没有交易记录');
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #999;">
+                        <div style="font-size: 64px; margin-bottom: 16px;">📭</div>
+                        <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #666;">暂无交易记录</div>
+                        <div style="font-size: 14px;">点击"记录交易"按钮开始记录您的交易</div>
+                    </div>
+                `;
+            }
         } else {
-            content.innerHTML = '<div class="loading-text">暂无交易记录</div>';
+            // API返回失败
+            console.error('❌ API返回失败:', result.error);
+            content.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: #999;">
+                    <div style="font-size: 64px; margin-bottom: 16px;">❌</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #f44336;">加载失败</div>
+                    <div style="font-size: 14px;">${result.error || '获取交易历史失败，请重试'}</div>
+                </div>
+            `;
         }
 
     } catch (error) {
         console.error('❌ 加载交易历史错误:', error);
-        content.innerHTML = '<div class="loading-text">加载失败，请重试</div>';
+        content.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; color: #999;">
+                <div style="font-size: 64px; margin-bottom: 16px;">⚠️</div>
+                <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #ff9800;">网络错误</div>
+                <div style="font-size: 14px;">无法连接到服务器，请检查网络连接后重试</div>
+            </div>
+        `;
     }
 }
 

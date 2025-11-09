@@ -270,8 +270,40 @@ function loadSubTabData(subtabId) {
             break;
         case 'analysis-risk-control':
             // 加载风险控制数据
-            if (typeof RiskControlManager !== 'undefined' && typeof RiskControlManager.loadRiskControl === 'function') {
+            if (typeof loadRiskControlModule === 'function') {
+                loadRiskControlModule();
+            } else if (typeof RiskControlManager !== 'undefined' && typeof RiskControlManager.loadRiskControl === 'function') {
                 RiskControlManager.loadRiskControl();
+            }
+            break;
+        case 'reports-portfolio':
+            // 加载持仓报表
+            if (typeof ReportManager !== 'undefined' && typeof ReportManager.loadPositionReportInline === 'function') {
+                ReportManager.loadPositionReportInline();
+            }
+            break;
+        case 'reports-trade':
+            // 加载交易报表
+            if (typeof ReportManager !== 'undefined' && typeof ReportManager.loadTradeReportInline === 'function') {
+                ReportManager.loadTradeReportInline();
+            }
+            break;
+        case 'reports-profit':
+            // 加载盈亏报表
+            if (typeof ReportManager !== 'undefined' && typeof ReportManager.loadProfitLossReportInline === 'function') {
+                ReportManager.loadProfitLossReportInline();
+            }
+            break;
+        case 'reports-monthly':
+            // 加载月度报表
+            if (typeof ReportManager !== 'undefined' && typeof ReportManager.loadMonthlyReportInline === 'function') {
+                ReportManager.loadMonthlyReportInline();
+            }
+            break;
+        case 'reports-annual':
+            // 加载年度报表
+            if (typeof ReportManager !== 'undefined' && typeof ReportManager.loadYearlyReportInline === 'function') {
+                ReportManager.loadYearlyReportInline();
             }
             break;
         // 可以在这里添加其他子页签的数据加载逻辑
@@ -300,6 +332,12 @@ function loadTabData(tabName) {
             // 加载交易计划数据
             if (typeof TradingPlanManager !== 'undefined' && typeof TradingPlanManager.loadAllTradingPlans === 'function') {
                 TradingPlanManager.loadAllTradingPlans();
+            }
+            break;
+        case 'reports':
+            // 加载报表页签时，自动加载第一个报表（持仓报表）
+            if (typeof ReportManager !== 'undefined' && typeof ReportManager.loadPositionReportInline === 'function') {
+                ReportManager.loadPositionReportInline();
             }
             break;
     }

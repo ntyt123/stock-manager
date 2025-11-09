@@ -34,14 +34,14 @@
         .portfolio-summary-grid .summary-label {
             font-size: 0.9rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.9);
+            color: #495057;
         }
 
         .portfolio-summary-grid .summary-value {
             font-size: 1.3rem;
             font-weight: 700;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            color: #2c3e50;
+            text-shadow: none;
         }
 
         @media (max-width: 768px) {
@@ -342,6 +342,20 @@
 
         .cache-info-value {
             color: #2c3e50;
+        }
+
+        /* 饼图图例颜色修复 */
+        .chart-legend,
+        canvas[id*="chart"] + .chart-legend,
+        .chartjs-legend
+
+        .chart-legend-item-text,
+        .chart-legend-label
+
+        /* Chart.js 图例文字颜色修复 */
+        #overview-positions .chart-legend,
+        #overview-positions .chartjs-legend {
+            color: #2c3e50 !important;
         }
 
         /* 响应式设计 */

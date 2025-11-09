@@ -1,0 +1,768 @@
+/**
+ * AI API配置管理样式 - 现代化美化版
+ */
+
+/* ==================== 配置容器 ==================== */
+.ai-api-configs-container {
+    margin-top: 30px;
+}
+
+.ai-api-configs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.ai-api-configs-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #333;
+    font-weight: 600;
+}
+
+/* 激活配置显示 */
+.active-api-config {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+}
+
+.api-config-badge {
+    padding: 15px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.api-config-badge.active {
+    border: 2px solid #4caf50;
+}
+
+.config-badge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.config-badge-header .config-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.config-badge-header .config-provider {
+    background: #4caf50;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.config-badge-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.config-info-item .label {
+    color: #666;
+    font-weight: 500;
+    min-width: 70px;
+}
+
+.config-info-item .value {
+    color: #333;
+    word-break: break-all;
+}
+
+/* 配置列表 */
+.ai-api-configs-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* 配置卡片 */
+.api-config-card {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s;
+}
+
+.api-config-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.api-config-card.active {
+    border-color: #4caf50;
+    background: #f1f8f4;
+}
+
+.config-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.config-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.config-card-title .config-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.config-card-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #f0f0f0;
+}
+
+.btn-icon-danger:hover {
+    background: #ffebee;
+}
+
+.config-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.config-info-row {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.config-label {
+    color: #666;
+    font-weight: 500;
+    min-width: 65px;
+}
+
+.config-value {
+    color: #333;
+    word-break: break-all;
+    flex: 1;
+}
+
+.config-url {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #0066cc;
+}
+
+.config-description {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+}
+
+/* 徽章 */
+.badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background: #4caf50;
+    color: white;
+}
+
+.badge-info {
+    background: #2196f3;
+    color: white;
+}
+
+/* 表单样式 */
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-size: 12px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.form-control[type="password"] {
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
+/* 空状态 */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #999;
+}
+
+.empty-state p {
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+/* 加载状态 */
+.loading-text {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+    font-style: italic;
+}
+
+.warning-text {
+    color: #ff9800;
+    font-weight: 500;
+}
+
+/* ==================== 现代化编辑模态框样式 ==================== */
+
+/* 模态框内容 */
+.api-config-modal-content {
+    max-width: 900px !important;
+    width: 95% !important;
+    max-height: 90vh;
+    overflow: hidden;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 模态框头部 */
+.api-config-modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 24px 30px !important;
+    border-radius: 16px 16px 0 0 !important;
+}
+
+.modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.modal-icon {
+    font-size: 36px;
+    line-height: 1;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.modal-title-text {
+    margin: 0 !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    color: white !important;
+}
+
+.modal-subtitle {
+    margin: 4px 0 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.api-config-modal-header .modal-close {
+    color: white !important;
+    opacity: 0.9;
+    font-size: 32px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.api-config-modal-header .modal-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+/* 模态框主体 */
+.api-config-modal-body {
+    padding: 30px !important;
+    max-height: calc(90vh - 200px);
+    overflow-y: auto;
+    background: #f8f9fa;
+}
+
+/* 配置分组 */
+.config-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+
+.config-section:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.config-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.section-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* 表单标签 */
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px !important;
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    font-size: 14px !important;
+}
+
+.label-text {
+    flex: 1;
+}
+
+.label-required {
+    color: #e74c3c;
+    font-weight: 700;
+}
+
+.label-optional {
+    color: #95a5a6;
+    font-size: 12px;
+    font-weight: 400;
+}
+
+/* 现代化输入框 */
+.modern-input,
+.modern-select,
+.modern-textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    transition: all 0.3s;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.modern-input:focus,
+.modern-select:focus,
+.modern-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+    background: #fafbff;
+}
+
+.modern-input:hover,
+.modern-select:hover,
+.modern-textarea:hover {
+    border-color: #b0b0b0;
+}
+
+.modern-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23667eea' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 40px;
+}
+
+.modern-textarea {
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
+}
+
+/* 带图标的输入框 */
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-icon {
+    position: absolute;
+    left: 16px;
+    font-size: 18px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.modern-input.with-icon {
+    padding-left: 48px;
+}
+
+/* 表单提示 */
+.form-hint {
+    display: block;
+    margin-top: 6px !important;
+    color: #7f8c8d !important;
+    font-size: 12px !important;
+    font-style: italic;
+}
+
+/* 现代化表单行 */
+.modern-form-row {
+    display: flex;
+    gap: 20px;
+}
+
+.modern-form-row .form-group {
+    margin-bottom: 0 !important;
+}
+
+/* 模型输入组 */
+.model-input-group {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.btn-fetch-models {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    white-space: nowrap;
+    height: 46px; /* 与输入框高度一致 */
+}
+
+.btn-fetch-models:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-fetch-models:active {
+    transform: translateY(0);
+}
+
+.btn-fetch-models:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* 复选框组 */
+.checkbox-group {
+    margin-bottom: 0 !important;
+}
+
+.modern-checkbox {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 0 !important;
+    cursor: pointer;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s;
+}
+
+.modern-checkbox:hover {
+    background: #e8f4ff;
+    border-color: #667eea;
+}
+
+.modern-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 2px 12px 0 0;
+    cursor: pointer;
+    accent-color: #667eea;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.checkbox-icon {
+    font-size: 24px;
+    line-height: 1;
+}
+
+.checkbox-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.checkbox-text strong {
+    font-size: 15px;
+    color: #2c3e50;
+}
+
+.checkbox-text small {
+    font-size: 12px;
+    color: #7f8c8d;
+    font-weight: 400;
+}
+
+/* 现代化按钮样式 */
+.modern-modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-top: 30px !important;
+    padding-top: 24px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.action-buttons-right {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-test {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+}
+
+.btn-test:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
+}
+
+.btn-test:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: #ecf0f1;
+    color: #2c3e50;
+    border: 2px solid #bdc3c7;
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    background: #bdc3c7;
+    border-color: #95a5a6;
+}
+
+.modern-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 28px !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: all 0.3s !important;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+.modern-btn-primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+.modern-btn-primary:active {
+    transform: translateY(0) !important;
+}
+
+.btn-icon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.btn-text {
+    line-height: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .ai-api-configs-list {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row,
+    .modern-form-row {
+        flex-direction: column;
+    }
+
+    .config-card-actions {
+        flex-wrap: wrap;
+    }
+
+    .api-config-modal-content {
+        width: 98% !important;
+        max-height: 95vh;
+    }
+
+    .api-config-modal-header {
+        padding: 20px !important;
+    }
+
+    .modal-title-text {
+        font-size: 20px !important;
+    }
+
+    .api-config-modal-body {
+        padding: 20px !important;
+    }
+
+    .config-section {
+        padding: 16px;
+    }
+
+    .modern-modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .action-buttons-right {
+        width: 100%;
+    }
+
+    .btn-test,
+    .btn-secondary,
+    .modern-btn-primary {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .model-input-group {
+        flex-direction: column;
+    }
+
+    .btn-fetch-models {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -13,7 +13,10 @@ async function showStockTooltip(stockCode, stockName, event) {
     const tooltipStockName = document.getElementById('tooltipStockName');
     const tooltipStockCode = document.getElementById('tooltipStockCode');
 
-    if (!tooltip) return;
+    if (!tooltip) {
+        console.error('❌ 找不到悬浮框元素');
+        return;
+    }
 
     console.log(`📊 显示股票详情: ${stockCode} ${stockName}`);
 
@@ -24,62 +27,121 @@ async function showStockTooltip(stockCode, stockName, event) {
     tooltipStockName.textContent = stockName || '加载中...';
     tooltipStockCode.textContent = stockCode;
 
-    // 显示加载状态
-    tooltipLoading.style.display = 'flex';
-    tooltipData.style.display = 'none';
+    // 显示加载状态 - 强制设置样式
+    if (tooltipLoading) {
+        tooltipLoading.style.display = 'flex';
+        tooltipLoading.style.padding = '40px 20px';
+        tooltipLoading.style.minHeight = '100px';
+    }
+    if (tooltipData) {
+        tooltipData.style.display = 'none';
+    }
 
-    // 绑定周期切换按钮事件
-    bindTooltipPeriodButtons();
-
-    // 优化定位逻辑：智能计算悬浮框位置
-    // 注意：tooltip 使用 position: fixed，所以坐标是相对于视口的，不需要加滚动偏移
+    // 简化定位逻辑：使用固定定位在鼠标附近
     const tooltipWidth = 450;
-    const tooltipHeight = 600;
-    const offset = 15; // 鼠标偏移量
-    const topOffset = 20; // 悬浮框距离鼠标上方的距离
+    const tooltipHeight = 400;
+    const offset = 15;
 
     // 获取视口尺寸
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
 
-    // 鼠标位置（相对于视口）
+    // 鼠标位置
     const mouseX = event.clientX;
     const mouseY = event.clientY;
 
-    // 智能定位：优先显示在右侧，如果空间不足则显示在左侧
-    let finalX, finalY;
+    // 计算位置
+    let finalX = mouseX + offset;
+    let finalY = mouseY - tooltipHeight / 2;
 
-    // 水平方向定位
-    if (mouseX + offset + tooltipWidth < viewportWidth) {
-        // 鼠标右侧有足够空间
-        finalX = mouseX + offset;
-    } else if (mouseX - offset - tooltipWidth > 0) {
-        // 鼠标左侧有足够空间
+    // 边界检查
+    if (finalX + tooltipWidth > viewportWidth - 10) {
         finalX = mouseX - offset - tooltipWidth;
-    } else {
-        // 两侧空间都不足，居中显示
-        finalX = Math.max(10, (viewportWidth - tooltipWidth) / 2);
+    }
+    if (finalX < 10) finalX = 10;
+    if (finalY < 10) finalY = 10;
+    if (finalY + tooltipHeight > viewportHeight - 10) {
+        finalY = viewportHeight - tooltipHeight - 10;
     }
 
-    // 垂直方向定位：优先显示在鼠标上方
-    if (mouseY - tooltipHeight - topOffset > 10) {
-        // 上方有足够空间，显示在鼠标上方
-        finalY = mouseY - tooltipHeight - topOffset;
-    } else if (mouseY + offset + tooltipHeight < viewportHeight - 10) {
-        // 上方空间不足，显示在鼠标下方
-        finalY = mouseY + offset;
-    } else {
-        // 上下空间都不足，尽量靠上显示
-        finalY = Math.max(10, Math.min(mouseY - tooltipHeight / 2, viewportHeight - tooltipHeight - 10));
+    // 移动到 body，确保不受其他元素影响（类似模态框的处理方式）
+    if (tooltip.parentElement !== document.body) {
+        document.body.appendChild(tooltip);
+        console.log('✅ 悬浮框已移动到 body');
     }
 
-    // 最终边界检查：确保不超出视口
-    finalX = Math.max(10, Math.min(finalX, viewportWidth - tooltipWidth - 10));
-    finalY = Math.max(10, Math.min(finalY, viewportHeight - tooltipHeight - 10));
+    // 强制设置样式，使用 cssText 一次性设置所有样式
+    tooltip.style.cssText = `
+        position: fixed !important;
+        left: ${finalX}px !important;
+        top: ${finalY}px !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 99999 !important;
+        background-color: white !important;
+        width: 450px !important;
+        min-height: 300px !important;
+        height: auto !important;
+        border: 2px solid #667eea !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25) !important;
+        overflow: visible !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
+        max-width: none !important;
+        max-height: none !important;
+        transform: none !important;
+        clip: auto !important;
+        clip-path: none !important;
+    `;
 
-    tooltip.style.left = `${finalX}px`;
-    tooltip.style.top = `${finalY}px`;
-    tooltip.style.display = 'block';
+    // 确保所有子元素也可见
+    const header = tooltip.querySelector('.stock-tooltip-header');
+    if (header) {
+        header.style.cssText = `
+            display: flex !important;
+            padding: 15px 20px !important;
+            min-height: 50px !important;
+            height: auto !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            box-sizing: border-box !important;
+        `;
+    }
+
+    const content = tooltip.querySelector('.stock-tooltip-content');
+    if (content) {
+        content.style.cssText = `
+            display: block !important;
+            min-height: 200px !important;
+            height: auto !important;
+            padding: 10px !important;
+            box-sizing: border-box !important;
+        `;
+    }
+
+    // 确保 loading 和 data 元素也有正确的 box-sizing
+    if (tooltipLoading) {
+        tooltipLoading.style.boxSizing = 'border-box';
+    }
+    if (tooltipData) {
+        tooltipData.style.boxSizing = 'border-box';
+    }
+
+    console.log('🔍 悬浮框样式调试信息:', {
+        display: tooltip.style.display,
+        position: tooltip.style.position,
+        left: tooltip.style.left,
+        top: tooltip.style.top,
+        zIndex: tooltip.style.zIndex,
+        offsetWidth: tooltip.offsetWidth,
+        offsetHeight: tooltip.offsetHeight,
+        clientWidth: tooltip.clientWidth,
+        clientHeight: tooltip.clientHeight,
+        computed: window.getComputedStyle(tooltip).display
+    });
 
     try {
         // 获取股票详情数据
@@ -88,7 +150,7 @@ async function showStockTooltip(stockCode, stockName, event) {
         console.error('❌ 获取股票详情失败:', error);
         tooltipLoading.style.display = 'none';
         tooltipData.style.display = 'block';
-        document.getElementById('tooltipCompanyInfo').textContent = '加载失败，请稍后重试';
+        document.getElementById('tooltipCompanyInfo').innerHTML = '<div style="color: #e74c3c; text-align: center; padding: 20px;">加载失败，请稍后重试</div>';
     }
 }
 
@@ -270,21 +332,30 @@ async function fetchStockDetail(stockCode, stockName) {
         const changePercent = safeNumber(quote.changePercent);
         const isPositive = changePercent >= 0;
 
-        document.getElementById('tooltipCurrentPrice').textContent = formatPrice(quote.currentPrice);
-        document.getElementById('tooltipCurrentPrice').className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
+        // 更新行情数据（如果元素存在）
+        const currentPriceEl = document.getElementById('tooltipCurrentPrice');
+        const changePercentEl = document.getElementById('tooltipChangePercent');
+        const highEl = document.getElementById('tooltipHigh');
+        const lowEl = document.getElementById('tooltipLow');
 
-        document.getElementById('tooltipChangePercent').textContent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
-        document.getElementById('tooltipChangePercent').className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
+        if (currentPriceEl) {
+            currentPriceEl.textContent = formatPrice(quote.currentPrice);
+            currentPriceEl.className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
+        }
+        if (changePercentEl) {
+            changePercentEl.textContent = `${isPositive ? '+' : ''}${changePercent.toFixed(2)}%`;
+            changePercentEl.className = `quote-value ${isPositive ? 'positive' : 'negative'}`;
+        }
+        if (highEl) {
+            highEl.textContent = formatPrice(quote.todayHigh);
+        }
+        if (lowEl) {
+            lowEl.textContent = formatPrice(quote.todayLow);
+        }
 
-        document.getElementById('tooltipHigh').textContent = formatPrice(quote.todayHigh);
-        document.getElementById('tooltipLow').textContent = formatPrice(quote.todayLow);
-
-        // 隐藏加载状态，显示数据（先显示行情数据）
+        // 隐藏加载状态，显示数据
         tooltipLoading.style.display = 'none';
         tooltipData.style.display = 'block';
-
-        // 异步渲染K线图（使用通用组件）
-        renderTooltipChart(stockCode);
 
         console.log('✅ 股票详情加载成功');
 
@@ -452,4 +523,11 @@ function initStockCodeHover() {
         });
     }
 }
+
+// ==================== 导出全局函数 ====================
+// 将函数导出到全局作用域，供HTML onclick使用
+window.showStockTooltip = showStockTooltip;
+window.closeStockTooltip = closeStockTooltip;
+window.initStockCodeHover = initStockCodeHover;
+window.switchTooltipChartPeriod = switchTooltipChartPeriod;
 
