@@ -4,33 +4,55 @@
 // loadWatchlist
 async function loadWatchlist() {
     const container = document.getElementById('watchlistContainer');
-    
+
     if (!container) return;
-    
+
     try {
         // 显示加载状态
         container.innerHTML = '<div class="loading-text">正在加载自选股...</div>';
-        
-        const response = await fetch('/api/watchlist', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+
+        // 添加10秒超时
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+        let response;
+        try {
+            response = await fetch('/api/watchlist', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                signal: controller.signal
+            });
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('获取自选股列表超时（10秒），请检查网络连接');
             }
-        });
-        
+            throw err;
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
         if (!response.ok) {
             throw new Error('获取自选股列表失败');
         }
-        
+
         const result = await response.json();
-        
+
         if (!result.success) {
             throw new Error(result.error || '获取自选股列表失败');
         }
-        
+
         const watchlist = result.data || [];
-        
+
         if (watchlist.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无自选股，请添加股票代码</div>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 36px; margin-bottom: 15px;">📋</div>
+                    <div style="font-size: 16px; color: #666;">暂无自选股</div>
+                    <div style="font-size: 14px; color: #999; margin-top: 8px;">请添加股票代码</div>
+                </div>
+            `;
             return;
         }
         
@@ -160,28 +182,52 @@ async function loadWatchlistQuotes() {
     try {
         // 显示加载状态
         container.innerHTML = '<div class="loading-text">正在获取行情数据...</div>';
-        
-        // 获取自选股列表
-        const response = await fetch('/api/watchlist', {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+
+        // 获取自选股列表（添加10秒超时）
+        const watchlistController = new AbortController();
+        const watchlistTimeoutId = setTimeout(() => watchlistController.abort(), 10000);
+
+        let response;
+        try {
+            response = await fetch('/api/watchlist', {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                signal: watchlistController.signal
+            });
+        } catch (err) {
+            clearTimeout(watchlistTimeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('获取自选股列表超时（10秒），请检查网络连接');
             }
-        });
-        
+            throw err;
+        } finally {
+            clearTimeout(watchlistTimeoutId);
+        }
+
         if (!response.ok) {
             throw new Error('获取自选股列表失败');
         }
-        
+
         const result = await response.json();
-        
+
         if (!result.success) {
             throw new Error(result.error || '获取自选股列表失败');
         }
-        
+
         const watchlist = result.data || [];
 
         if (watchlist.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无自选股行情数据</div>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📈</div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: #666;">暂无自选股</div>
+                    <div style="font-size: 14px; color: #999;">
+                        <p>您还没有添加任何自选股</p>
+                        <p>点击"市场动态"页签添加股票到自选股</p>
+                    </div>
+                </div>
+            `;
             return;
         }
 
@@ -394,12 +440,27 @@ async function loadOverviewWatchlistQuotes() {
     }
 
     try {
-        // 获取自选股列表
-        const response = await fetch('/api/watchlist', {
-            headers: {
-                'Authorization': `Bearer ${token}`
+        // 获取自选股列表（添加10秒超时）
+        const watchlistController = new AbortController();
+        const watchlistTimeoutId = setTimeout(() => watchlistController.abort(), 10000);
+
+        let response;
+        try {
+            response = await fetch('/api/watchlist', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                signal: watchlistController.signal
+            });
+        } catch (err) {
+            clearTimeout(watchlistTimeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('获取自选股列表超时（10秒），请检查网络连接');
             }
-        });
+            throw err;
+        } finally {
+            clearTimeout(watchlistTimeoutId);
+        }
 
         if (!response.ok) {
             throw new Error('获取自选股列表失败');
@@ -414,7 +475,16 @@ async function loadOverviewWatchlistQuotes() {
         const watchlist = result.data || [];
 
         if (watchlist.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无自选股，请先添加</div>';
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 48px; margin-bottom: 20px;">📈</div>
+                    <div style="font-size: 18px; margin-bottom: 10px; color: #666;">暂无自选股</div>
+                    <div style="font-size: 14px; color: #999;">
+                        <p>您还没有添加任何自选股</p>
+                        <p>点击"市场动态"页签添加股票到自选股</p>
+                    </div>
+                </div>
+            `;
             return;
         }
 
