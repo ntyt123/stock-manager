@@ -240,6 +240,9 @@ async function deploy() {
       // 安装/更新依赖
       'echo "📦 安装依赖..." && npm install --production',
 
+      // 初始化数据库
+      'echo "💾 初始化数据库..." && node database/init.js',
+
       // 检查PM2是否已安装
       'if ! command -v pm2 &> /dev/null; then echo "安装PM2..." && npm install -g pm2; fi',
 

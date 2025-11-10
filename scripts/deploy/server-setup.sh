@@ -183,6 +183,11 @@ print_success "日志目录创建完成"
 mkdir -p backups
 print_success "备份目录创建完成"
 
+# 初始化数据库
+print_info "初始化数据库..."
+node database/init.js
+print_success "数据库初始化完成"
+
 # ==================== 步骤8: 启动服务 ====================
 print_header "步骤 8/8: 启动服务"
 
