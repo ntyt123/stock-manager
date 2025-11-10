@@ -156,14 +156,21 @@ function openCapitalModal() {
     statusDiv.innerHTML = '';
     statusDiv.className = 'form-status';
 
-    // 显示模态框
-    modal.style.display = 'flex';
+    // 显示模态框 - 使用class控制并强制设置尺寸
+    modal.classList.add('show');
+    modal.style.width = '100vw';
+    modal.style.height = '100vh';
+    modal.style.minWidth = '100vw';
+    modal.style.minHeight = '100vh';
+
+    console.log('✅ 模态框已打开，classList:', modal.classList);
+    console.log('✅ 尺寸:', modal.getBoundingClientRect());
 }
 
 // 关闭总资金设置模态框
 function closeCapitalModal() {
     const modal = document.getElementById('capitalModal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
 }
 
 // 保存总资金
@@ -202,9 +209,25 @@ async function saveTotalCapital() {
 
 // 导出到全局 window 对象
 window.CapitalManager = CapitalManager;
+window.openCapitalModal = openCapitalModal;
+window.closeCapitalModal = closeCapitalModal;
+window.saveTotalCapital = saveTotalCapital;
+
+// 调试信息
+console.log('✅ Capital Manager 模块已加载');
+console.log('✅ openCapitalModal:', typeof openCapitalModal);
+console.log('✅ closeCapitalModal:', typeof closeCapitalModal);
+console.log('✅ saveTotalCapital:', typeof saveTotalCapital);
 
 // 页面加载时初始化（等待登录完成）
 document.addEventListener('DOMContentLoaded', async () => {
+    // 将modal移动到body根部，避免父容器限制
+    const modal = document.getElementById('capitalModal');
+    if (modal && modal.parentElement.tagName !== 'BODY') {
+        document.body.appendChild(modal);
+        console.log('✅ 资金模态框已移动到body根部');
+    }
+
     // 监听登录成功事件
     document.addEventListener('loginSuccess', async () => {
         await CapitalManager.init();
