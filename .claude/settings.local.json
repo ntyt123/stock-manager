@@ -41,7 +41,10 @@
       "Bash(Select-String -Pattern \"debug1:|debug2:|debug3:\")",
       "Bash(Select-Object -First 50)",
       "Bash(powershell:*)",
-      "Bash(\"f:\\Git\\stock-manager\\public\\js\\modules\\trade-manager.js\")"
+      "Bash(\"f:\\Git\\stock-manager\\public\\js\\modules\\trade-manager.js\")",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(ping:*)"
     ],
     "deny": [],
     "ask": []

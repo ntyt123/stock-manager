@@ -188,15 +188,30 @@ async function loadWatchlistQuotes() {
         // 提取股票代码列表
         const stockCodes = watchlist.map(stock => stock.stock_code);
 
-        // 批量获取真实行情数据
-        const quotesResponse = await fetch('/api/stock/quotes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-            },
-            body: JSON.stringify({ stockCodes })
-        });
+        // 批量获取真实行情数据（添加15秒超时）
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        let quotesResponse;
+        try {
+            quotesResponse = await fetch('/api/stock/quotes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ stockCodes }),
+                signal: controller.signal
+            });
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('获取行情数据超时（15秒），请检查网络连接或稍后重试');
+            }
+            throw err;
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         if (!quotesResponse.ok) {
             throw new Error('获取行情数据失败');
@@ -276,8 +291,18 @@ async function loadWatchlistQuotes() {
         });
 
     } catch (error) {
-        console.error('加载自选股行情错误:', error);
-        container.innerHTML = '<div class="error-text">获取行情数据失败</div>';
+        console.error('❌ 加载自选股行情错误:', error);
+        const errorMsg = error.message || '获取行情数据失败';
+        container.innerHTML = `
+            <div class="error-text">
+                <div style="font-size: 18px; margin-bottom: 10px;">⚠️ ${errorMsg}</div>
+                <div style="font-size: 14px; color: #666;">
+                    ${error.message && error.message.includes('超时')
+                        ? '建议：<br>1. 检查网络连接<br>2. 检查服务器是否能访问新浪财经API<br>3. 刷新页面重试'
+                        : '建议：刷新页面重试或查看浏览器控制台获取详细错误信息'}
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -396,15 +421,30 @@ async function loadOverviewWatchlistQuotes() {
         // 提取股票代码列表
         const stockCodes = watchlist.map(stock => stock.stock_code);
 
-        // 批量获取行情数据
-        const quotesResponse = await fetch('/api/stock/quotes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ stockCodes })
-        });
+        // 批量获取行情数据（添加15秒超时）
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        let quotesResponse;
+        try {
+            quotesResponse = await fetch('/api/stock/quotes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ stockCodes }),
+                signal: controller.signal
+            });
+        } catch (err) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('获取行情数据超时（15秒），请检查网络连接或稍后重试');
+            }
+            throw err;
+        } finally {
+            clearTimeout(timeoutId);
+        }
 
         if (!quotesResponse.ok) {
             throw new Error('获取行情数据失败');
@@ -486,8 +526,18 @@ async function loadOverviewWatchlistQuotes() {
         });
 
     } catch (error) {
-        console.error('加载总览自选股行情错误:', error);
-        container.innerHTML = '<div class="loading-text">加载失败，请刷新重试</div>';
+        console.error('❌ 加载总览自选股行情错误:', error);
+        const errorMsg = error.message || '加载失败';
+        container.innerHTML = `
+            <div class="error-text">
+                <div style="font-size: 18px; margin-bottom: 10px;">⚠️ ${errorMsg}</div>
+                <div style="font-size: 14px; color: #666;">
+                    ${error.message && error.message.includes('超时')
+                        ? '建议：<br>1. 检查网络连接<br>2. 检查服务器是否能访问新浪财经API<br>3. 刷新页面重试'
+                        : '建议：刷新页面重试或查看浏览器控制台获取详细错误信息'}
+                </div>
+            </div>
+        `;
     }
 }
 

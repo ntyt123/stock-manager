@@ -273,10 +273,26 @@ module.exports = (authenticateToken) => {
             });
 
         } catch (error) {
-            console.error('批量获取股票行情错误:', error.message);
+            console.error('❌ 批量获取股票行情错误:');
+            console.error('  错误类型:', error.name);
+            console.error('  错误信息:', error.message);
+            console.error('  堆栈:', error.stack);
+
+            // 根据不同的错误类型返回更详细的错误信息
+            let errorMessage = '批量获取股票行情失败';
+            if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT') {
+                errorMessage = '获取行情数据超时，请检查网络连接';
+            } else if (error.response) {
+                errorMessage = `行情API返回错误: ${error.response.status}`;
+            } else if (error.request) {
+                errorMessage = '无法连接到行情数据源，请检查网络';
+            } else {
+                errorMessage = error.message || '未知错误';
+            }
+
             res.status(500).json({
                 success: false,
-                error: '批量获取股票行情失败: ' + error.message
+                error: errorMessage
             });
         }
     });
