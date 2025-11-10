@@ -11,10 +11,10 @@ chcp 65001 >nul
 REM ========== 配置区域 ==========
 REM 首次使用请修改以下配置
 
-set REMOTE_HOST=your-server-ip
+set REMOTE_HOST=http://42.192.40.196/
 set REMOTE_USER=ubuntu
 set REMOTE_PORT=22
-set REMOTE_PATH=/home/ubuntu/stock-manager
+set REMOTE_PATH=/opt/stock-manager
 set BRANCH=master
 
 REM ==============================
