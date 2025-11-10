@@ -250,8 +250,8 @@ async function deploy() {
       // 进入项目目录
       `cd ${CONFIG.remotePath}`,
 
-      // 拉取最新代码
-      `echo "📥 拉取代码..." && git pull origin ${CONFIG.branch}`,
+      // 重置本地更改并拉取最新代码（设置超时30秒）
+      `echo "📥 拉取代码..." && git checkout . && timeout 30 git pull origin ${CONFIG.branch} || echo "⚠️ Git拉取超时或失败，使用现有代码"`,
 
       // 安装/更新依赖
       'echo "📦 安装依赖..." && npm install --production',
