@@ -140,7 +140,7 @@ async function viewCostDetail(stockCode, stockName) {
     try {
         // 显示模态框
         const modal = document.getElementById('costDetailModal');
-        modal.style.display = 'block';
+        modal.classList.add('show');
 
         document.getElementById('costDetailTitle').textContent = `${stockCode} ${stockName} - 成本详情`;
         document.getElementById('costDetailContent').innerHTML = '<div class="loading-text">正在加载成本详情...</div>';
@@ -300,7 +300,7 @@ function getAdjustmentTypeName(type) {
 // 关闭成本详情模态框
 function closeCostDetailModal() {
     const modal = document.getElementById('costDetailModal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
 }
 
 // 打开添加成本记录模态框
@@ -312,7 +312,7 @@ function openAddCostRecordModal(stockCode = '', stockName = '') {
     }
 
     const modal = document.getElementById('addCostRecordModal');
-    modal.style.display = 'block';
+    modal.classList.add('show');
 
     // 重置表单
     document.getElementById('addCostRecordForm').reset();
@@ -334,7 +334,7 @@ function openAddCostRecordModal(stockCode = '', stockName = '') {
 // 关闭添加成本记录模态框
 function closeAddCostRecordModal() {
     const modal = document.getElementById('addCostRecordModal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
 }
 
 // 绑定成本记录自动计算
@@ -458,7 +458,7 @@ async function deleteCostRecord(recordId) {
 
             // 刷新详情页
             const modal = document.getElementById('costDetailModal');
-            if (modal.style.display === 'block') {
+            if (modal.classList.contains('show')) {
                 const title = document.getElementById('costDetailTitle').textContent;
                 const match = title.match(/(\d{6})\s+(.+?)\s+-/);
                 if (match) {
@@ -487,7 +487,7 @@ function openCostAdjustmentModal(stockCode = '', stockName = '') {
     }
 
     const modal = document.getElementById('costAdjustmentModal');
-    modal.style.display = 'block';
+    modal.classList.add('show');
 
     // 重置表单
     document.getElementById('costAdjustmentForm').reset();
@@ -509,7 +509,7 @@ function openCostAdjustmentModal(stockCode = '', stockName = '') {
 // 关闭成本调整模态框
 function closeCostAdjustmentModal() {
     const modal = document.getElementById('costAdjustmentModal');
-    modal.style.display = 'none';
+    modal.classList.remove('show');
 }
 
 // 绑定调整类型变化
@@ -612,3 +612,15 @@ async function submitCostAdjustment() {
         statusDiv.className = 'form-status error';
     }
 }
+
+// 页面加载完成后将所有模态框移动到body根部
+document.addEventListener('DOMContentLoaded', () => {
+    const modals = ['costDetailModal', 'addCostRecordModal', 'costAdjustmentModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && modal.parentElement.tagName !== 'BODY') {
+            document.body.appendChild(modal);
+            console.log(`✅ ${modalId}已移动到body根部`);
+        }
+    });
+});

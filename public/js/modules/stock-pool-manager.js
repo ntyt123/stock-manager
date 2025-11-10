@@ -167,7 +167,7 @@ const StockPoolManager = {
         document.getElementById('poolFormTags').value = '';
         document.getElementById('poolFormStatus').innerHTML = '';
 
-        document.getElementById('stockPoolFormModal').style.display = 'flex';
+        document.getElementById('stockPoolFormModal').classList.add('show');
     },
 
     // 打开编辑股票池模态框
@@ -188,7 +188,7 @@ const StockPoolManager = {
             document.getElementById('poolFormTags').value = pool.tags || '';
             document.getElementById('poolFormStatus').innerHTML = '';
 
-            document.getElementById('stockPoolFormModal').style.display = 'flex';
+            document.getElementById('stockPoolFormModal').classList.add('show');
 
         } catch (error) {
             console.error('❌ 打开编辑模态框失败:', error);
@@ -198,7 +198,7 @@ const StockPoolManager = {
 
     // 关闭股票池表单模态框
     closePoolFormModal: function() {
-        document.getElementById('stockPoolFormModal').style.display = 'none';
+        document.getElementById('stockPoolFormModal').classList.remove('show');
     },
 
     // 提交股票池表单
@@ -786,7 +786,7 @@ const StockPoolManager = {
             }
         });
 
-        document.getElementById('addStockToPoolModal').style.display = 'flex';
+        document.getElementById('addStockToPoolModal').classList.add('show');
 
         // 聚焦到股票代码输入框
         setTimeout(() => stockCodeInput.focus(), 100);
@@ -794,7 +794,7 @@ const StockPoolManager = {
 
     // 关闭添加股票模态框
     closeAddStockModal: function() {
-        document.getElementById('addStockToPoolModal').style.display = 'none';
+        document.getElementById('addStockToPoolModal').classList.remove('show');
     },
 
     // 提交添加股票

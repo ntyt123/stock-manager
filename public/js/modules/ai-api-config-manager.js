@@ -174,7 +174,7 @@ const AIApiConfigManager = {
         document.getElementById('configTemperature').value = '0.7';
         document.getElementById('configMaxTokens').value = '2000';
         document.getElementById('configTimeout').value = '30000';
-        document.getElementById('aiApiConfigModal').style.display = 'flex';
+        document.getElementById('aiApiConfigModal').classList.add('show');
     },
 
     /**
@@ -206,7 +206,7 @@ const AIApiConfigManager = {
             document.getElementById('configSetActive').checked = config.is_active;
 
             // 显示模态框
-            document.getElementById('aiApiConfigModal').style.display = 'flex';
+            document.getElementById('aiApiConfigModal').classList.add('show');
 
         } catch (error) {
             console.error('❌ 加载配置详情失败:', error);
@@ -218,7 +218,7 @@ const AIApiConfigManager = {
      * 关闭模态框
      */
     closeModal() {
-        document.getElementById('aiApiConfigModal').style.display = 'none';
+        document.getElementById('aiApiConfigModal').classList.remove('show');
         this.currentEditingId = null;
     },
 
@@ -494,3 +494,12 @@ const AIApiConfigManager = {
 
 // 将 AIApiConfigManager 暴露到全局作用域
 window.AIApiConfigManager = AIApiConfigManager;
+
+// 页面加载完成后将模态框移动到body根部
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('aiApiConfigModal');
+    if (modal && modal.parentElement.tagName !== 'BODY') {
+        document.body.appendChild(modal);
+        console.log('✅ AI API配置模态框已移动到body根部');
+    }
+});

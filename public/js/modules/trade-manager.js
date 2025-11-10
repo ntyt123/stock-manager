@@ -594,3 +594,7 @@ function bindStockCodeAutoFill(codeInputId, nameInputId) {
     console.log(`✅ 股票代码自动填充已绑定 (${codeInputId} → ${nameInputId})`);
 }
 
+
+// ==================== 导出全局函数 ====================
+window.openTradeRecordModal = openTradeRecordModal;
+window.viewTradeHistory = viewTradeHistory;

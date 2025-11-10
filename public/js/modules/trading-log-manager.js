@@ -271,14 +271,14 @@ const TradingLogManager = {
         document.getElementById('logFormStatus').textContent = '';
 
         // 显示模态框
-        document.getElementById('tradingLogModal').style.display = 'block';
+        document.getElementById('tradingLogModal').classList.add('show');
 
         console.log('📝 打开新建日志模态框');
     },
 
     // 关闭日志模态框
     closeLogModal() {
-        document.getElementById('tradingLogModal').style.display = 'none';
+        document.getElementById('tradingLogModal').classList.remove('show');
         document.getElementById('tradingLogForm').reset();
         this.currentLogId = null;
     },
@@ -400,7 +400,7 @@ const TradingLogManager = {
                 document.getElementById('logIsImportant').checked = log.is_important === 1;
 
                 // 显示模态框
-                document.getElementById('tradingLogModal').style.display = 'block';
+                document.getElementById('tradingLogModal').classList.add('show');
             }
 
         } catch (error) {
@@ -616,3 +616,12 @@ const TradingLogManager = {
 
 // 导出到全局
 window.TradingLogManager = TradingLogManager;
+
+// 页面加载完成后将模态框移动到body根部
+document.addEventListener('DOMContentLoaded', () => {
+    const modal = document.getElementById('tradingLogModal');
+    if (modal && modal.parentElement.tagName !== 'BODY') {
+        document.body.appendChild(modal);
+        console.log('✅ 交易日志模态框已移动到body根部');
+    }
+});

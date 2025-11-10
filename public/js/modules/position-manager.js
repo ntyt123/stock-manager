@@ -767,6 +767,7 @@ document.addEventListener('capitalUpdated', (event) => {
 
 // ==================== 导出全局函数 ====================
 // 将函数导出到全局作用域，供HTML onclick使用
+window.initExcelUpload = initExcelUpload;
 window.openExcelUploadModal = openExcelUploadModal;
 window.closeExcelUploadModal = closeExcelUploadModal;
 window.openManualPositionModal = openManualPositionModal;

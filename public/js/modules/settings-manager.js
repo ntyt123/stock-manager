@@ -37,7 +37,7 @@ const SettingsManager = {
         console.log('📝 打开系统设置');
         const modal = document.getElementById('settingsModal');
         if (modal) {
-            modal.style.display = 'block';
+            modal.classList.add('show');
             this.loadSettings();
             this.initEventListeners();
             this.loadSystemInfo();
@@ -48,7 +48,7 @@ const SettingsManager = {
     closeSettings() {
         const modal = document.getElementById('settingsModal');
         if (modal) {
-            modal.style.display = 'none';
+            modal.classList.remove('show');
         }
     },
 
@@ -1012,6 +1012,13 @@ window.SettingsManager = SettingsManager;
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', () => {
     console.log('⚙️ 设置管理器已加载');
+
+    // 将modal移动到body根部，避免父容器限制
+    const modal = document.getElementById('settingsModal');
+    if (modal && modal.parentElement.tagName !== 'BODY') {
+        document.body.appendChild(modal);
+        console.log('✅ 设置模态框已移动到body根部');
+    }
 
     // 应用已保存的设置
     const settings = SettingsManager.getSettings();
