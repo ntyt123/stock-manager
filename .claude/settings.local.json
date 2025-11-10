@@ -31,7 +31,15 @@
       "Bash(powershell -Command \"Stop-Process -Id 76980 -Force\")",
       "Bash(powershell -Command:*)",
       "Bash(echo:*)",
-      "Bash(\"f:\\Git\\stock-manager\\public\\js\\modules\\position-manager.js\")"
+      "Bash(\"f:\\Git\\stock-manager\\public\\js\\modules\\position-manager.js\")",
+      "Bash(nul)",
+      "Bash(git clean:*)",
+      "Bash(.gitignore)",
+      "Bash(git checkout:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(Select-String -Pattern \"debug1:|debug2:|debug3:\")",
+      "Bash(Select-Object -First 50)"
     ],
     "deny": [],
     "ask": []

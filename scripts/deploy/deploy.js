@@ -21,7 +21,8 @@ let CONFIG = {
   remotePort: '22',
   remotePath: '/opt/stock-manager',
   branch: 'master',
-  skipGitCheck: false
+  skipGitCheck: false,
+  sshKeyFile: 'c:\\Users\\yidan_zhou\\.ssh\\stock_hailun.pem'
 };
 
 // 加载配置
@@ -77,6 +78,11 @@ async function configWizard() {
     console.log(`   服务器: ${CONFIG.remoteUser}@${CONFIG.remoteHost}:${CONFIG.remotePort}`);
     console.log(`   路径: ${CONFIG.remotePath}`);
     console.log(`   分支: ${CONFIG.branch}\n`);
+
+    if (AUTO_CONFIRM) {
+      console.log('✅ 自动确认：使用现有配置');
+      return;
+    }
 
     const useExisting = await prompt('使用现有配置? (yes/no): ');
     if (useExisting.toLowerCase() === 'yes' || useExisting.toLowerCase() === 'y') {
@@ -160,10 +166,14 @@ async function deploy() {
       process.exit(1);
     }
 
-    const confirm = await prompt('\n确认开始部署? (yes/no): ');
-    if (confirm.toLowerCase() !== 'yes' && confirm.toLowerCase() !== 'y') {
-      console.log('❌ 部署已取消');
-      process.exit(0);
+    if (!AUTO_CONFIRM) {
+      const confirm = await prompt('\n确认开始部署? (yes/no): ');
+      if (confirm.toLowerCase() !== 'yes' && confirm.toLowerCase() !== 'y') {
+        console.log('❌ 部署已取消');
+        process.exit(0);
+      }
+    } else {
+      console.log('\n✅ 自动确认：开始部署');
     }
 
     console.log('\n🎯 开始部署流程...\n');
@@ -182,13 +192,18 @@ async function deploy() {
       console.log('⚠️  检测到未提交的更改:');
       console.log(gitStatus);
 
-      const commit = await prompt('\n是否提交这些更改? (yes/no/skip): ');
-      if (commit.toLowerCase() === 'yes' || commit.toLowerCase() === 'y') {
-        const message = await prompt('请输入提交信息: ');
-        execCommand('git add .', '添加文件到暂存区');
-        execCommand(`git commit -m "${message}"`, '提交代码');
-      } else if (commit.toLowerCase() === 'skip') {
+      if (AUTO_CONFIRM) {
+        console.log('\n✅ 自动确认：跳过提交，继续部署');
         CONFIG.skipGitCheck = true;
+      } else {
+        const commit = await prompt('\n是否提交这些更改? (yes/no/skip): ');
+        if (commit.toLowerCase() === 'yes' || commit.toLowerCase() === 'y') {
+          const message = await prompt('请输入提交信息: ');
+          execCommand('git add .', '添加文件到暂存区');
+          execCommand(`git commit -m "${message}"`, '提交代码');
+        } else if (commit.toLowerCase() === 'skip') {
+          CONFIG.skipGitCheck = true;
+        }
       }
     } else {
       console.log('✅ 工作区干净');
@@ -213,7 +228,8 @@ async function deploy() {
 
     // ==================== 步骤3: 测试SSH连接 ====================
     console.log('\n🔌 步骤 3/5: 测试SSH连接...');
-    const sshTest = `ssh -p ${CONFIG.remotePort} -o ConnectTimeout=5 ${CONFIG.remoteUser}@${CONFIG.remoteHost} "echo 'SSH连接成功'"`;
+    const sshKeyArg = CONFIG.sshKeyFile ? `-i "${CONFIG.sshKeyFile}" ` : '';
+    const sshTest = `ssh ${sshKeyArg}-p ${CONFIG.remotePort} -o ConnectTimeout=5 ${CONFIG.remoteUser}@${CONFIG.remoteHost} "echo 'SSH连接成功'"`;
     execCommand(sshTest, '测试SSH连接');
 
     // ==================== 步骤4: 备份生产数据库 ====================
@@ -224,7 +240,7 @@ async function deploy() {
       `cp stock_manager.db backups/stock_manager_$(date +%Y%m%d_%H%M%S).db 2>/dev/null || echo "跳过备份（数据库不存在）"`
     ].join(' && ');
 
-    const sshBackup = `ssh -p ${CONFIG.remotePort} ${CONFIG.remoteUser}@${CONFIG.remoteHost} "${backupCommands}"`;
+    const sshBackup = `ssh ${sshKeyArg}-p ${CONFIG.remotePort} ${CONFIG.remoteUser}@${CONFIG.remoteHost} "${backupCommands}"`;
     execCommand(sshBackup, '备份数据库', { allowError: true });
 
     // ==================== 步骤5: 部署到服务器 ====================
@@ -256,7 +272,7 @@ async function deploy() {
       'echo "📊 服务状态:" && pm2 status'
     ].join(' && ');
 
-    const sshDeploy = `ssh -p ${CONFIG.remotePort} ${CONFIG.remoteUser}@${CONFIG.remoteHost} "${deployCommands}"`;
+    const sshDeploy = `ssh ${sshKeyArg}-p ${CONFIG.remotePort} ${CONFIG.remoteUser}@${CONFIG.remoteHost} "${deployCommands}"`;
     execCommand(sshDeploy, '在服务器上部署');
 
     // ==================== 部署完成 ====================
@@ -286,6 +302,8 @@ async function deploy() {
 // ==================== 程序入口 ====================
 // 处理命令行参数
 const args = process.argv.slice(2);
+const AUTO_CONFIRM = args.includes('--yes') || args.includes('-y');
+
 if (args.includes('--help') || args.includes('-h')) {
   console.log(`
 用法: node deploy.js [选项]
@@ -293,10 +311,12 @@ if (args.includes('--help') || args.includes('-h')) {
 选项:
   --help, -h        显示帮助信息
   --config          重新配置部署参数
+  --yes, -y         自动确认所有提示
 
 示例:
   node deploy.js              # 正常部署
   node deploy.js --config     # 重新配置
+  node deploy.js --yes        # 自动确认部署
   `);
   process.exit(0);
 }
