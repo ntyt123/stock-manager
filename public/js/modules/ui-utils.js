@@ -262,6 +262,12 @@ function loadSubTabData(subtabId) {
                 StockPoolManager.init();
             }
             break;
+        case 'stock-selection-three-day':
+            // 加载三日选股法数据
+            if (typeof ThreeDaySelectionManager !== 'undefined' && typeof ThreeDaySelectionManager.init === 'function') {
+                ThreeDaySelectionManager.init();
+            }
+            break;
         case 'market-sentiment':
             // 加载市场情绪分析数据
             if (typeof loadMarketSentiment === 'function') {
@@ -321,6 +327,12 @@ function loadTabData(tabName) {
         case 'market':
             if (typeof loadMarketData === 'function') {
                 loadMarketData();
+            }
+            break;
+        case 'stock-selection':
+            // 加载选股页签时，自动加载三日选股法数据
+            if (typeof ThreeDaySelectionManager !== 'undefined' && typeof ThreeDaySelectionManager.init === 'function') {
+                ThreeDaySelectionManager.init();
             }
             break;
         case 'analysis':

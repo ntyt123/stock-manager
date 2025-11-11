@@ -44,7 +44,8 @@
       "Bash(\"f:\\Git\\stock-manager\\public\\js\\modules\\trade-manager.js\")",
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
-      "Bash(ping:*)"
+      "Bash(ping:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []

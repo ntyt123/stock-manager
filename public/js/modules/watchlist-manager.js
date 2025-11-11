@@ -11,9 +11,9 @@ async function loadWatchlist() {
         // 显示加载状态
         container.innerHTML = '<div class="loading-text">正在加载自选股...</div>';
 
-        // 添加10秒超时
+        // 添加30秒超时
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
         let response;
         try {
@@ -26,7 +26,7 @@ async function loadWatchlist() {
         } catch (err) {
             clearTimeout(timeoutId);
             if (err.name === 'AbortError') {
-                throw new Error('获取自选股列表超时（10秒），请检查网络连接');
+                throw new Error('获取自选股列表超时（30秒），请检查网络连接');
             }
             throw err;
         } finally {
@@ -183,9 +183,9 @@ async function loadWatchlistQuotes() {
         // 显示加载状态
         container.innerHTML = '<div class="loading-text">正在获取行情数据...</div>';
 
-        // 获取自选股列表（添加10秒超时）
+        // 获取自选股列表（添加30秒超时）
         const watchlistController = new AbortController();
-        const watchlistTimeoutId = setTimeout(() => watchlistController.abort(), 10000);
+        const watchlistTimeoutId = setTimeout(() => watchlistController.abort(), 30000);
 
         let response;
         try {
@@ -198,7 +198,7 @@ async function loadWatchlistQuotes() {
         } catch (err) {
             clearTimeout(watchlistTimeoutId);
             if (err.name === 'AbortError') {
-                throw new Error('获取自选股列表超时（10秒），请检查网络连接');
+                throw new Error('获取自选股列表超时（30秒），请检查网络连接');
             }
             throw err;
         } finally {
@@ -440,9 +440,9 @@ async function loadOverviewWatchlistQuotes() {
     }
 
     try {
-        // 获取自选股列表（添加10秒超时）
+        // 获取自选股列表（添加30秒超时）
         const watchlistController = new AbortController();
-        const watchlistTimeoutId = setTimeout(() => watchlistController.abort(), 10000);
+        const watchlistTimeoutId = setTimeout(() => watchlistController.abort(), 30000);
 
         let response;
         try {
@@ -455,7 +455,7 @@ async function loadOverviewWatchlistQuotes() {
         } catch (err) {
             clearTimeout(watchlistTimeoutId);
             if (err.name === 'AbortError') {
-                throw new Error('获取自选股列表超时（10秒），请检查网络连接');
+                throw new Error('获取自选股列表超时（30秒），请检查网络连接');
             }
             throw err;
         } finally {
@@ -535,65 +535,110 @@ async function loadOverviewWatchlistQuotes() {
 
         // 获取默认K线周期设置
         const defaultPeriod = window.SettingsManager ? window.SettingsManager.getSettings().chartPeriod : 'day';
-        console.log(`📊 [总览自选股] 使用默认K线周期: ${defaultPeriod}`);
 
-        // 渲染行情数据（只显示前6个，带K线图）
-        let html = '';
-        quotes.slice(0, 6).forEach((quote, index) => {
-            const isPositive = parseFloat(quote.changePercent) >= 0;
-            const chartId = `overview-chart-${quote.stockCode}-${index}`;
+        // 检查容器是否已有内容（判断是否为首次加载）
+        const isFirstLoad = !container.querySelector('.quote-item');
 
-            html += `
-                <div class="quote-item">
-                    <div class="quote-header">
-                        <div class="quote-info">
-                            <span class="quote-symbol">${quote.stockName || '未知股票'} (${quote.stockCode})</span>
-                        </div>
-                        <div class="quote-stats">
-                            <div class="quote-price">¥${quote.currentPrice.toFixed(2)}</div>
-                            <div class="quote-change ${isPositive ? 'positive' : 'negative'}">
-                                ${isPositive ? '+' : ''}${quote.changePercent}%
+        // 检查自选股列表是否改变（数量或顺序）
+        const currentStockCodes = quotes.slice(0, 6).map(q => q.stockCode).join(',');
+        const existingStockCodes = Array.from(container.querySelectorAll('.quote-item'))
+            .map(item => item.getAttribute('data-stock-code'))
+            .join(',');
+        const listChanged = currentStockCodes !== existingStockCodes;
+
+        if (isFirstLoad || listChanged) {
+            // 首次加载或列表改变，渲染完整HTML结构
+            if (listChanged) {
+                console.log(`📊 [总览自选股] 列表改变，重新渲染`);
+            } else {
+                console.log(`📊 [总览自选股] 首次加载，使用默认K线周期: ${defaultPeriod}`);
+            }
+
+            let html = '';
+            quotes.slice(0, 6).forEach((quote, index) => {
+                const isPositive = parseFloat(quote.changePercent) >= 0;
+                const chartId = `overview-chart-${quote.stockCode}`;
+
+                html += `
+                    <div class="quote-item" data-stock-code="${quote.stockCode}">
+                        <div class="quote-header">
+                            <div class="quote-info">
+                                <span class="quote-symbol">${quote.stockName || '未知股票'} (${quote.stockCode})</span>
+                            </div>
+                            <div class="quote-stats">
+                                <div class="quote-price" data-price>¥${quote.currentPrice.toFixed(2)}</div>
+                                <div class="quote-change ${isPositive ? 'positive' : 'negative'}" data-change>
+                                    ${isPositive ? '+' : ''}${quote.changePercent}%
+                                </div>
                             </div>
                         </div>
+                        <div class="chart-period-selector">
+                            <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                            <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                            <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
+                            <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
+                            <button class="create-plan-btn" onclick="createTradingPlanFromStock('${quote.stockCode}', '${quote.stockName || ''}', ${quote.currentPrice}, 'buy')">📋 制定买入计划</button>
+                        </div>
+                        <div class="quote-chart-container">
+                            <canvas id="${chartId}" class="quote-chart"></canvas>
+                        </div>
                     </div>
-                    <div class="chart-period-selector">
-                        <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
-                        <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
-                        <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
-                        <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
-                        <button class="create-plan-btn" onclick="createTradingPlanFromStock('${quote.stockCode}', '${quote.stockName || ''}', ${quote.currentPrice}, 'buy')">📋 制定买入计划</button>
-                    </div>
-                    <div class="quote-chart-container">
-                        <canvas id="${chartId}" class="quote-chart"></canvas>
-                    </div>
-                </div>
-            `;
-        });
-
-        container.innerHTML = html;
-
-        // 渲染图表（使用设置中的默认周期）
-        quotes.slice(0, 6).forEach((quote, index) => {
-            const chartId = `overview-chart-${quote.stockCode}-${index}`;
-            renderStockChart(chartId, quote.stockCode, defaultPeriod);
-        });
-
-        // 绑定周期切换按钮事件
-        document.querySelectorAll('#overviewWatchlistQuotes .period-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const period = this.getAttribute('data-period');
-                const chartId = this.getAttribute('data-chart');
-                const stockCode = this.getAttribute('data-stock');
-
-                // 更新按钮状态
-                const parentSelector = this.parentElement;
-                parentSelector.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-
-                // 重新渲染图表
-                renderStockChart(chartId, stockCode, period);
+                `;
             });
-        });
+
+            container.innerHTML = html;
+
+            // 渲染图表（使用设置中的默认周期）
+            quotes.slice(0, 6).forEach((quote, index) => {
+                const chartId = `overview-chart-${quote.stockCode}`;
+                renderStockChart(chartId, quote.stockCode, defaultPeriod);
+            });
+
+            // 绑定周期切换按钮事件
+            document.querySelectorAll('#overviewWatchlistQuotes .period-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const period = this.getAttribute('data-period');
+                    const chartId = this.getAttribute('data-chart');
+                    const stockCode = this.getAttribute('data-stock');
+
+                    // 更新按钮状态
+                    const parentSelector = this.parentElement;
+                    parentSelector.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    // 重新渲染图表
+                    renderStockChart(chartId, stockCode, period);
+                });
+            });
+        } else {
+            // 刷新数据，只更新价格和图表
+            console.log(`📊 [总览自选股] 刷新数据`);
+
+            quotes.slice(0, 6).forEach((quote, index) => {
+                const quoteItem = container.querySelector(`.quote-item[data-stock-code="${quote.stockCode}"]`);
+                if (quoteItem) {
+                    // 更新价格
+                    const priceElement = quoteItem.querySelector('[data-price]');
+                    const changeElement = quoteItem.querySelector('[data-change]');
+
+                    if (priceElement) {
+                        priceElement.textContent = `¥${quote.currentPrice.toFixed(2)}`;
+                    }
+
+                    if (changeElement) {
+                        const isPositive = parseFloat(quote.changePercent) >= 0;
+                        changeElement.textContent = `${isPositive ? '+' : ''}${quote.changePercent}%`;
+                        changeElement.className = `quote-change ${isPositive ? 'positive' : 'negative'}`;
+                    }
+
+                    // 更新图表（获取当前激活的周期）
+                    const activePeriodBtn = quoteItem.querySelector('.period-btn.active');
+                    const currentPeriod = activePeriodBtn ? activePeriodBtn.getAttribute('data-period') : defaultPeriod;
+                    const chartId = `overview-chart-${quote.stockCode}`;
+                    renderStockChart(chartId, quote.stockCode, currentPeriod);
+                }
+            });
+        }
 
     } catch (error) {
         console.error('❌ 加载总览自选股行情错误:', error);

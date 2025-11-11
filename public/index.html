@@ -152,6 +152,10 @@
                 <span class="tab-icon">🌍</span>
                 <span class="tab-text">股市信息</span>
             </button>
+            <button class="tab-btn" data-tab="stock-selection">
+                <span class="tab-icon">🔍</span>
+                <span class="tab-text">选股</span>
+            </button>
             <button class="tab-btn" data-tab="analysis">
                 <span class="tab-icon">📈</span>
                 <span class="tab-text">分析</span>
@@ -740,6 +744,37 @@
                                 <div id="bigOrdersData">
                                     <div class="loading-text">正在加载大单追踪数据...</div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 选股页签 -->
+        <div id="stock-selection-tab" class="tab-content">
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="stock-selection-three-day">
+                        <span class="sub-tab-icon">🔍</span>
+                        <span class="sub-tab-text">三日选股法</span>
+                    </button>
+                </div>
+
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 三日选股法 -->
+                    <div class="sub-tab-content active" id="stock-selection-three-day">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🔍</div>
+                                <div class="card-title">三日选股法</div>
+                            </div>
+
+                            <!-- 三日选股法内容区域 -->
+                            <div id="threeDaySelectionContent">
+                                <div class="loading-text">正在加载三日选股法...</div>
                             </div>
                         </div>
                     </div>
@@ -2877,22 +2912,6 @@
                                         <span class="setting-unit">元</span>
                                     </div>
                                 </div>
-                                <div class="setting-item">
-                                    <div class="setting-label">
-                                        <span class="setting-title">自动刷新间隔</span>
-                                        <span class="setting-desc">持仓数据自动刷新的时间间隔</span>
-                                    </div>
-                                    <div class="setting-control">
-                                        <select class="setting-select" id="setting-refresh-interval">
-                                            <option value="0">不自动刷新</option>
-                                            <option value="30">30秒</option>
-                                            <option value="60">1分钟</option>
-                                            <option value="300">5分钟</option>
-                                            <option value="600">10分钟</option>
-                                            <option value="1800">30分钟</option>
-                                        </select>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 
@@ -2976,6 +2995,26 @@
                                             <input type="checkbox" id="setting-auto-refresh">
                                             <span class="setting-switch-slider"></span>
                                         </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-label">
+                                        <span class="setting-title">自动刷新间隔</span>
+                                        <span class="setting-desc">行情数据自动刷新的时间间隔</span>
+                                    </div>
+                                    <div class="setting-control">
+                                        <select class="setting-select" id="setting-refresh-interval">
+                                            <option value="0">不自动刷新</option>
+                                            <option value="1">1秒（极速）</option>
+                                            <option value="3">3秒</option>
+                                            <option value="5">5秒</option>
+                                            <option value="10">10秒</option>
+                                            <option value="30">30秒</option>
+                                            <option value="60">1分钟</option>
+                                            <option value="300">5分钟</option>
+                                            <option value="600">10分钟</option>
+                                            <option value="1800">30分钟</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="setting-item">
@@ -3379,7 +3418,7 @@
                                 <div class="model-input-group">
                                     <div class="input-with-icon" style="flex: 1;">
                                         <span class="input-icon">🎯</span>
-                                        <input type="text" id="configModel" class="form-control modern-input with-icon" required placeholder="例如: deepseek-chat, gpt-4" list="modelList">
+                                        <input type="text" id="configModel" class="form-control modern-input with-icon" required placeholder="点击输入框查看模型列表，或直接输入" list="modelList">
                                         <datalist id="modelList"></datalist>
                                     </div>
                                     <button type="button" class="btn btn-fetch-models" onclick="AIApiConfigManager.fetchModels()">
@@ -3387,7 +3426,7 @@
                                         <span class="btn-text">获取模型</span>
                                     </button>
                                 </div>
-                                <small class="form-hint">💡 点击"获取模型"自动加载可用模型列表</small>
+                                <small class="form-hint">💡 点击"获取模型"加载列表，然后<strong>清空输入框并点击</strong>即可查看所有可用模型</small>
                             </div>
                         </div>
 
@@ -3950,6 +3989,8 @@
     <script src="/js/modules/trading-log-manager.js"></script>
     <!-- 股票池管理模块 -->
     <script src="/js/modules/stock-pool-manager.js"></script>
+    <!-- 三日选股法模块 -->
+    <script src="/js/modules/three-day-selection-manager.js"></script>
     <!-- AI提示词管理模块 -->
     <script src="/js/modules/ai-prompt-manager.js"></script>
     <!-- 组合优化管理模块 -->

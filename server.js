@@ -26,8 +26,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'stock-manager-secret-key';
 
 // ==================== 中间件配置 ====================
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(fileUpload());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -81,6 +81,7 @@ const predictionRoutes = require('./routes/prediction')(authenticateToken);
 const aiApiConfigRoutes = require('./routes/ai-api-config')(authenticateToken);
 const recapRoutes = require('./routes/recap')(authenticateToken);
 const reportRoutes = require('./routes/report')(authenticateToken);
+const threeDaySelectionRoutes = require('./routes/three-day-selection')(authenticateToken);
 
 // 挂载路由
 app.use('/api/auth', authRoutes);
@@ -107,6 +108,7 @@ app.use('/api/prediction', predictionRoutes);
 app.use('/api/ai-api', aiApiConfigRoutes);
 app.use('/api/recap', recapRoutes);
 app.use('/api/report', reportRoutes);
+app.use('/api/three-day-selection', threeDaySelectionRoutes);
 
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）

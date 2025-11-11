@@ -11,6 +11,14 @@ const readline = require('readline');
 const fs = require('fs');
 const path = require('path');
 
+// ==================== 命令行参数处理 ====================
+const args = process.argv.slice(2);
+const AUTO_CONFIRM = args.includes('--yes') || args.includes('-y');
+
+// 调试信息
+console.log('调试: 接收到的参数:', args);
+console.log('调试: AUTO_CONFIRM =', AUTO_CONFIRM);
+
 // ==================== 配置管理 ====================
 const CONFIG_FILE = path.join(__dirname, '.deploy-config.json');
 
@@ -66,7 +74,11 @@ function prompt(question) {
 function printBanner() {
   console.log('\n========================================');
   console.log('   Stock Manager 一键部署工具');
-  console.log('========================================\n');
+  console.log('========================================');
+  if (AUTO_CONFIRM) {
+    console.log('🤖 自动确认模式: 已启用');
+  }
+  console.log('');
 }
 
 // ==================== 配置向导 ====================
@@ -184,17 +196,24 @@ async function deploy() {
 
     if (gitStatus === null) {
       console.log('⚠️  未检测到Git仓库');
-      const continueAnyway = await prompt('继续部署? (yes/no): ');
-      if (continueAnyway.toLowerCase() !== 'yes') {
-        process.exit(0);
+      if (AUTO_CONFIRM) {
+        console.log('✅ 自动确认：继续部署');
+      } else {
+        const continueAnyway = await prompt('继续部署? (yes/no): ');
+        if (continueAnyway.toLowerCase() !== 'yes') {
+          process.exit(0);
+        }
       }
     } else if (gitStatus && !CONFIG.skipGitCheck) {
       console.log('⚠️  检测到未提交的更改:');
       console.log(gitStatus);
 
       if (AUTO_CONFIRM) {
-        console.log('\n✅ 自动确认：跳过提交，继续部署');
-        CONFIG.skipGitCheck = true;
+        console.log('\n✅ 自动确认：自动提交更改');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const message = `Auto deploy ${timestamp}`;
+        execCommand('git add .', '添加文件到暂存区');
+        execCommand(`git commit -m "${message}"`, '提交代码');
       } else {
         const commit = await prompt('\n是否提交这些更改? (yes/no/skip): ');
         if (commit.toLowerCase() === 'yes' || commit.toLowerCase() === 'y') {
@@ -215,11 +234,16 @@ async function deploy() {
       try {
         execCommand(`git push origin ${CONFIG.branch}`, '推送代码');
       } catch (error) {
-        const forcePush = await prompt('推送失败，是否强制推送? (yes/no): ');
-        if (forcePush.toLowerCase() === 'yes') {
-          execCommand(`git push -f origin ${CONFIG.branch}`, '强制推送代码');
+        if (AUTO_CONFIRM) {
+          console.log('⚠️  推送失败');
+          console.log('✅ 自动确认：跳过强制推送，继续部署');
         } else {
-          throw error;
+          const forcePush = await prompt('推送失败，是否强制推送? (yes/no): ');
+          if (forcePush.toLowerCase() === 'yes') {
+            execCommand(`git push -f origin ${CONFIG.branch}`, '强制推送代码');
+          } else {
+            throw error;
+          }
         }
       }
     } else {
@@ -258,6 +282,9 @@ async function deploy() {
 
       // 初始化数据库
       'echo "💾 初始化数据库..." && node database/init.js',
+
+      // 运行数据库迁移（添加趋势预测模板）
+      'echo "🔄 运行数据库迁移..." && node database/run-add-trend-prediction.js 2>/dev/null || echo "⚠️ 趋势预测模板迁移已跳过（可能已存在）"',
 
       // 检查PM2是否已安装
       'if ! command -v pm2 &> /dev/null; then echo "安装PM2..." && npm install -g pm2; fi',
@@ -300,10 +327,6 @@ async function deploy() {
 }
 
 // ==================== 程序入口 ====================
-// 处理命令行参数
-const args = process.argv.slice(2);
-const AUTO_CONFIRM = args.includes('--yes') || args.includes('-y');
-
 if (args.includes('--help') || args.includes('-h')) {
   console.log(`
 用法: node deploy.js [选项]

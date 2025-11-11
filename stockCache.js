@@ -264,7 +264,7 @@ class StockCache {
     setIntraday(stockCode, period, limit, data) {
         const key = `${stockCode}_${period}_${limit}`;
 
-        // 分时数据在交易时间内缓存时间更短（1分钟），非交易时间缓存到下一个交易时段
+        // 分时数据缓存时间
         const now = Date.now();
         let expiresAt;
 
@@ -272,8 +272,8 @@ class StockCache {
             // 交易时间：缓存1分钟（分时数据更新更频繁）
             expiresAt = now + 60 * 1000;
         } else {
-            // 非交易时间：缓存到下一个交易时段
-            expiresAt = this.getNextTradeTimeStart();
+            // 非交易时间：缓存1小时（减少无意义的请求）
+            expiresAt = now + 60 * 60 * 1000;
         }
 
         const ttl = Math.floor((expiresAt - now) / 1000);

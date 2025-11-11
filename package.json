@@ -10,6 +10,7 @@
     "start:1panel": "bash scripts/start-prod.sh",
     "build": "npm install",
     "deploy": "node scripts/deploy/deploy.js",
+    "deploy:auto": "node scripts/deploy/deploy.js -y",
     "deploy:bat": "scripts/deploy/deploy.bat",
     "logs": "scripts/deploy/logs.bat",
     "status": "scripts/deploy/status.bat",

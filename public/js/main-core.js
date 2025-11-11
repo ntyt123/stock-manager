@@ -34,7 +34,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // 其他不依赖总资金的模块正常加载
-        loadOverviewWatchlistQuotes();
+        // 只有当总览页签激活时才加载自选股行情，避免不必要的请求
+        const activeTab = document.querySelector('.tab-btn.active');
+        const currentTab = activeTab ? activeTab.dataset.tab : 'overview';
+
+        if (currentTab === 'overview') {
+            loadOverviewWatchlistQuotes();
+        }
+
         loadMarketIndices();
         loadChangeDistribution();
         loadSystemStats();

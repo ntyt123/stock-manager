@@ -13,6 +13,10 @@ class StockChartManager {
     constructor() {
         // 存储所有图表实例
         this.chartInstances = {};
+        // 跟踪每个canvas是否已经渲染过（用于控制动画）
+        this.firstRenderFlags = {};
+        // 跟踪每个canvas当前的图表类型（用于判断是否需要重建）
+        this.chartTypes = {};
     }
 
     /**
@@ -30,10 +34,11 @@ class StockChartManager {
             return;
         }
 
-        // 销毁已存在的图表实例
-        this.destroyChart(canvasId);
-
         try {
+            // 检查是否已有图表实例
+            const existingChart = this.chartInstances[canvasId];
+            const isFirstRender = !this.firstRenderFlags[canvasId];
+
             // 检测是否为分时数据
             const isIntraday = period === 'intraday';
 
@@ -65,18 +70,49 @@ class StockChartManager {
             const priceChange = historyData[historyData.length - 1].close - historyData[0].close;
             const isPositive = priceChange >= 0;
 
-            let chart;
+            // 检查图表类型是否改变
+            const currentType = isIntraday ? 'intraday' : 'kline';
+            const typeChanged = existingChart && this.chartTypes[canvasId] !== currentType;
 
-            if (isIntraday) {
-                // 渲染分时图
-                chart = this._renderIntradayChart(canvas, historyData, labels, isPositive, options);
-            } else {
-                // 渲染K线图
-                chart = this._renderKLineChart(canvas, historyData, labels, isPositive, options);
+            // 检查图表实例是否与预期类型匹配
+            let needRebuild = isFirstRender || typeChanged || !existingChart;
+
+            // 如果图表存在，进行额外的类型验证
+            if (existingChart && !needRebuild) {
+                const expectedDatasets = isIntraday ? 1 : 2;
+                const actualDatasets = existingChart.data?.datasets?.length || 0;
+
+                if (actualDatasets !== expectedDatasets) {
+                    console.warn(`⚠️ 检测到图表类型不一致 (期望${expectedDatasets}个datasets，实际${actualDatasets}个)，强制重建`);
+                    needRebuild = true;
+                }
             }
 
-            // 保存图表实例
-            this.chartInstances[canvasId] = chart;
+            // 如果不需要重建，只更新数据
+            if (!needRebuild) {
+                this._updateChartData(existingChart, historyData, labels, isIntraday, isPositive);
+            } else {
+                // 需要重建图表
+                this.destroyChart(canvasId);
+
+                let chart;
+                if (isIntraday) {
+                    // 渲染分时图
+                    chart = this._renderIntradayChart(canvas, historyData, labels, isPositive, options, isFirstRender);
+                } else {
+                    // 渲染K线图
+                    chart = this._renderKLineChart(canvas, historyData, labels, isPositive, options, isFirstRender);
+                }
+
+                // 保存图表实例
+                this.chartInstances[canvasId] = chart;
+
+                // 保存图表类型
+                this.chartTypes[canvasId] = currentType;
+
+                // 标记为已渲染
+                this.firstRenderFlags[canvasId] = true;
+            }
 
         } catch (error) {
             console.error(`渲染股票 ${stockCode} 图表失败:`, error);
@@ -85,6 +121,41 @@ class StockChartManager {
             const errorMessage = error.message || '数据加载失败，请稍后重试';
             this._renderErrorMessage(canvas, errorTitle, errorMessage);
         }
+    }
+
+    /**
+     * 更新现有图表的数据（不重新创建图表）
+     * @private
+     */
+    _updateChartData(chart, historyData, labels, isIntraday, isPositive) {
+        if (!chart) return;
+
+        // 更新标签
+        chart.data.labels = labels;
+
+        if (isIntraday) {
+            // 更新分时图数据
+            const closePrices = historyData.map(item => item.close);
+            chart.data.datasets[0].data = closePrices;
+            chart.data.datasets[0].borderColor = isPositive ? '#e74c3c' : '#27ae60';
+            chart.data.datasets[0].backgroundColor = isPositive ? 'rgba(231, 76, 60, 0.1)' : 'rgba(39, 174, 96, 0.1)';
+        } else {
+            // 更新K线图数据
+            const bodyData = historyData.map(item => [item.open, item.close]);
+            const shadowData = historyData.map(item => [item.low, item.high]);
+            const colorData = historyData.map(item => item.close >= item.open);
+
+            chart.data.datasets[0].data = shadowData;
+            chart.data.datasets[0].backgroundColor = colorData.map(isUp => isUp ? 'rgba(231, 76, 60, 0.8)' : 'rgba(39, 174, 96, 0.8)');
+            chart.data.datasets[0].borderColor = colorData.map(isUp => isUp ? '#e74c3c' : '#27ae60');
+
+            chart.data.datasets[1].data = bodyData;
+            chart.data.datasets[1].backgroundColor = colorData.map(isUp => isUp ? 'rgba(231, 76, 60, 1)' : 'rgba(39, 174, 96, 1)');
+            chart.data.datasets[1].borderColor = colorData.map(isUp => isUp ? '#e74c3c' : '#27ae60');
+        }
+
+        // 更新图表，不使用动画
+        chart.update('none');
     }
 
     /**
@@ -98,6 +169,10 @@ class StockChartManager {
             this.chartInstances[canvasId].destroy();
             delete this.chartInstances[canvasId];
         }
+
+        // 清理相关的跟踪数据
+        delete this.chartTypes[canvasId];
+        delete this.firstRenderFlags[canvasId];
 
         // 方法2: 从Chart.js全局注册表中查找并销毁
         // Chart.getChart可以接受canvas元素或ID字符串
@@ -325,7 +400,7 @@ class StockChartManager {
      * 渲染分时图（线形图）
      * @private
      */
-    _renderIntradayChart(canvas, historyData, labels, isPositive, options) {
+    _renderIntradayChart(canvas, historyData, labels, isPositive, options, isFirstRender = true) {
         // 创建图表前的最后检查：确保canvas上没有遗留的图表
         const existingChart = Chart.getChart(canvas);
         if (existingChart) {
@@ -355,6 +430,10 @@ class StockChartManager {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: isFirstRender ? {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                } : false,
                 interaction: {
                     mode: 'index',
                     intersect: false
@@ -422,7 +501,7 @@ class StockChartManager {
      * 渲染K线图（日线/周线/月线）
      * @private
      */
-    _renderKLineChart(canvas, historyData, labels, isPositive, options) {
+    _renderKLineChart(canvas, historyData, labels, isPositive, options, isFirstRender = true) {
         // 创建图表前的最后检查：确保canvas上没有遗留的图表
         const existingChart = Chart.getChart(canvas);
         if (existingChart) {
@@ -485,6 +564,10 @@ class StockChartManager {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: isFirstRender ? {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                } : false,
                 plugins: {
                     legend: {
                         display: false

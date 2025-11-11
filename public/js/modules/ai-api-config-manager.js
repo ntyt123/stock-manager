@@ -26,6 +26,43 @@ const AIApiConfigManager = {
         console.log('📦 初始化AI API配置管理模块...');
         await this.loadConfigs();
         await this.loadActiveConfig();
+        this.setupModelInputBehavior();
+    },
+
+    /**
+     * 设置模型输入框行为
+     */
+    setupModelInputBehavior() {
+        const modelInput = document.getElementById('configModel');
+        if (!modelInput) return;
+
+        // 当用户聚焦输入框时，如果为空则显示所有选项
+        modelInput.addEventListener('focus', function() {
+            // 在 Chrome/Edge 中，双击输入框可以显示 datalist
+            if (this.value === '') {
+                // 触发输入事件以显示所有选项
+                this.value = ' ';
+                setTimeout(() => {
+                    this.value = '';
+                    this.dispatchEvent(new Event('input', { bubbles: true }));
+                }, 10);
+            }
+        });
+
+        // 添加提示：用户可以直接开始输入来筛选
+        modelInput.addEventListener('click', function() {
+            const datalist = document.getElementById('modelList');
+            if (datalist && datalist.options.length > 0 && this.value === '') {
+                // 显示提示
+                const hint = this.nextElementSibling;
+                if (hint && hint.classList.contains('model-hint')) {
+                    hint.style.display = 'block';
+                    setTimeout(() => {
+                        hint.style.display = 'none';
+                    }, 3000);
+                }
+            }
+        });
     },
 
     /**
@@ -442,6 +479,9 @@ const AIApiConfigManager = {
             });
 
             if (response.success && response.data) {
+                // 保存模型列表到内存
+                this.availableModels = response.data;
+
                 // 填充datalist
                 const datalist = document.getElementById('modelList');
                 datalist.innerHTML = '';
@@ -453,13 +493,18 @@ const AIApiConfigManager = {
                     datalist.appendChild(option);
                 });
 
-                showNotification(`成功加载 ${response.count} 个模型`, 'success');
+                showNotification(`成功加载 ${response.count} 个模型，清空输入框点击可查看`, 'success');
 
-                // 如果当前模型为空且有可用模型，自动选择第一个
+                // 清空输入框并聚焦，方便用户查看所有选项
                 const modelInput = document.getElementById('configModel');
-                if (!modelInput.value && response.data.length > 0) {
-                    modelInput.value = response.data[0].id;
-                }
+                modelInput.value = '';
+
+                // 延迟聚焦以确保 datalist 已填充
+                setTimeout(() => {
+                    modelInput.focus();
+                    // 触发输入事件以显示 datalist
+                    modelInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }, 100);
 
                 console.log(`✅ 成功加载 ${response.count} 个模型`);
             } else {

@@ -64,52 +64,52 @@ async function loadMarketIndices() {
         // 获取默认K线周期设置
         const settings = window.SettingsManager ? window.SettingsManager.getSettings() : {};
         const defaultPeriod = settings.chartPeriod || 'day';
-        console.log(`📊 [市场指数] 完整设置:`, settings);
-        console.log(`📊 [市场指数] chartPeriod值: "${settings.chartPeriod}"`);
-        console.log(`📊 [市场指数] 最终使用周期: "${defaultPeriod}"`);
 
-        // 渲染指数数据（带K线图）
-        let html = '';
-        indices.forEach((index, i) => {
-            const quote = quotes[i];
-            if (quote) {
-                const isPositive = parseFloat(quote.changePercent) >= 0;
-                const chartId = `market-index-chart-${quote.stockCode}-${i}`;
+        // 检查容器是否已有内容（判断是否为首次加载）
+        const isFirstLoad = !container.querySelector('.quote-item');
 
-                html += `
-                    <div class="quote-item">
-                        <div class="quote-header">
-                            <div class="quote-info">
-                                <span class="quote-symbol">${index.name} (${quote.stockCode})</span>
-                            </div>
-                            <div class="quote-stats">
-                                <div class="quote-price">${quote.currentPrice.toFixed(2)}</div>
-                                <div class="quote-change ${isPositive ? 'positive' : 'negative'}">
-                                    ${isPositive ? '+' : ''}${quote.changePercent}%
+        if (isFirstLoad) {
+            // 首次加载，渲染完整HTML结构
+            console.log(`📊 [市场指数] 首次加载，完整设置:`, settings);
+            console.log(`📊 [市场指数] 使用周期: "${defaultPeriod}"`);
+
+            let html = '';
+            indices.forEach((index, i) => {
+                const quote = quotes[i];
+                if (quote) {
+                    const isPositive = parseFloat(quote.changePercent) >= 0;
+                    const chartId = `market-index-chart-${quote.stockCode}-${i}`;
+
+                    html += `
+                        <div class="quote-item" data-stock-code="${quote.stockCode}">
+                            <div class="quote-header">
+                                <div class="quote-info">
+                                    <span class="quote-symbol">${index.name} (${quote.stockCode})</span>
+                                </div>
+                                <div class="quote-stats">
+                                    <div class="quote-price" data-price>${quote.currentPrice.toFixed(2)}</div>
+                                    <div class="quote-change ${isPositive ? 'positive' : 'negative'}" data-change>
+                                        ${isPositive ? '+' : ''}${quote.changePercent}%
+                                    </div>
                                 </div>
                             </div>
+                            <div class="chart-period-selector">
+                                <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
+                                <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
+                                <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
+                                <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
+                            </div>
+                            <div class="quote-chart-container">
+                                <canvas id="${chartId}" class="quote-chart"></canvas>
+                            </div>
                         </div>
-                        <div class="chart-period-selector">
-                            <button class="period-btn ${defaultPeriod === 'intraday' ? 'active' : ''}" data-period="intraday" data-chart="${chartId}" data-stock="${quote.stockCode}">分时</button>
-                            <button class="period-btn ${defaultPeriod === 'day' ? 'active' : ''}" data-period="day" data-chart="${chartId}" data-stock="${quote.stockCode}">日线</button>
-                            <button class="period-btn ${defaultPeriod === 'week' ? 'active' : ''}" data-period="week" data-chart="${chartId}" data-stock="${quote.stockCode}">周线</button>
-                            <button class="period-btn ${defaultPeriod === 'month' ? 'active' : ''}" data-period="month" data-chart="${chartId}" data-stock="${quote.stockCode}">月线</button>
-                        </div>
-                        <div class="quote-chart-container">
-                            <canvas id="${chartId}" class="quote-chart"></canvas>
-                        </div>
-                    </div>
-                `;
-            }
-        });
+                    `;
+                }
+            });
 
-        if (html) {
             container.innerHTML = html;
 
-            // 渲染图表（使用设置中的默认周期）
-            const defaultPeriod = window.SettingsManager ? window.SettingsManager.getSettings().chartPeriod : 'day';
-            console.log(`📊 使用默认K线周期: ${defaultPeriod}`);
-
+            // 渲染图表
             quotes.forEach((quote, i) => {
                 const chartId = `market-index-chart-${quote.stockCode}-${i}`;
                 renderStockChart(chartId, quote.stockCode, defaultPeriod);
@@ -132,7 +132,33 @@ async function loadMarketIndices() {
                 });
             });
         } else {
-            throw new Error('无法解析指数数据');
+            // 刷新数据，只更新价格和图表
+            console.log(`📊 [市场指数] 刷新数据`);
+
+            quotes.forEach((quote, i) => {
+                const quoteItem = container.querySelector(`.quote-item[data-stock-code="${quote.stockCode}"]`);
+                if (quoteItem) {
+                    // 更新价格
+                    const priceElement = quoteItem.querySelector('[data-price]');
+                    const changeElement = quoteItem.querySelector('[data-change]');
+
+                    if (priceElement) {
+                        priceElement.textContent = quote.currentPrice.toFixed(2);
+                    }
+
+                    if (changeElement) {
+                        const isPositive = parseFloat(quote.changePercent) >= 0;
+                        changeElement.textContent = `${isPositive ? '+' : ''}${quote.changePercent}%`;
+                        changeElement.className = `quote-change ${isPositive ? 'positive' : 'negative'}`;
+                    }
+
+                    // 更新图表（获取当前激活的周期）
+                    const activePeriodBtn = quoteItem.querySelector('.period-btn.active');
+                    const currentPeriod = activePeriodBtn ? activePeriodBtn.getAttribute('data-period') : defaultPeriod;
+                    const chartId = `market-index-chart-${quote.stockCode}-${i}`;
+                    renderStockChart(chartId, quote.stockCode, currentPeriod);
+                }
+            });
         }
 
     } catch (error) {
@@ -861,6 +887,7 @@ function loadTradeTimeReminder() {
         const now = new Date();
         const hours = now.getHours();
         const minutes = now.getMinutes();
+        const seconds = now.getSeconds();
         const currentTime = hours * 60 + minutes;
 
         // 定义交易时段
@@ -884,7 +911,8 @@ function loadTradeTimeReminder() {
             icon = '🔔';
             statusClass = 'trading';
             const remainMinutes = morningClose - currentTime;
-            countdown = `距上午收盘还有 ${Math.floor(remainMinutes / 60)}小时${remainMinutes % 60}分钟`;
+            const remainSeconds = 60 - seconds;
+            countdown = `距上午收盘还有 ${Math.floor(remainMinutes / 60)}小时${remainMinutes % 60}分${remainSeconds}秒`;
             message = '上午交易时段';
         } else if (currentTime >= afternoonOpen && currentTime < afternoonClose) {
             // 下午交易中
@@ -892,7 +920,8 @@ function loadTradeTimeReminder() {
             icon = '🔔';
             statusClass = 'trading';
             const remainMinutes = afternoonClose - currentTime;
-            countdown = `距收盘还有 ${Math.floor(remainMinutes / 60)}小时${remainMinutes % 60}分钟`;
+            const remainSeconds = 60 - seconds;
+            countdown = `距收盘还有 ${Math.floor(remainMinutes / 60)}小时${remainMinutes % 60}分${remainSeconds}秒`;
             message = '下午交易时段';
         } else if (currentTime >= callAuctionStart && currentTime < callAuctionEnd) {
             // 集合竞价时段
@@ -900,7 +929,8 @@ function loadTradeTimeReminder() {
             icon = '⏰';
             statusClass = 'call-auction';
             const remainMinutes = callAuctionEnd - currentTime;
-            countdown = `距开盘还有 ${remainMinutes} 分钟`;
+            const remainSeconds = 60 - seconds;
+            countdown = `距开盘还有 ${remainMinutes}分${remainSeconds}秒`;
             message = '集合竞价中，9:25撮合成交';
         } else if (currentTime >= callAuctionEnd && currentTime < morningOpen) {
             // 集合竞价结束到开盘
@@ -908,7 +938,8 @@ function loadTradeTimeReminder() {
             icon = '⏰';
             statusClass = 'pre-trading';
             const remainMinutes = morningOpen - currentTime;
-            countdown = `距开盘还有 ${remainMinutes} 分钟`;
+            const remainSeconds = 60 - seconds;
+            countdown = `距开盘还有 ${remainMinutes}分${remainSeconds}秒`;
             message = '准备开盘';
         } else if (currentTime >= morningClose && currentTime < afternoonOpen) {
             // 午休时间
@@ -969,8 +1000,29 @@ function loadTradeTimeReminder() {
     // 初始加载
     updateTradeTime();
 
-    // 每分钟更新一次
-    setInterval(updateTradeTime, 60000);
+    // 在交易时间内每秒更新，非交易时间每分钟更新
+    let updateInterval = null;
+
+    function scheduleNextUpdate() {
+        if (updateInterval) {
+            clearInterval(updateInterval);
+        }
+
+        const inTradeTime = isTradeTime();
+        const interval = inTradeTime ? 1000 : 60000; // 交易时间1秒，非交易时间60秒
+
+        updateInterval = setInterval(updateTradeTime, interval);
+
+        // 每次更新后重新检查是否需要调整更新频率
+        setTimeout(() => {
+            const stillInTradeTime = isTradeTime();
+            if (inTradeTime !== stillInTradeTime) {
+                scheduleNextUpdate();
+            }
+        }, interval);
+    }
+
+    scheduleNextUpdate();
 }
 
 // loadIndustryDistribution
@@ -1090,6 +1142,31 @@ async function loadIndustryDistribution() {
 // ==================== 自动刷新行情功能 ====================
 let autoRefreshTimer = null;
 
+// 判断当前是否在交易时间段内
+function isTradeTime() {
+    const now = new Date();
+    const day = now.getDay();
+
+    // 周末不是交易时间
+    if (day === 0 || day === 6) {
+        return false;
+    }
+
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 60 + minutes;
+
+    // 定义交易时段
+    const callAuctionStart = 9 * 60 + 15;  // 09:15 集合竞价开始
+    const morningClose = 11 * 60 + 30;     // 11:30
+    const afternoonOpen = 13 * 60;         // 13:00
+    const afternoonClose = 15 * 60;        // 15:00
+
+    // 判断是否在交易时段内（包括集合竞价）
+    return (currentTime >= callAuctionStart && currentTime < morningClose) ||
+           (currentTime >= afternoonOpen && currentTime < afternoonClose);
+}
+
 // 启动自动刷新
 function startAutoRefresh() {
     // 先停止旧的定时器
@@ -1100,8 +1177,9 @@ function startAutoRefresh() {
     const autoRefresh = settings.autoRefresh || false;
     const refreshInterval = settings.refreshInterval || 0; // 秒
 
+    // 如果用户未启用自动刷新或刷新间隔为0，则不启动
     if (!autoRefresh || refreshInterval <= 0) {
-        console.log('⏸️ 自动刷新行情已禁用');
+        console.log('⏸️ 自动刷新已禁用（用户设置）');
         return;
     }
 
@@ -1109,7 +1187,6 @@ function startAutoRefresh() {
 
     // 设置定时器
     autoRefreshTimer = setInterval(() => {
-        console.log('🔄 自动刷新行情中...');
         refreshMarketData();
     }, refreshInterval * 1000);
 }
@@ -1125,42 +1202,51 @@ function stopAutoRefresh() {
 
 // 刷新所有行情数据
 function refreshMarketData() {
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString('zh-CN');
-    console.log(`📊 [${timeStr}] 刷新市场行情数据...`);
+    // 获取当前激活的页签
+    const activeTab = document.querySelector('.tab-btn.active');
+    const currentTab = activeTab ? activeTab.dataset.tab : null;
 
-    // 刷新市场指数
-    const marketIndicesContainer = document.getElementById('marketIndices');
-    if (marketIndicesContainer && marketIndicesContainer.innerHTML) {
-        loadMarketIndices();
+    // 只刷新当前激活页签相关的数据
+    if (currentTab === 'overview') {
+        // 总览页签：刷新总览自选股行情和持仓统计
+        const overviewWatchlistContainer = document.getElementById('overviewWatchlistQuotes');
+        if (overviewWatchlistContainer && overviewWatchlistContainer.innerHTML) {
+            loadOverviewWatchlistQuotes();
+        }
+
+        const portfolioStatsContainer = document.getElementById('portfolioStats');
+        if (portfolioStatsContainer && portfolioStatsContainer.innerHTML) {
+            loadPortfolioStats();
+        }
+    } else if (currentTab === 'market') {
+        // 股市信息页签：刷新市场相关数据
+        const marketIndicesContainer = document.getElementById('marketIndices');
+        if (marketIndicesContainer && marketIndicesContainer.innerHTML) {
+            loadMarketIndices();
+        }
+
+        const marketOverviewContainer = document.getElementById('marketOverview');
+        if (marketOverviewContainer && marketOverviewContainer.innerHTML) {
+            loadMarketOverview();
+        }
+
+        const watchlistQuotesContainer = document.getElementById('watchlistQuotes');
+        if (watchlistQuotesContainer && watchlistQuotesContainer.innerHTML) {
+            loadWatchlistQuotes();
+        }
+
+        const topGainersContainer = document.getElementById('topGainers');
+        const topLosersContainer = document.getElementById('topLosers');
+        if (topGainersContainer && topLosersContainer) {
+            loadTopGainersLosers();
+        }
+
+        const changeDistributionContainer = document.getElementById('changeDistribution');
+        if (changeDistributionContainer && changeDistributionContainer.innerHTML) {
+            loadChangeDistribution();
+        }
     }
-
-    // 刷新市场概览
-    const marketOverviewContainer = document.getElementById('marketOverview');
-    if (marketOverviewContainer && marketOverviewContainer.innerHTML) {
-        loadMarketOverview();
-    }
-
-    // 刷新自选股行情
-    const watchlistQuotesContainer = document.getElementById('watchlistQuotes');
-    if (watchlistQuotesContainer && watchlistQuotesContainer.innerHTML) {
-        loadWatchlistQuotes();
-    }
-
-    // 刷新总览自选股行情
-    const overviewWatchlistContainer = document.getElementById('overviewWatchlistQuotes');
-    if (overviewWatchlistContainer && overviewWatchlistContainer.innerHTML) {
-        loadOverviewWatchlistQuotes();
-    }
-
-    // 刷新涨跌幅榜
-    const topGainersContainer = document.getElementById('topGainers');
-    const topLosersContainer = document.getElementById('topLosers');
-    if (topGainersContainer && topLosersContainer) {
-        loadTopGainersLosers();
-    }
-
-    console.log(`✅ [${timeStr}] 市场行情数据刷新完成`);
+    // 其他页签（选股、交易、分析等）不自动刷新行情数据
 }
 
 // updateStockData (旧函数，保留兼容性)
