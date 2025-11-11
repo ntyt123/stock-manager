@@ -241,6 +241,7 @@ const AIApiConfigManager = {
             document.getElementById('configTimeout').value = config.timeout;
             document.getElementById('configDescription').value = config.description || '';
             document.getElementById('configSetActive').checked = config.is_active;
+            document.getElementById('configEnableWebSearch').checked = config.enable_web_search || false;
 
             // 显示模态框
             document.getElementById('aiApiConfigModal').classList.add('show');
@@ -304,7 +305,8 @@ const AIApiConfigManager = {
             temperature: parseFloat(document.getElementById('configTemperature').value),
             max_tokens: parseInt(document.getElementById('configMaxTokens').value),
             timeout: parseInt(document.getElementById('configTimeout').value),
-            description: document.getElementById('configDescription').value.trim() || null
+            description: document.getElementById('configDescription').value.trim() || null,
+            enable_web_search: document.getElementById('configEnableWebSearch').checked ? 1 : 0
         };
 
         try {

@@ -286,6 +286,9 @@ async function deploy() {
       // 运行数据库迁移（添加趋势预测模板）
       'echo "🔄 运行数据库迁移..." && node database/run-add-trend-prediction.js 2>/dev/null || echo "⚠️ 趋势预测模板迁移已跳过（可能已存在）"',
 
+      // 运行数据库迁移（添加联网搜索字段）
+      'echo "🔄 运行联网搜索迁移..." && node database/migrations/005_add_enable_web_search.js 2>/dev/null || echo "⚠️ 联网搜索字段迁移已跳过（可能已存在）"',
+
       // 检查PM2是否已安装
       'if ! command -v pm2 &> /dev/null; then echo "安装PM2..." && npm install -g pm2; fi',
 

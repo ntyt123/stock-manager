@@ -50,8 +50,8 @@ const aiApiConfigModel = {
                 temperature, max_tokens, timeout,
                 is_active, is_default,
                 custom_headers, custom_request_transform, custom_response_transform,
-                description, extra_config
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                description, extra_config, enable_web_search
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
         const result = stmt.run(
@@ -69,7 +69,8 @@ const aiApiConfigModel = {
             config.custom_request_transform || null,
             config.custom_response_transform || null,
             config.description || null,
-            config.extra_config ? JSON.stringify(config.extra_config) : null
+            config.extra_config ? JSON.stringify(config.extra_config) : null,
+            config.enable_web_search || 0
         );
 
         return this.findById(result.lastInsertRowid);
@@ -94,6 +95,7 @@ const aiApiConfigModel = {
                 custom_response_transform = ?,
                 description = ?,
                 extra_config = ?,
+                enable_web_search = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = ?
         `);
@@ -112,6 +114,7 @@ const aiApiConfigModel = {
             config.custom_response_transform || null,
             config.description || null,
             config.extra_config ? JSON.stringify(config.extra_config) : null,
+            config.enable_web_search || 0,
             id
         );
 

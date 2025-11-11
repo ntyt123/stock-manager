@@ -259,6 +259,15 @@ async function callDeepSeekAPI(userMessage, systemMessage = '你是一位专业�
                 max_tokens: apiConfig.max_tokens || 3000
             };
 
+            // 如果API配置中启用了联网搜索，添加web_search参数
+            // 支持SiliconFlow、DeepSeek等服务的联网搜索功能
+            if (apiConfig.enable_web_search) {
+                requestBody.web_search = {
+                    enable: true
+                };
+                console.log('🌐 已启用AI联网搜索功能');
+            }
+
             response = await axios.post(apiConfig.api_url, requestBody, {
                 headers,
                 timeout: apiConfig.timeout || 120000,

@@ -167,7 +167,67 @@ module.exports = (authenticateToken) => {
 
             console.log(`📅 预测日期: ${predictionDate} (${isToday ? '今日' : '下一交易日'})`);
 
-            // 从数据库读取提示词模板
+            // 1. 获取股票实时行情数据
+            console.log(`📡 获取 ${stockCode} 的实时行情...`);
+            const { getStockQuote } = require('../utils/stockQuoteHelper');
+            const quoteData = await getStockQuote(stockCode);
+
+            if (!quoteData) {
+                return res.json({
+                    success: false,
+                    error: '无法获取股票实时行情数据，请稍后重试'
+                });
+            }
+
+            // 2. 获取近期K线数据（最近30天）
+            console.log(`📡 获取 ${stockCode} 的历史K线数据...`);
+            const axios = require('axios');
+            const market = stockCode.startsWith('6') ? 'sh' : 'sz';
+            const fullCode = `${market}${stockCode}`;
+            const klineUrl = `http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol=${fullCode}&scale=240&datalen=30`;
+
+            let klineData = [];
+            try {
+                const klineResponse = await axios.get(klineUrl, {
+                    headers: { 'Referer': 'https://finance.sina.com.cn' },
+                    timeout: 8000
+                });
+                klineData = klineResponse.data || [];
+                console.log(`✅ 获取K线数据成功，共 ${klineData.length} 条`);
+            } catch (error) {
+                console.warn(`⚠️ 获取K线数据失败: ${error.message}`);
+            }
+
+            // 3. 构建股票数据摘要
+            const stockDataSummary = `
+【实时行情数据】
+- 股票名称：${quoteData.stockName}
+- 当前价格：¥${quoteData.currentPrice}
+- 今日开盘：¥${quoteData.todayOpen}
+- 今日最高：¥${quoteData.todayHigh}
+- 今日最低：¥${quoteData.todayLow}
+- 昨日收盘：¥${quoteData.yesterdayClose}
+- 涨跌幅：${quoteData.changePercent}%
+- 涨跌额：¥${quoteData.change}
+- 成交量：${(quoteData.volume / 100000000).toFixed(2)}亿股
+- 成交额：${(quoteData.amount / 100000000).toFixed(2)}亿元
+- 更新时间：${quoteData.date} ${quoteData.time}
+
+【近期走势数据】
+${klineData.length > 0 ?
+    `最近${klineData.length}个交易日K线数据（最近10天）：
+${klineData.slice(-10).map(k => `  ${k.day}: 开盘¥${k.open} | 最高¥${k.high} | 最低¥${k.low} | 收盘¥${k.close} | 成交量${(k.volume / 100).toFixed(0)}万股`).join('\n')}
+
+近30日价格区间：
+  最高价：¥${Math.max(...klineData.map(k => parseFloat(k.high)))}
+  最低价：¥${Math.min(...klineData.map(k => parseFloat(k.low)))}
+  平均价：¥${(klineData.reduce((sum, k) => sum + parseFloat(k.close), 0) / klineData.length).toFixed(2)}`
+    : '暂无历史K线数据'}
+
+⚠️ 请基于以上真实的股票数据进行分析，不要使用任何历史或训练数据中的价格。所有分析必须以上述实时数据为准。
+`;
+
+            // 4. 从数据库读取提示词模板
             const template = await aiPromptTemplateModel.findBySceneType('trend_prediction');
 
             if (!template || !template.is_active) {
@@ -177,7 +237,7 @@ module.exports = (authenticateToken) => {
                 });
             }
 
-            // 构建变量映射
+            // 5. 构建变量映射
             const variables = {
                 stock_code: stockCode,
                 stock_name: stockName,
@@ -185,11 +245,14 @@ module.exports = (authenticateToken) => {
                 trading_day_status: isToday ? '当前交易日' : '下一个交易日'
             };
 
-            // 替换模板中的变量
+            // 6. 替换模板中的变量
             let userPrompt = template.user_prompt_template;
             for (const [key, value] of Object.entries(variables)) {
                 userPrompt = userPrompt.replace(new RegExp(`\\{${key}\\}`, 'g'), value);
             }
+
+            // 7. 在提示词前插入股票实时数据
+            userPrompt = stockDataSummary + '\n\n' + userPrompt;
 
             console.log('📝 ==================== 趋势预测提示词 ====================');
             console.log('系统提示词:', template.system_prompt);
