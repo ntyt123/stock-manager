@@ -22,7 +22,8 @@ const stockCache = require('../stockCache');
             ['trend_analysis_data', 'TEXT'],
             ['trading_logs_data', 'TEXT'],
             ['daily_summary', 'TEXT'],
-            ['daily_summary_at', 'DATETIME']
+            ['daily_summary_at', 'DATETIME'],
+            ['no_trading_today', 'BOOLEAN DEFAULT 0']
         ];
 
         for (const [colName, colType] of newColumns) {
@@ -47,23 +48,10 @@ async function generateRecapData(req, res) {
         const recapDate = date || new Date().toISOString().split('T')[0];
         const userId = req.user.id;
 
-        // 检查是否已存在（按用户和日期）
-        const existing = db.prepare(
-            'SELECT * FROM daily_recap WHERE recap_date = ? AND user_id = ?'
-        ).get(recapDate, userId);
-
-        if (existing) {
-            return res.json({
-                success: true,
-                message: '今日复盘数据已存在',
-                data: existing
-            });
-        }
-
         // 1. 获取市场数据
         const marketData = await getMarketData(recapDate);
 
-        // 2. 获取持仓数据
+        // 2. 获取持仓数据（使用最新数据）
         const positionData = await getPositionData(recapDate, userId);
 
         // 3. 获取交易数据
@@ -75,7 +63,68 @@ async function generateRecapData(req, res) {
         // 5. 获取交易日志
         const tradingLogs = await getTradingLogs(recapDate, userId);
 
-        // 插入复盘记录
+        // 检查是否已存在（按用户和日期）
+        const existing = db.prepare(
+            'SELECT * FROM daily_recap WHERE recap_date = ? AND user_id = ?'
+        ).get(recapDate, userId);
+
+        if (existing) {
+            // 更新现有记录，刷新持仓和盈亏数据
+            db.prepare(`
+                UPDATE daily_recap SET
+                    market_data = ?,
+                    position_data = ?,
+                    today_profit = ?,
+                    total_profit = ?,
+                    position_count = ?,
+                    rise_count = ?,
+                    fall_count = ?,
+                    flat_count = ?,
+                    trade_data = ?,
+                    trade_count = ?,
+                    buy_count = ?,
+                    sell_count = ?,
+                    plan_data = ?,
+                    plan_count = ?,
+                    plan_completed = ?,
+                    plan_execution_rate = ?,
+                    trading_logs_data = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE recap_date = ? AND user_id = ?
+            `).run(
+                JSON.stringify(marketData),
+                JSON.stringify(positionData.positions),
+                positionData.todayProfit,
+                positionData.totalProfit,
+                positionData.count,
+                positionData.riseCount,
+                positionData.fallCount,
+                positionData.flatCount,
+                JSON.stringify(tradeData.trades),
+                tradeData.count,
+                tradeData.buyCount,
+                tradeData.sellCount,
+                JSON.stringify(planData.plans),
+                planData.count,
+                planData.completed,
+                planData.executionRate,
+                JSON.stringify(tradingLogs.logs),
+                recapDate,
+                userId
+            );
+
+            const recap = db.prepare(
+                'SELECT * FROM daily_recap WHERE recap_date = ? AND user_id = ?'
+            ).get(recapDate, userId);
+
+            return res.json({
+                success: true,
+                message: '复盘数据已更新',
+                data: recap
+            });
+        }
+
+        // 插入新复盘记录
         const result = db.prepare(`
             INSERT INTO daily_recap (
                 recap_date,
@@ -1117,6 +1166,87 @@ async function saveAnalysisResult(req, res) {
     }
 }
 
+/**
+ * 标记今日无操作
+ */
+async function markNoTrading(req, res) {
+    try {
+        const { date } = req.body;
+        const recapDate = date || new Date().toISOString().split('T')[0];
+        const userId = req.user.id;
+
+        console.log(`📝 标记今日无操作: ${recapDate} (用户ID: ${userId})`);
+
+        // 检查是否已存在复盘记录
+        const existing = db.prepare(
+            'SELECT * FROM daily_recap WHERE recap_date = ? AND user_id = ?'
+        ).get(recapDate, userId);
+
+        if (existing) {
+            // 更新现有记录
+            db.prepare(`
+                UPDATE daily_recap
+                SET no_trading_today = 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE recap_date = ? AND user_id = ?
+            `).run(recapDate, userId);
+
+            console.log(`✅ 已更新复盘记录，标记为今日无操作`);
+        } else {
+            // 创建新记录
+            // 获取市场数据（仍需要记录市场行情）
+            const marketData = await getMarketData(recapDate);
+
+            // 获取持仓数据
+            const positionData = await getPositionData(recapDate, userId);
+
+            db.prepare(`
+                INSERT INTO daily_recap (
+                    recap_date,
+                    user_id,
+                    market_data,
+                    position_data,
+                    today_profit,
+                    total_profit,
+                    position_count,
+                    rise_count,
+                    fall_count,
+                    flat_count,
+                    no_trading_today,
+                    trade_count,
+                    buy_count,
+                    sell_count
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0)
+            `).run(
+                recapDate,
+                userId,
+                JSON.stringify(marketData),
+                JSON.stringify(positionData.positions),  // 保存positions数组
+                positionData.todayProfit || 0,           // 修正：todayProfit
+                positionData.totalProfit || 0,           // 修正：totalProfit
+                positionData.count || 0,                 // 修正：count
+                positionData.riseCount || 0,             // 修正：riseCount
+                positionData.fallCount || 0,             // 修正：fallCount
+                positionData.flatCount || 0              // 修正：flatCount
+            );
+
+            console.log(`✅ 已创建复盘记录，标记为今日无操作`);
+        }
+
+        res.json({
+            success: true,
+            message: '已标记今日无操作'
+        });
+
+    } catch (error) {
+        console.error('❌ 标记今日无操作失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '标记失败: ' + error.message
+        });
+    }
+}
+
 module.exports = {
     generateRecapData,
     analyzeWithAI,
@@ -1124,5 +1254,6 @@ module.exports = {
     saveNotes,
     markAsCompleted,
     getHistory,
-    saveAnalysisResult
+    saveAnalysisResult,
+    markNoTrading
 };

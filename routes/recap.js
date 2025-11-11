@@ -29,5 +29,8 @@ module.exports = (authenticateToken) => {
     // 保存分析结果
     router.post('/save-analysis', authenticateToken, recapController.saveAnalysisResult);
 
+    // 标记今日无操作
+    router.post('/no-trading', authenticateToken, recapController.markNoTrading);
+
     return router;
 };

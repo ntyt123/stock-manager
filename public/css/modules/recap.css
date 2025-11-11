@@ -751,8 +751,44 @@
     margin-bottom: 24px;
     font-size: 15px;
     font-weight: 600;
-    text-align: center;
     box-shadow: 0 2px 8px rgba(244, 67, 54, 0.15);
+}
+
+.recap-alert-info {
+    background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+    color: #2e7d32;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+    margin-bottom: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
+}
+
+.recap-no-trading-btn {
+    background: linear-gradient(135deg, #42a5f5 0%, #1e88e5 100%);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
+}
+
+.recap-no-trading-btn:hover {
+    background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+}
+
+.recap-no-trading-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.3);
 }
 
 /* ==================== 交易日志空状态（简化版） ==================== */

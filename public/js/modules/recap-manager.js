@@ -192,8 +192,11 @@ const RecapManager = {
         this.overlay.classList.add('show');
         this.panel.classList.add('show');
 
-        // 加载复盘数据
-        await this.loadRecapData();
+        // 每次打开都刷新最新数据
+        await this.refreshRecapData();
+
+        // 渲染复盘内容
+        this.renderRecapContent();
     },
 
     /**
@@ -202,6 +205,44 @@ const RecapManager = {
     closeRecapPanel() {
         this.overlay.classList.remove('show');
         this.panel.classList.remove('show');
+    },
+
+    /**
+     * 刷新复盘数据（获取最新数据）
+     */
+    async refreshRecapData() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+
+            // 每次都重新生成复盘数据，确保使用最新的持仓和盈亏数据
+            // generateRecapData会调用/api/recap/generate，该接口会更新现有记录或创建新记录
+            await this.generateRecapData();
+
+            console.log('✅ 已刷新最新复盘数据');
+        } catch (error) {
+            console.error('❌ 刷新复盘数据失败:', error);
+
+            // 如果刷新失败，尝试从服务器获取现有数据作为后备
+            try {
+                const response = await fetch(`/api/recap/status?date=${new Date().toISOString().split('T')[0]}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.data.recap) {
+                    this.currentRecap = result.data.recap;
+                    console.log('⚠️ 使用缓存的复盘数据作为后备');
+                } else {
+                    throw new Error('无法获取复盘数据');
+                }
+            } catch (fallbackError) {
+                console.error('❌ 获取后备数据也失败:', fallbackError);
+                throw error;
+            }
+        }
     },
 
     /**
@@ -284,9 +325,20 @@ const RecapManager = {
             </div>
 
             <!-- 操作录入提醒 -->
-            ${tradingLogs.length === 0 ? `
+            ${tradingLogs.length === 0 && !recap.no_trading_today ? `
                 <div class="recap-alert-warning">
-                    ⚠️ 尚未录入今日操作
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span>⚠️ 尚未录入今日操作</span>
+                        <button class="recap-no-trading-btn" onclick="RecapManager.markNoTrading()">
+                            今日无操作
+                        </button>
+                    </div>
+                </div>
+            ` : ''}
+
+            ${recap.no_trading_today ? `
+                <div class="recap-alert-info">
+                    ✅ 已标记：今日无操作
                 </div>
             ` : ''}
 
@@ -1526,6 +1578,55 @@ const RecapManager = {
             this.historyOverlay.style.display = 'none';
             this.historyPanel.style.display = 'none';
         }, 300);
+    },
+
+    /**
+     * 标记今日无操作
+     */
+    async markNoTrading() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+
+            const response = await fetch('/api/recap/no-trading', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ date: today })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // 更新当前复盘数据
+                if (this.currentRecap) {
+                    this.currentRecap.no_trading_today = 1;
+                }
+
+                // 重新渲染内容
+                this.renderRecapContent();
+
+                // 显示成功提示
+                if (typeof UIUtils !== 'undefined' && UIUtils.showToast) {
+                    UIUtils.showToast('已标记今日无操作', 'success');
+                } else {
+                    alert('已标记今日无操作');
+                }
+
+                console.log('✅ 已标记今日无操作');
+            } else {
+                throw new Error(result.message || '标记失败');
+            }
+        } catch (error) {
+            console.error('❌ 标记今日无操作失败:', error);
+
+            if (typeof UIUtils !== 'undefined' && UIUtils.showToast) {
+                UIUtils.showToast('标记失败: ' + error.message, 'error');
+            } else {
+                alert('标记失败: ' + error.message);
+            }
+        }
     }
 };
 
