@@ -20,64 +20,80 @@ async function getAllStocks(req, res) {
         let stocks = [];
 
         try {
-            // 分页获取沪深A股（每页80只，获取多页直到没有数据）
-            let currentPage = 1;
-            const pageSize = 80; // 新浪API每页返回约80只
-            let hasMoreData = true;
+            // 并发获取多页数据（避免单个请求超时）
+            const maxPages = 60; // 最多获取60页，约5000只股票
+            const pageSize = 80;
 
-            while (hasMoreData && currentPage <= 100) { // 最多获取100页，约8000只股票
-                console.log(`📡 正在获取第 ${currentPage} 页股票...`);
+            console.log(`📡 开始并发获取股票列表（预计 ${maxPages} 页）...`);
 
-                const response = await axios.get('http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData', {
-                    params: {
-                        page: currentPage,
-                        num: pageSize,
-                        sort: 'symbol',
-                        asc: 1,
-                        node: 'hs_a',
-                        symbol: '',
-                        _s_r_a: 'page'
-                    },
-                    timeout: 15000,
-                    transformResponse: [(data) => {
-                        // 新浪API返回的是字符串，需要手动解析
-                        try {
-                            if (typeof data === 'string') {
-                                return JSON.parse(data);
-                            }
-                            return data;
-                        } catch (e) {
-                            console.error('JSON解析失败:', e.message);
+            // 分批并发请求（每批10页）
+            const batchSize = 10;
+            for (let batchStart = 1; batchStart <= maxPages; batchStart += batchSize) {
+                const batchEnd = Math.min(batchStart + batchSize - 1, maxPages);
+                console.log(`📡 正在获取第 ${batchStart}-${batchEnd} 页...`);
+
+                // 创建并发请求
+                const promises = [];
+                for (let page = batchStart; page <= batchEnd; page++) {
+                    promises.push(
+                        axios.get('http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData', {
+                            params: {
+                                page: page,
+                                num: pageSize,
+                                sort: 'symbol',
+                                asc: 1,
+                                node: 'hs_a',
+                                symbol: '',
+                                _s_r_a: 'page'
+                            },
+                            timeout: 10000
+                        }).catch(err => {
+                            console.warn(`⚠️ 第 ${page} 页请求失败: ${err.message}`);
                             return null;
+                        })
+                    );
+                }
+
+                // 等待这一批请求完成
+                const responses = await Promise.all(promises);
+
+                // 处理响应
+                let hasData = false;
+                for (const response of responses) {
+                    if (response && response.data) {
+                        try {
+                            const data = typeof response.data === 'string' ? JSON.parse(response.data) : response.data;
+
+                            if (Array.isArray(data) && data.length > 0) {
+                                hasData = true;
+                                data.forEach(stock => {
+                                    if (stock.code && stock.name && !stock.code.startsWith('bj')) {
+                                        // 过滤掉北交所股票
+                                        stocks.push({
+                                            code: stock.code,
+                                            name: stock.name,
+                                            market: stock.code.startsWith('6') ? '沪市' : '深市'
+                                        });
+                                    }
+                                });
+                            }
+                        } catch (e) {
+                            console.warn(`⚠️ 数据解析失败: ${e.message}`);
                         }
-                    }]
-                });
-
-                if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-                    console.log(`✅ 第 ${currentPage} 页获取到 ${response.data.length} 只股票`);
-
-                    response.data.forEach(stock => {
-                        if (stock.code && stock.name) {
-                            stocks.push({
-                                code: stock.code,
-                                name: stock.name,
-                                market: stock.code.startsWith('6') ? '沪市' : '深市'
-                            });
-                        }
-                    });
-
-                    // 如果这一页数据少于pageSize，说明已经是最后一页
-                    if (response.data.length < pageSize) {
-                        hasMoreData = false;
-                        console.log(`✅ 已获取所有股票，总计 ${stocks.length} 只`);
-                    } else {
-                        currentPage++;
-                        // 延迟避免API限流
-                        await new Promise(resolve => setTimeout(resolve, 500));
                     }
-                } else {
-                    hasMoreData = false;
-                    console.log(`⚠️ 第 ${currentPage} 页无数据，停止获取`);
+                }
+
+                console.log(`✅ 第 ${batchStart}-${batchEnd} 页完成，当前总计 ${stocks.length} 只股票`);
+
+                // 如果这一批都没有数据，说明已经获取完毕
+                if (!hasData) {
+                    console.log(`✅ 所有数据已获取完毕，共 ${stocks.length} 只股票`);
+                    break;
+                }
+
+                // 延迟避免API限流（批次之间延迟）
+                if (batchEnd < maxPages) {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                 }
             }
 
@@ -557,12 +573,13 @@ function calculateScore(threeDayData, volumeRatio, indicators, config) {
 }
 
 /**
- * 执行股票扫描
+ * 执行股票扫描（支持SSE实时进度）
  */
 async function runScan(req, res) {
     try {
         const userId = req.user.id;
         const { configId, stockList } = req.body;
+        const useStream = req.query.stream === 'true'; // 检查是否使用SSE
 
         // 获取配置
         const config = db.prepare(`
@@ -584,6 +601,14 @@ async function runScan(req, res) {
             });
         }
 
+        // 如果使用SSE，设置响应头
+        if (useStream) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.flushHeaders();
+        }
+
         const scanDate = new Date().toISOString().split('T')[0];
         const now = new Date().toISOString();
         const results = [];
@@ -591,6 +616,15 @@ async function runScan(req, res) {
         let totalSelected = 0;
 
         console.log(`🔍 开始扫描 ${totalScanned} 只股票...`);
+
+        // 发送开始事件
+        if (useStream) {
+            res.write(`data: ${JSON.stringify({
+                type: 'start',
+                total: totalScanned,
+                message: '开始扫描...'
+            })}\n\n`);
+        }
 
         let scannedCount = 0;
 
@@ -602,6 +636,19 @@ async function runScan(req, res) {
 
                 const percent = ((scannedCount / totalScanned) * 100).toFixed(2);
                 console.log(`📊 [${scannedCount}/${totalScanned}] ${percent}% - 正在扫描: ${stockCode} ${stockName}`);
+
+                // 发送进度事件
+                if (useStream) {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'progress',
+                        current: scannedCount,
+                        total: totalScanned,
+                        percent: parseFloat(percent),
+                        stockCode,
+                        stockName,
+                        selected: totalSelected
+                    })}\n\n`);
+                }
 
                 // 获取K线数据
                 const klineData = await getStockKlineData(stockCode, 20);
@@ -701,6 +748,19 @@ async function runScan(req, res) {
                 totalSelected++;
                 console.log(`✅ ${stockCode} ${stockName} 符合条件，评分: ${score}`);
 
+                // 发送选中事件
+                if (useStream) {
+                    res.write(`data: ${JSON.stringify({
+                        type: 'selected',
+                        stock: {
+                            stockCode,
+                            stockName,
+                            currentPrice,
+                            score
+                        }
+                    })}\n\n`);
+                }
+
                 // 延迟避免API限流
                 await new Promise(resolve => setTimeout(resolve, 200));
 
@@ -726,24 +786,50 @@ async function runScan(req, res) {
 
         console.log(`🎉 扫描完成: ${totalScanned}只 -> 选中${totalSelected}只 (${selectionRate.toFixed(2)}%)`);
 
-        res.json({
-            success: true,
-            message: `扫描完成，选中 ${totalSelected} 只股票`,
-            data: {
+        // 根据是否使用SSE返回不同响应
+        if (useStream) {
+            // 发送完成事件
+            res.write(`data: ${JSON.stringify({
+                type: 'complete',
                 totalScanned,
                 totalSelected,
                 selectionRate,
                 results
-            }
-        });
+            })}\n\n`);
+            res.end();
+        } else {
+            // 传统JSON响应
+            res.json({
+                success: true,
+                message: `扫描完成，选中 ${totalSelected} 只股票`,
+                data: {
+                    totalScanned,
+                    totalSelected,
+                    selectionRate,
+                    results
+                }
+            });
+        }
 
     } catch (error) {
         console.error('扫描失败:', error);
-        res.status(500).json({
-            success: false,
-            message: '扫描失败',
-            error: error.message
-        });
+
+        if (req.query.stream === 'true') {
+            // SSE错误响应
+            res.write(`data: ${JSON.stringify({
+                type: 'error',
+                message: '扫描失败',
+                error: error.message
+            })}\n\n`);
+            res.end();
+        } else {
+            // 传统JSON错误响应
+            res.status(500).json({
+                success: false,
+                message: '扫描失败',
+                error: error.message
+            });
+        }
     }
 }
 

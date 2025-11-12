@@ -423,7 +423,7 @@ const ThreeDaySelectionManager = {
     // ==================== 扫描功能 ====================
 
     // 打开扫描弹窗
-    openScanModal: async function(configId) {
+    openScanModal: function(configId) {
         console.log('🔍 打开扫描弹窗, configId:', configId);
         this.currentConfig = this.configs.find(c => c.id === configId);
 
@@ -434,11 +434,22 @@ const ThreeDaySelectionManager = {
 
         document.getElementById('scanConfigName').textContent = this.currentConfig.config_name;
 
-        // 加载全部股票列表
-        await this.loadAllStocksForScan();
-
+        // 先打开弹窗，提升用户体验
         document.getElementById('scanModal').style.display = 'flex';
         console.log('✅ 扫描弹窗已打开');
+
+        // 如果还没有加载股票列表，或者列表为空，则在后台异步加载
+        if (!this.allStocks || this.allStocks.length === 0) {
+            // 后台异步加载股票列表
+            this.loadAllStocksForScan().catch(error => {
+                console.error('❌ 后台加载股票列表失败:', error);
+            });
+        } else {
+            // 如果已经有缓存的股票列表，直接显示
+            document.getElementById('scanStockCount').textContent = this.allStocks.length;
+            document.getElementById('loadStocksBtn').textContent = '✅ 已加载 ' + this.allStocks.length + ' 只';
+            document.getElementById('loadStocksBtn').disabled = false;
+        }
     },
 
     // 加载全部股票列表用于扫描
@@ -537,7 +548,7 @@ const ThreeDaySelectionManager = {
         }
     },
 
-    // 开始扫描
+    // 开始扫描（使用SSE实时进度）
     startScan: async function() {
         console.log('🎯 开始扫描函数被调用');
 
@@ -564,13 +575,19 @@ const ThreeDaySelectionManager = {
         document.getElementById('scanPercent').textContent = '0';
         document.getElementById('foundCount').textContent = '0';
         document.getElementById('scanProgressBar').style.width = '0%';
+        document.getElementById('currentStockCode').textContent = '准备中...';
+        document.getElementById('currentStockName').textContent = '';
 
         try {
-            const response = await fetch('/api/three-day-selection/scan', {
+            // 先发送POST请求启动扫描，然后通过SSE接收进度
+            const token = localStorage.getItem('token');
+
+            // 使用fetch API发送POST请求，但通过stream接收响应
+            const response = await fetch(`/api/three-day-selection/scan?stream=true`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     configId: this.currentConfig.id,
@@ -578,23 +595,105 @@ const ThreeDaySelectionManager = {
                 })
             });
 
-            const data = await response.json();
-
-            if (data.success) {
-                showNotification(`扫描完成！选中 ${data.data.totalSelected} 只股票`, 'success');
-                document.getElementById('scanModal').style.display = 'none';
-                this.viewResults(this.currentConfig.id);
-            } else {
-                showNotification(data.message || '扫描失败', 'error');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+
+            // 读取SSE流
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+
+            while (true) {
+                const { value, done } = await reader.read();
+
+                if (done) {
+                    console.log('✅ SSE流结束');
+                    break;
+                }
+
+                // 解码数据并添加到缓冲区
+                buffer += decoder.decode(value, { stream: true });
+
+                // 处理完整的SSE消息
+                const lines = buffer.split('\n\n');
+                buffer = lines.pop() || ''; // 保留不完整的消息
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.substring(6));
+                            this.handleScanEvent(data);
+                        } catch (error) {
+                            console.error('解析SSE消息失败:', error);
+                        }
+                    }
+                }
+            }
+
         } catch (error) {
             console.error('❌ 扫描失败:', error);
             showNotification('扫描失败: ' + error.message, 'error');
-        } finally {
             this.isScanning = false;
             document.getElementById('scanProgress').style.display = 'none';
             document.getElementById('startScanBtn').disabled = false;
             document.getElementById('closeScanBtn').disabled = false;
+        }
+    },
+
+    // 处理SSE事件
+    handleScanEvent: function(event) {
+        console.log('📨 收到SSE事件:', event);
+
+        switch (event.type) {
+            case 'start':
+                console.log(`🚀 开始扫描 ${event.total} 只股票`);
+                document.getElementById('totalCount').textContent = event.total;
+                break;
+
+            case 'progress':
+                // 更新进度条和计数
+                document.getElementById('scannedCount').textContent = event.current;
+                document.getElementById('scanPercent').textContent = event.percent.toFixed(2);
+                document.getElementById('foundCount').textContent = event.selected;
+                document.getElementById('scanProgressBar').style.width = `${event.percent}%`;
+                document.getElementById('currentStockCode').textContent = event.stockCode;
+                document.getElementById('currentStockName').textContent = event.stockName;
+                break;
+
+            case 'selected':
+                // 股票被选中
+                console.log(`✅ 选中股票: ${event.stock.stockCode} ${event.stock.stockName}`);
+                break;
+
+            case 'complete':
+                // 扫描完成
+                console.log(`🎉 扫描完成: ${event.totalSelected}/${event.totalScanned} 只股票被选中`);
+                showNotification(`扫描完成！选中 ${event.totalSelected} 只股票`, 'success');
+
+                this.isScanning = false;
+                document.getElementById('scanProgress').style.display = 'none';
+                document.getElementById('startScanBtn').disabled = false;
+                document.getElementById('closeScanBtn').disabled = false;
+                document.getElementById('scanModal').style.display = 'none';
+
+                // 刷新结果
+                this.viewResults(this.currentConfig.id);
+                break;
+
+            case 'error':
+                // 扫描错误
+                console.error('❌ 扫描错误:', event.message);
+                showNotification(`扫描失败: ${event.message}`, 'error');
+
+                this.isScanning = false;
+                document.getElementById('scanProgress').style.display = 'none';
+                document.getElementById('startScanBtn').disabled = false;
+                document.getElementById('closeScanBtn').disabled = false;
+                break;
+
+            default:
+                console.warn('未知的SSE事件类型:', event.type);
         }
     },
 

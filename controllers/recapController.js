@@ -733,15 +733,23 @@ async function getPositionData(date, userId) {
                 positions.forEach(pos => {
                     const quote = quotes.find(q => q.stockCode === pos.code);
                     if (quote && quote.currentPrice > 0) {
-                        pos.current_price = quote.currentPrice;
-                        pos.yesterday_close = quote.yesterdayClose || pos.current_price;
+                        // 保存昨日收盘价（如果API没返回，使用当前价作为昨日收盘）
+                        const yesterdayClose = quote.yesterdayClose && quote.yesterdayClose > 0
+                            ? quote.yesterdayClose
+                            : pos.current_price || quote.currentPrice;
 
-                        // 重新计算当前盈亏
+                        pos.yesterday_close = yesterdayClose;
+                        pos.current_price = quote.currentPrice;
+
+                        // 重新计算当前盈亏（总盈亏 = 当前价 - 成本价）
                         pos.total_profit = (quote.currentPrice - pos.cost_price) * pos.quantity;
                         pos.profit_rate = pos.cost_price > 0 ? (pos.total_profit / pos.cost) * 100 : 0;
 
-                        // 计算今日盈亏（当前价 - 昨日收盘价）* 持仓数量
-                        pos.today_profit = (quote.currentPrice - pos.yesterday_close) * pos.quantity;
+                        // 计算今日盈亏（今日盈亏 = 当前价 - 昨日收盘价）
+                        pos.today_profit = (quote.currentPrice - yesterdayClose) * pos.quantity;
+
+                        // 添加调试日志
+                        console.log(`💰 [${pos.code} ${pos.name}] 当前价=¥${quote.currentPrice}, 昨收=¥${yesterdayClose}, 成本=¥${pos.cost_price}, 今日盈亏=¥${pos.today_profit.toFixed(2)}, 总盈亏=¥${pos.total_profit.toFixed(2)}`);
                     }
                 });
 
