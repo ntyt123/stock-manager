@@ -20,45 +20,71 @@ async function getAllStocks(req, res) {
         let stocks = [];
 
         try {
-            // 获取沪深A股（使用hs_a节点可以一次性获取所有A股）
-            const response = await axios.get('http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData', {
-                params: {
-                    page: 1,
-                    num: 5000,
-                    sort: 'symbol',
-                    asc: 1,
-                    node: 'hs_a',
-                    symbol: '',
-                    _s_r_a: 'page'
-                },
-                timeout: 15000,
-                transformResponse: [(data) => {
-                    // 新浪API返回的是字符串，需要手动解析
-                    try {
-                        if (typeof data === 'string') {
-                            return JSON.parse(data);
-                        }
-                        return data;
-                    } catch (e) {
-                        console.error('JSON解析失败:', e.message);
-                        return null;
-                    }
-                }]
-            });
+            // 分页获取沪深A股（每页80只，获取多页直到没有数据）
+            let currentPage = 1;
+            const pageSize = 80; // 新浪API每页返回约80只
+            let hasMoreData = true;
 
-            if (response.data && Array.isArray(response.data)) {
-                console.log(`📊 从API获取到 ${response.data.length} 只股票`);
-                response.data.forEach(stock => {
-                    if (stock.code && stock.name) {
-                        stocks.push({
-                            code: stock.code,
-                            name: stock.name,
-                            market: stock.code.startsWith('6') ? '沪市' : '深市'
-                        });
-                    }
+            while (hasMoreData && currentPage <= 100) { // 最多获取100页，约8000只股票
+                console.log(`📡 正在获取第 ${currentPage} 页股票...`);
+
+                const response = await axios.get('http://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData', {
+                    params: {
+                        page: currentPage,
+                        num: pageSize,
+                        sort: 'symbol',
+                        asc: 1,
+                        node: 'hs_a',
+                        symbol: '',
+                        _s_r_a: 'page'
+                    },
+                    timeout: 15000,
+                    transformResponse: [(data) => {
+                        // 新浪API返回的是字符串，需要手动解析
+                        try {
+                            if (typeof data === 'string') {
+                                return JSON.parse(data);
+                            }
+                            return data;
+                        } catch (e) {
+                            console.error('JSON解析失败:', e.message);
+                            return null;
+                        }
+                    }]
                 });
+
+                if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+                    console.log(`✅ 第 ${currentPage} 页获取到 ${response.data.length} 只股票`);
+
+                    response.data.forEach(stock => {
+                        if (stock.code && stock.name) {
+                            stocks.push({
+                                code: stock.code,
+                                name: stock.name,
+                                market: stock.code.startsWith('6') ? '沪市' : '深市'
+                            });
+                        }
+                    });
+
+                    // 如果这一页数据少于pageSize，说明已经是最后一页
+                    if (response.data.length < pageSize) {
+                        hasMoreData = false;
+                        console.log(`✅ 已获取所有股票，总计 ${stocks.length} 只`);
+                    } else {
+                        currentPage++;
+                        // 延迟避免API限流
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                } else {
+                    hasMoreData = false;
+                    console.log(`⚠️ 第 ${currentPage} 页无数据，停止获取`);
+                }
+            }
+
+            if (stocks.length > 0) {
+                console.log(`📊 从API共获取到 ${stocks.length} 只股票`);
             } else {
-                console.warn('⚠️ API返回数据格式不正确');
+                console.warn('⚠️ API返回数据格式不正确或无数据');
             }
         } catch (error) {
             console.error('❌ 获取股票列表失败:', error.message);
