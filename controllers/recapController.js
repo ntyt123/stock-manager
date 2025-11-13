@@ -782,11 +782,12 @@ async function getPositionData(date, userId) {
 
                 console.log(`📈 [${pos.code}] 有交易: 昨持${yesterdayQty}股, 今买${trade.buyQty}股, 今卖${trade.sellQty}股, 现持${pos.quantity}股`);
 
-                // 1. 昨日持仓部分的今日盈亏
-                if (yesterdayQty > 0 && pos.yesterday_close) {
-                    const oldHoldingProfit = (pos.current_price - pos.yesterday_close) * yesterdayQty;
+                // 1. 昨日持仓部分的今日盈亏（只计算仍持有的部分，已卖出的在"卖出盈亏"中计算）
+                const yesterdayQtyStillHeld = Math.max(0, yesterdayQty - trade.sellQty);
+                if (yesterdayQtyStillHeld > 0 && pos.yesterday_close) {
+                    const oldHoldingProfit = (pos.current_price - pos.yesterday_close) * yesterdayQtyStillHeld;
                     todayProfitValue += oldHoldingProfit;
-                    console.log(`   昨日持仓盈亏: (${pos.current_price} - ${pos.yesterday_close}) × ${yesterdayQty} = ¥${oldHoldingProfit.toFixed(2)}`);
+                    console.log(`   昨日持仓盈亏(仍持有${yesterdayQtyStillHeld}股): (${pos.current_price} - ${pos.yesterday_close}) × ${yesterdayQtyStillHeld} = ¥${oldHoldingProfit.toFixed(2)}`);
                 }
 
                 // 2. 今天新买入部分的盈亏
