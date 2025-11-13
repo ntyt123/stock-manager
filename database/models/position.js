@@ -112,7 +112,8 @@ const positionModel = {
                 const currentTime = new Date().toISOString();
                 const { stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate } = positionData;
 
-                const info = db.prepare(`INSERT INTO positions
+                // 使用 INSERT OR REPLACE 防止重复记录
+                const info = db.prepare(`INSERT OR REPLACE INTO positions
                     (user_id, stock_code, stock_name, quantity, cost_price, current_price, market_value, profit_loss, profit_loss_rate, source, created_at, updated_at)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
                     .run(userId, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, 'auto', currentTime, currentTime);
