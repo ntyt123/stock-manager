@@ -853,7 +853,10 @@ const RecapManager = {
                         if (recapResult.success && recapResult.data && recapResult.data.recap) {
                             const recap = recapResult.data.recap;
                             const todayProfit = recap.today_profit || 0;
-                            const todayProfitRate = totalCost > 0 ? (todayProfit / totalCost) * 100 : 0;
+                            // 今日盈利率 = 今日盈利 / 昨日收盘市值 * 100
+                            // 昨日收盘市值 = 当前市值 - 今日盈利
+                            const yesterdayMarketValue = totalMarketValue - todayProfit;
+                            const todayProfitRate = yesterdayMarketValue > 0 ? (todayProfit / yesterdayMarketValue) * 100 : 0;
 
                             const todayProfitEl = document.getElementById('headerTodayProfit');
                             const todayProfitCard = todayProfitEl?.closest('.stat-card');
@@ -887,7 +890,8 @@ const RecapManager = {
                     if (todayProfitEl) {
                         // 使用假数据作为后备
                         const todayProfit = totalProfit * 0.3;
-                        const todayProfitRate = totalCost > 0 ? (todayProfit / totalCost) * 100 : 0;
+                        const yesterdayMarketValue = totalMarketValue - todayProfit;
+                        const todayProfitRate = yesterdayMarketValue > 0 ? (todayProfit / yesterdayMarketValue) * 100 : 0;
                         todayProfitEl.textContent = `${todayProfitRate >= 0 ? '+' : ''}${todayProfitRate.toFixed(2)}%`;
 
                         if (todayProfitRate >= 0) {
