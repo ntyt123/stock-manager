@@ -800,11 +800,13 @@ const RecapManager = {
                 // 计算总盈亏和盈亏率
                 let totalProfit = 0;
                 let totalCost = 0;
+                let totalMarketValue = 0;
 
                 positions.forEach(pos => {
                     const profit = (pos.currentPrice - pos.costPrice) * pos.quantity;
                     totalProfit += profit;
                     totalCost += pos.costPrice * pos.quantity;
+                    totalMarketValue += pos.currentPrice * pos.quantity;
                 });
 
                 const profitRate = totalCost > 0 ? (totalProfit / totalCost) * 100 : 0;
