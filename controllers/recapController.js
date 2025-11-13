@@ -732,18 +732,86 @@ async function getPositionData(date, userId) {
             }
         }
 
+        // 查询今天的交易记录，正确计算今日盈亏
+        const todayTrades = db.prepare(`
+            SELECT stock_code, stock_name, trade_type, quantity, price, created_at
+            FROM trade_operations
+            WHERE user_id = ? AND DATE(trade_date) = ?
+            ORDER BY created_at ASC
+        `).all(userId, date);
+
+        // 计算每只股票今天的交易变化
+        const tradeMap = {};
+        todayTrades.forEach(trade => {
+            if (!tradeMap[trade.stock_code]) {
+                tradeMap[trade.stock_code] = {
+                    name: trade.stock_name,
+                    buyQty: 0,
+                    sellQty: 0,
+                    buyAmount: 0, // 买入金额
+                    sellAmount: 0  // 卖出金额
+                };
+            }
+
+            if (trade.trade_type === 'buy' || trade.trade_type === 'add') {
+                tradeMap[trade.stock_code].buyQty += trade.quantity;
+                tradeMap[trade.stock_code].buyAmount += trade.quantity * trade.price;
+            } else if (trade.trade_type === 'sell' || trade.trade_type === 'reduce') {
+                tradeMap[trade.stock_code].sellQty += trade.quantity;
+                tradeMap[trade.stock_code].sellAmount += trade.quantity * trade.price;
+            }
+        });
+
         let todayProfit = 0;
         let totalProfit = 0;
         let riseCount = 0;
         let fallCount = 0;
         let flatCount = 0;
 
-        // 计算每个持仓的盈亏
+        // 计算当前持仓的总盈亏和今日盈亏
         positions.forEach(pos => {
             const profit = pos.total_profit || 0;
-            const todayProfitValue = pos.today_profit || 0;
-
             totalProfit += profit;
+
+            let todayProfitValue = 0;
+            const trade = tradeMap[pos.code];
+
+            if (trade) {
+                // 今天有交易的股票
+                const yesterdayQty = pos.quantity - trade.buyQty + trade.sellQty;
+
+                console.log(`📈 [${pos.code}] 有交易: 昨持${yesterdayQty}股, 今买${trade.buyQty}股, 今卖${trade.sellQty}股, 现持${pos.quantity}股`);
+
+                // 1. 昨日持仓部分的今日盈亏
+                if (yesterdayQty > 0 && pos.yesterday_close) {
+                    const oldHoldingProfit = (pos.current_price - pos.yesterday_close) * yesterdayQty;
+                    todayProfitValue += oldHoldingProfit;
+                    console.log(`   昨日持仓盈亏: (${pos.current_price} - ${pos.yesterday_close}) × ${yesterdayQty} = ¥${oldHoldingProfit.toFixed(2)}`);
+                }
+
+                // 2. 今天新买入部分的盈亏
+                if (trade.buyQty > 0) {
+                    const avgBuyPrice = trade.buyAmount / trade.buyQty;
+                    const newBuyProfit = (pos.current_price - avgBuyPrice) * trade.buyQty;
+                    todayProfitValue += newBuyProfit;
+                    console.log(`   新买入盈亏: (${pos.current_price} - ${avgBuyPrice.toFixed(2)}) × ${trade.buyQty} = ¥${newBuyProfit.toFixed(2)}`);
+                }
+
+                // 3. 今天卖出部分的盈亏
+                if (trade.sellQty > 0 && pos.yesterday_close) {
+                    const avgSellPrice = trade.sellAmount / trade.sellQty;
+                    const sellProfit = (avgSellPrice - pos.yesterday_close) * trade.sellQty;
+                    todayProfitValue += sellProfit;
+                    console.log(`   卖出盈亏: (${avgSellPrice.toFixed(2)} - ${pos.yesterday_close}) × ${trade.sellQty} = ¥${sellProfit.toFixed(2)}`);
+                }
+
+                pos.today_profit = todayProfitValue;
+                console.log(`   总今日盈亏: ¥${todayProfitValue.toFixed(2)}`);
+            } else if (pos.today_profit) {
+                // 今天没有交易的股票，使用已计算的today_profit
+                todayProfitValue = pos.today_profit;
+            }
+
             todayProfit += todayProfitValue;
 
             // 根据今日盈亏情况统计涨跌
@@ -751,6 +819,40 @@ async function getPositionData(date, userId) {
             else if (todayProfitValue < 0) fallCount++;
             else flatCount++;
         });
+
+        // 处理今天清仓的股票（不在当前持仓中，但有今日盈亏）
+        for (const [code, trade] of Object.entries(tradeMap)) {
+            if (trade.sellQty > 0 && !positions.find(p => p.code === code)) {
+                console.log(`🗑️ [${code}] 今日清仓: 卖出${trade.sellQty}股`);
+
+                // 获取该股票的最新行情（用于获取昨收价）
+                try {
+                    let market = code.startsWith('6') ? 'sh' : 'sz';
+                    const sinaUrl = `https://hq.sinajs.cn/list=${market}${code}`;
+                    const response = await axios.get(sinaUrl, {
+                        headers: { 'Referer': 'https://finance.sina.com.cn' },
+                        timeout: 5000,
+                        responseType: 'arraybuffer'
+                    });
+
+                    const data = iconv.decode(Buffer.from(response.data), 'gbk');
+                    const match = data.match(/="(.+)"/);
+                    if (match && match[1]) {
+                        const values = match[1].split(',');
+                        const yesterdayClose = parseFloat(values[2]);
+                        const avgSellPrice = trade.sellAmount / trade.sellQty;
+
+                        if (yesterdayClose > 0) {
+                            const clearProfit = (avgSellPrice - yesterdayClose) * trade.sellQty;
+                            todayProfit += clearProfit;
+                            console.log(`   清仓盈亏: (${avgSellPrice.toFixed(2)} - ${yesterdayClose}) × ${trade.sellQty} = ¥${clearProfit.toFixed(2)}`);
+                        }
+                    }
+                } catch (err) {
+                    console.log(`   ⚠️ 无法获取${code}的行情数据`);
+                }
+            }
+        }
 
         console.log(`💰 计算盈亏: 今日盈亏=¥${todayProfit.toFixed(2)}, 总盈亏=¥${totalProfit.toFixed(2)}`);
 
