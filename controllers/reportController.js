@@ -14,9 +14,18 @@ async function getPositionReport(req, res) {
 
         // 获取用户所有持仓数据
         const positions = db.prepare(`
-            SELECT * FROM user_positions
+            SELECT
+                stock_code as stockCode,
+                stock_name as stockName,
+                quantity,
+                cost_price as costPrice,
+                current_price as currentPrice,
+                market_value as marketValue,
+                profit_loss as profitLoss,
+                profit_loss_rate as profitLossRate
+            FROM positions
             WHERE user_id = ?
-            ORDER BY marketValue DESC
+            ORDER BY market_value DESC
         `).all(userId);
 
         if (!positions || positions.length === 0) {
@@ -746,7 +755,16 @@ async function getProfitLossReport(req, res) {
 
         // 2. 获取当前持仓用于计算未实现盈亏
         const positions = db.prepare(`
-            SELECT * FROM user_positions WHERE user_id = ?
+            SELECT
+                stock_code as stockCode,
+                stock_name as stockName,
+                quantity,
+                cost_price as costPrice,
+                current_price as currentPrice,
+                market_value as marketValue,
+                profit_loss as profitLoss,
+                profit_loss_rate as profitLossRate
+            FROM positions WHERE user_id = ?
         `).all(userId);
 
         // 3. 计算已实现盈亏（通过配对买卖计算）
@@ -1061,7 +1079,16 @@ async function getMonthlyReport(req, res) {
 
         // 2. 获取当前持仓
         const positions = db.prepare(`
-            SELECT * FROM user_positions WHERE user_id = ?
+            SELECT
+                stock_code as stockCode,
+                stock_name as stockName,
+                quantity,
+                cost_price as costPrice,
+                current_price as currentPrice,
+                market_value as marketValue,
+                profit_loss as profitLoss,
+                profit_loss_rate as profitLossRate
+            FROM positions WHERE user_id = ?
         `).all(userId);
 
         // 3. 计算月度收益统计
@@ -1354,7 +1381,16 @@ async function getYearlyReport(req, res) {
         // 2. 获取当前持仓（仅当查询当前年度时需要）
         const currentYear = new Date().getFullYear().toString();
         const positions = targetYear === currentYear ? db.prepare(`
-            SELECT * FROM user_positions WHERE user_id = ?
+            SELECT
+                stock_code as stockCode,
+                stock_name as stockName,
+                quantity,
+                cost_price as costPrice,
+                current_price as currentPrice,
+                market_value as marketValue,
+                profit_loss as profitLoss,
+                profit_loss_rate as profitLossRate
+            FROM positions WHERE user_id = ?
         `).all(userId) : [];
 
         // 3. 年度收益总结

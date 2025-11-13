@@ -6,7 +6,25 @@ const positionModel = {
     findByUserId: (userId) => {
         return new Promise((resolve, reject) => {
             try {
-                const rows = db.prepare(`SELECT * FROM user_positions WHERE user_id = ? ORDER BY updated_at DESC`).all(userId);
+                // 从新的positions表查询，并将字段名转换为驼峰命名（保持前端兼容）
+                const rows = db.prepare(`
+                    SELECT
+                        id,
+                        user_id,
+                        stock_code as stockCode,
+                        stock_name as stockName,
+                        quantity,
+                        cost_price as costPrice,
+                        current_price as currentPrice,
+                        market_value as marketValue,
+                        profit_loss as profitLoss,
+                        profit_loss_rate as profitLossRate,
+                        created_at,
+                        updated_at
+                    FROM positions
+                    WHERE user_id = ? AND quantity > 0
+                    ORDER BY updated_at DESC
+                `).all(userId);
                 resolve(rows);
             } catch (err) {
                 reject(err);
@@ -22,16 +40,16 @@ const positionModel = {
 
                 // 使用事务
                 const insertOrUpdate = db.transaction((positions) => {
-                    const stmt = db.prepare(`INSERT OR REPLACE INTO user_positions
-                        (user_id, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, created_at, updated_at)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                    const stmt = db.prepare(`INSERT OR REPLACE INTO positions
+                        (user_id, stock_code, stock_name, quantity, cost_price, current_price, market_value, profit_loss, profit_loss_rate, source, created_at, updated_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
                     positions.forEach(position => {
                         const { stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate } = position;
 
                         stmt.run(
                             userId, stockCode, stockName, quantity, costPrice, currentPrice,
-                            marketValue, profitLoss, profitLossRate, currentTime, currentTime
+                            marketValue, profitLoss, profitLossRate, 'auto', currentTime, currentTime
                         );
                     });
                 });
@@ -51,7 +69,7 @@ const positionModel = {
     deleteByUserId: (userId) => {
         return new Promise((resolve, reject) => {
             try {
-                const info = db.prepare("DELETE FROM user_positions WHERE user_id = ?").run(userId);
+                const info = db.prepare("DELETE FROM positions WHERE user_id = ?").run(userId);
                 resolve({ changes: info.changes });
             } catch (err) {
                 reject(err);
@@ -63,7 +81,23 @@ const positionModel = {
     findByStockCode: (userId, stockCode) => {
         return new Promise((resolve, reject) => {
             try {
-                const row = db.prepare(`SELECT * FROM user_positions WHERE user_id = ? AND stockCode = ?`).get(userId, stockCode);
+                const row = db.prepare(`
+                    SELECT
+                        id,
+                        user_id,
+                        stock_code as stockCode,
+                        stock_name as stockName,
+                        quantity,
+                        cost_price as costPrice,
+                        current_price as currentPrice,
+                        market_value as marketValue,
+                        profit_loss as profitLoss,
+                        profit_loss_rate as profitLossRate,
+                        created_at,
+                        updated_at
+                    FROM positions
+                    WHERE user_id = ? AND stock_code = ?
+                `).get(userId, stockCode);
                 resolve(row);
             } catch (err) {
                 reject(err);
@@ -78,10 +112,10 @@ const positionModel = {
                 const currentTime = new Date().toISOString();
                 const { stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate } = positionData;
 
-                const info = db.prepare(`INSERT INTO user_positions
-                    (user_id, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-                    .run(userId, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, currentTime, currentTime);
+                const info = db.prepare(`INSERT INTO positions
+                    (user_id, stock_code, stock_name, quantity, cost_price, current_price, market_value, profit_loss, profit_loss_rate, source, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+                    .run(userId, stockCode, stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, 'auto', currentTime, currentTime);
 
                 resolve({ id: info.lastInsertRowid, created_at: currentTime });
             } catch (err) {
@@ -97,10 +131,10 @@ const positionModel = {
                 const currentTime = new Date().toISOString();
                 const { stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate } = positionData;
 
-                const info = db.prepare(`UPDATE user_positions SET
-                    stockName = ?, quantity = ?, costPrice = ?, currentPrice = ?,
-                    marketValue = ?, profitLoss = ?, profitLossRate = ?, updated_at = ?
-                    WHERE user_id = ? AND stockCode = ?`)
+                const info = db.prepare(`UPDATE positions SET
+                    stock_name = ?, quantity = ?, cost_price = ?, current_price = ?,
+                    market_value = ?, profit_loss = ?, profit_loss_rate = ?, updated_at = ?
+                    WHERE user_id = ? AND stock_code = ?`)
                     .run(stockName, quantity, costPrice, currentPrice, marketValue, profitLoss, profitLossRate, currentTime, userId, stockCode);
 
                 resolve({ changes: info.changes });
@@ -114,7 +148,7 @@ const positionModel = {
     deletePosition: (userId, stockCode) => {
         return new Promise((resolve, reject) => {
             try {
-                const info = db.prepare(`DELETE FROM user_positions WHERE user_id = ? AND stockCode = ?`).run(userId, stockCode);
+                const info = db.prepare(`DELETE FROM positions WHERE user_id = ? AND stock_code = ?`).run(userId, stockCode);
                 resolve({ changes: info.changes });
             } catch (err) {
                 reject(err);

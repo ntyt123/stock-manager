@@ -307,6 +307,11 @@ const RecapManager = {
                     <div class="value">${recap.today_profit >= 0 ? '+' : ''}¥${recap.today_profit.toFixed(2)}</div>
                     <div class="desc">${recap.today_profit >= 0 ? '盈利' : '亏损'}</div>
                 </div>
+                <div class="recap-overview-card ${recap.total_profit >= 0 ? 'positive' : 'negative'}">
+                    <div class="label">总盈亏</div>
+                    <div class="value">${recap.total_profit >= 0 ? '+' : ''}¥${recap.total_profit.toFixed(2)}</div>
+                    <div class="desc">${recap.total_profit >= 0 ? '盈利' : '亏损'}</div>
+                </div>
                 <div class="recap-overview-card">
                     <div class="label">持仓数量</div>
                     <div class="value">${recap.position_count}</div>

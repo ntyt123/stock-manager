@@ -580,93 +580,33 @@ async function getMarketData(date) {
 }
 
 /**
- * 获取持仓数据（合并 user_positions 和 manual_positions 两个表）
+ * 获取持仓数据（从统一的 positions 表获取）
  */
 async function getPositionData(date, userId) {
     try {
-        // 1. 从 user_positions 表获取持仓（驼峰命名）
-        const userPositions = db.prepare(`
-            SELECT * FROM user_positions WHERE user_id = ? AND quantity > 0 ORDER BY stockCode
+        // 直接从统一的 positions 表获取所有持仓
+        const positions = db.prepare(`
+            SELECT
+                stock_code as code,
+                stock_name as name,
+                quantity,
+                cost_price,
+                current_price,
+                market_value,
+                profit_loss as total_profit,
+                profit_loss_rate as profit_rate,
+                source
+            FROM positions
+            WHERE user_id = ? AND quantity > 0
+            ORDER BY stock_code
         `).all(userId);
 
-        // 2. 从 manual_positions 表获取手动录入的持仓（下划线命名）
-        const manualPositions = db.prepare(`
-            SELECT * FROM manual_positions WHERE user_id = ? AND quantity > 0 ORDER BY stock_code
-        `).all(userId);
-
-        // 3. 合并两个表的数据，统一格式
-        const allPositions = [];
-        const stockMap = new Map();
-
-        // 添加 user_positions 的数据
-        userPositions.forEach(pos => {
-            const key = pos.stockCode;
-            if (!stockMap.has(key)) {
-                stockMap.set(key, {
-                    // 前端期望的字段名
-                    code: pos.stockCode,
-                    name: pos.stockName,
-                    quantity: pos.quantity,
-                    cost: (pos.costPrice || 0) * (pos.quantity || 0),
-                    current_price: pos.currentPrice,
-                    total_profit: pos.profitLoss || 0,
-                    profit_rate: pos.profitLossRate || 0,
-                    // 额外字段
-                    cost_price: pos.costPrice,
-                    source: 'user_positions'
-                });
-            }
+        // 计算 cost 字段（前端需要）
+        positions.forEach(pos => {
+            pos.cost = pos.cost_price * pos.quantity;
         });
 
-        // 添加或合并 manual_positions 的数据
-        manualPositions.forEach(pos => {
-            const key = pos.stock_code;
-            if (!stockMap.has(key)) {
-                // 计算盈亏（如果有当前价格的话）
-                const costPrice = pos.cost_price || 0;
-                const currentPrice = pos.current_price || costPrice;
-                const quantity = pos.quantity || 0;
-                const totalProfit = (currentPrice - costPrice) * quantity;
-
-                stockMap.set(key, {
-                    // 前端期望的字段名
-                    code: pos.stock_code,
-                    name: pos.stock_name,
-                    quantity: quantity,
-                    cost: costPrice * quantity,
-                    current_price: currentPrice,
-                    total_profit: totalProfit,
-                    profit_rate: costPrice > 0 ? (totalProfit / (costPrice * quantity)) * 100 : 0,
-                    // 额外字段
-                    cost_price: costPrice,
-                    source: 'manual_positions'
-                });
-            } else {
-                // 如果同一股票在两个表都有，合并数量
-                const existing = stockMap.get(key);
-                const addQuantity = pos.quantity || 0;
-                const addCostPrice = pos.cost_price || 0;
-
-                // 重新计算加权平均成本
-                const totalQuantity = existing.quantity + addQuantity;
-                const totalCost = existing.cost + (addCostPrice * addQuantity);
-                const avgCostPrice = totalQuantity > 0 ? totalCost / totalQuantity : 0;
-
-                existing.quantity = totalQuantity;
-                existing.cost = totalCost;
-                existing.cost_price = avgCostPrice;
-                existing.source = 'both';
-
-                // 重新计算盈亏
-                if (existing.current_price) {
-                    existing.total_profit = (existing.current_price - avgCostPrice) * totalQuantity;
-                    existing.profit_rate = avgCostPrice > 0 ? (existing.total_profit / totalCost) * 100 : 0;
-                }
-            }
-        });
-
-        // 转换为数组
-        const positions = Array.from(stockMap.values());
+        console.log(`📊 持仓数据: 共 ${positions.length} 条`);
 
         // 自动获取所有持仓股票的最新价格
         if (positions.length > 0) {
@@ -733,10 +673,23 @@ async function getPositionData(date, userId) {
                 positions.forEach(pos => {
                     const quote = quotes.find(q => q.stockCode === pos.code);
                     if (quote && quote.currentPrice > 0) {
-                        // 保存昨日收盘价（如果API没返回，使用当前价作为昨日收盘）
-                        const yesterdayClose = quote.yesterdayClose && quote.yesterdayClose > 0
-                            ? quote.yesterdayClose
-                            : pos.current_price || quote.currentPrice;
+                        // 获取昨日收盘价，优先使用API返回的值
+                        let yesterdayClose = null;
+
+                        // 1. 首选：使用API返回的昨日收盘价
+                        if (quote.yesterdayClose && quote.yesterdayClose > 0) {
+                            yesterdayClose = quote.yesterdayClose;
+                        }
+                        // 2. 备选：使用数据库中保存的当前价（作为前一次的价格）
+                        else if (pos.current_price && pos.current_price > 0) {
+                            yesterdayClose = pos.current_price;
+                            console.log(`⚠️ [${pos.code}] API未返回昨收价，使用数据库价格 ¥${yesterdayClose}`);
+                        }
+                        // 3. 最后：使用当前价（这会导致今日盈亏为0）
+                        else {
+                            yesterdayClose = quote.currentPrice;
+                            console.log(`⚠️ [${pos.code}] 无法获取昨收价，今日盈亏将为0`);
+                        }
 
                         pos.yesterday_close = yesterdayClose;
                         pos.current_price = quote.currentPrice;
@@ -749,7 +702,8 @@ async function getPositionData(date, userId) {
                         pos.today_profit = (quote.currentPrice - yesterdayClose) * pos.quantity;
 
                         // 添加调试日志
-                        console.log(`💰 [${pos.code} ${pos.name}] 当前价=¥${quote.currentPrice}, 昨收=¥${yesterdayClose}, 成本=¥${pos.cost_price}, 今日盈亏=¥${pos.today_profit.toFixed(2)}, 总盈亏=¥${pos.total_profit.toFixed(2)}`);
+                        const todayChange = ((quote.currentPrice - yesterdayClose) / yesterdayClose * 100).toFixed(2);
+                        console.log(`💰 [${pos.code} ${pos.name}] 当前=¥${quote.currentPrice}, 昨收=¥${yesterdayClose}(${todayChange}%), 成本=¥${pos.cost_price}, 今日盈亏=¥${pos.today_profit.toFixed(2)}, 总盈亏=¥${pos.total_profit.toFixed(2)}`);
                     }
                 });
 
@@ -781,8 +735,6 @@ async function getPositionData(date, userId) {
         });
 
         console.log(`💰 计算盈亏: 今日盈亏=¥${todayProfit.toFixed(2)}, 总盈亏=¥${totalProfit.toFixed(2)}`);
-
-        console.log(`📊 持仓数据: user_positions=${userPositions.length}条, manual_positions=${manualPositions.length}条, 合并后=${positions.length}条`);
 
         return {
             positions,

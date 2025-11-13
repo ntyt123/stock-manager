@@ -1,5 +1,5 @@
 const express = require('express');
-const { tradeOperationModel } = require('../database');
+const { tradeOperationModel, positionModel, watchlistModel } = require('../database');
 
 module.exports = (authenticateToken) => {
     const router = express.Router();
@@ -91,6 +91,87 @@ module.exports = (authenticateToken) => {
             const result = await tradeOperationModel.add(userId, tradeData);
 
             console.log(`✅ 用户 ${userId} 添加交易记录: ${tradeType} ${stockName} (${stockCode})`);
+
+            // 同步持仓数据
+            try {
+                // 查询当前持仓
+                const existingPosition = await positionModel.findByStockCode(userId, stockCode);
+
+                if (tradeType === 'buy' || tradeType === 'add') {
+                    // 买入或加仓
+                    if (existingPosition) {
+                        // 更新现有持仓：计算新的成本价和数量
+                        const oldQuantity = existingPosition.quantity || 0;
+                        const oldCost = existingPosition.costPrice || 0;
+                        const newQuantity = oldQuantity + qty;
+                        const newCostPrice = ((oldCost * oldQuantity) + (prc * qty)) / newQuantity;
+
+                        await positionModel.updatePosition(userId, stockCode, {
+                            stockName,
+                            quantity: newQuantity,
+                            costPrice: newCostPrice,
+                            currentPrice: prc,
+                            marketValue: newQuantity * prc,
+                            profitLoss: 0,
+                            profitLossRate: 0
+                        });
+
+                        console.log(`📊 更新持仓: ${stockName} (${stockCode}) 数量: ${oldQuantity} -> ${newQuantity}, 成本: ¥${oldCost.toFixed(2)} -> ¥${newCostPrice.toFixed(2)}`);
+                    } else {
+                        // 新增持仓
+                        await positionModel.addPosition(userId, {
+                            stockCode,
+                            stockName,
+                            quantity: qty,
+                            costPrice: prc,
+                            currentPrice: prc,
+                            marketValue: qty * prc,
+                            profitLoss: 0,
+                            profitLossRate: 0
+                        });
+
+                        console.log(`📊 新增持仓: ${stockName} (${stockCode}) 数量: ${qty}, 成本: ¥${prc.toFixed(2)}`);
+
+                        // 新股票加入自选
+                        const inWatchlist = await watchlistModel.exists(userId, stockCode);
+                        if (!inWatchlist) {
+                            await watchlistModel.add(userId, stockCode, stockName);
+                            console.log(`⭐ 加入自选: ${stockName} (${stockCode})`);
+                        }
+                    }
+                } else if (tradeType === 'sell' || tradeType === 'reduce') {
+                    // 卖出或减仓
+                    if (existingPosition) {
+                        const oldQuantity = existingPosition.quantity || 0;
+                        const newQuantity = oldQuantity - qty;
+
+                        if (newQuantity <= 0) {
+                            // 清仓：删除持仓
+                            await positionModel.deletePosition(userId, stockCode);
+                            console.log(`🗑️ 清仓删除持仓: ${stockName} (${stockCode})`);
+                        } else {
+                            // 部分卖出：更新数量
+                            const costPrice = existingPosition.costPrice || 0;
+                            await positionModel.updatePosition(userId, stockCode, {
+                                stockName,
+                                quantity: newQuantity,
+                                costPrice: costPrice,
+                                currentPrice: prc,
+                                marketValue: newQuantity * prc,
+                                profitLoss: (prc - costPrice) * newQuantity,
+                                profitLossRate: ((prc - costPrice) / costPrice) * 100
+                            });
+
+                            console.log(`📊 减少持仓: ${stockName} (${stockCode}) 数量: ${oldQuantity} -> ${newQuantity}`);
+                        }
+                    } else {
+                        console.log(`⚠️ 警告: 卖出股票但未找到持仓记录: ${stockName} (${stockCode})`);
+                    }
+                }
+            } catch (syncError) {
+                console.error('⚠️ 同步持仓数据失败:', syncError.message);
+                // 不影响交易记录添加成功，只是记录错误
+            }
 
             res.json({
                 success: true,
