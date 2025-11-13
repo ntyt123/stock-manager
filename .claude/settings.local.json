@@ -45,7 +45,9 @@
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
       "Bash(ping:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(deploy.bat)",
+      "Bash(cmd /c \"cd scripts\\deploy && deploy.bat\")"
     ],
     "deny": [],
     "ask": []
