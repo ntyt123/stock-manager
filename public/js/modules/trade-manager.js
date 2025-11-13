@@ -285,6 +285,23 @@ async function submitTradeRecord() {
 
             showNotification('交易记录添加成功', 'success');
 
+            // 刷新持仓数据（如果函数存在）
+            if (typeof window.refreshPositionsDisplay === 'function') {
+                console.log('🔄 自动刷新持仓数据...');
+                window.refreshPositionsDisplay();
+            }
+
+            // 刷新自选股列表（如果是买入新股票，会自动加入自选）
+            if (typeof loadWatchlist === 'function') {
+                console.log('🔄 自动刷新自选股列表...');
+                setTimeout(() => {
+                    loadWatchlist();
+                    if (typeof loadWatchlistQuotes === 'function') {
+                        loadWatchlistQuotes();
+                    }
+                }, 500); // 延迟500ms，确保后端同步完成
+            }
+
             // 延迟关闭模态框
             setTimeout(() => {
                 closeTradeRecordModal();
