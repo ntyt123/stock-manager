@@ -601,6 +601,24 @@ async function getPositionData(date, userId) {
             ORDER BY stock_code
         `).all(userId);
 
+        // 去重：如果同一个股票代码有多条记录，只保留第一条
+        const uniquePositions = [];
+        const seenCodes = new Set();
+
+        positions.forEach(pos => {
+            if (!seenCodes.has(pos.code)) {
+                seenCodes.add(pos.code);
+                uniquePositions.push(pos);
+            } else {
+                console.log(`⚠️ 发现重复持仓记录: ${pos.code} ${pos.name}，已跳过`);
+            }
+        });
+
+        if (uniquePositions.length < positions.length) {
+            console.log(`🔧 去重：原始 ${positions.length} 条，去重后 ${uniquePositions.length} 条`);
+            positions = uniquePositions;
+        }
+
         // 计算 cost 字段（前端需要）
         positions.forEach(pos => {
             pos.cost = pos.cost_price * pos.quantity;

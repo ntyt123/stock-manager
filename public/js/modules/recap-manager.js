@@ -860,6 +860,13 @@ const RecapManager = {
                             const yesterdayMarketValue = totalMarketValue - todayProfit;
                             const todayProfitRate = yesterdayMarketValue > 0 ? (todayProfit / yesterdayMarketValue) * 100 : 0;
 
+                            // 调试日志
+                            console.log('📊 今日盈利率计算详情:');
+                            console.log('   - 今日盈利:', todayProfit.toFixed(2));
+                            console.log('   - 当前市值:', totalMarketValue.toFixed(2));
+                            console.log('   - 昨日市值:', yesterdayMarketValue.toFixed(2));
+                            console.log('   - 今日盈利率:', todayProfitRate.toFixed(2) + '%');
+
                             const todayProfitEl = document.getElementById('headerTodayProfit');
                             const todayProfitCard = todayProfitEl?.closest('.stat-card');
 
