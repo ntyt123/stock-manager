@@ -47,7 +47,10 @@
       "Bash(ping:*)",
       "Bash(cat:*)",
       "Bash(deploy.bat)",
-      "Bash(cmd /c \"cd scripts\\deploy && deploy.bat\")"
+      "Bash(cmd /c \"cd scripts\\deploy && deploy.bat\")",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
