@@ -734,7 +734,7 @@ async function getPositionData(date, userId) {
 
         // 查询今天的交易记录，正确计算今日盈亏
         const todayTrades = db.prepare(`
-            SELECT stock_code, stock_name, trade_type, quantity, price, created_at
+            SELECT stock_code, stock_name, trade_type, quantity, price, fee, created_at
             FROM trade_operations
             WHERE user_id = ? AND DATE(trade_date) = ?
             ORDER BY created_at ASC
@@ -748,17 +748,26 @@ async function getPositionData(date, userId) {
                     name: trade.stock_name,
                     buyQty: 0,
                     sellQty: 0,
-                    buyAmount: 0, // 买入金额
-                    sellAmount: 0  // 卖出金额
+                    buyAmount: 0, // 买入金额（扣除过户费）
+                    sellAmount: 0  // 卖出金额（扣除印花税和过户费）
                 };
             }
 
+            const amount = trade.quantity * trade.price; // 成交金额
+
+            // 过户费：上海股票（6开头）万分之0.2（0.002%）
+            const transferFee = trade.stock_code.startsWith('6') ? amount * 0.00002 : 0;
+
             if (trade.trade_type === 'buy' || trade.trade_type === 'add') {
                 tradeMap[trade.stock_code].buyQty += trade.quantity;
-                tradeMap[trade.stock_code].buyAmount += trade.quantity * trade.price;
+                // 买入成本扣除过户费
+                tradeMap[trade.stock_code].buyAmount += amount - transferFee;
             } else if (trade.trade_type === 'sell' || trade.trade_type === 'reduce') {
+                // 印花税：仅卖出收取，千分之一（0.1%）
+                const stampTax = amount * 0.001;
                 tradeMap[trade.stock_code].sellQty += trade.quantity;
-                tradeMap[trade.stock_code].sellAmount += trade.quantity * trade.price;
+                // 卖出收入扣除印花税和过户费
+                tradeMap[trade.stock_code].sellAmount += amount - stampTax - transferFee;
             }
         });
 
