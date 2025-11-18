@@ -699,7 +699,7 @@ const RecapManager = {
                         <div class="log-header">
                             <span class="log-type-badge">${logTypeLabels[log.log_type] || log.log_type}</span>
                             ${log.sentiment ? `<span class="log-sentiment">${sentimentEmoji[log.sentiment] || log.sentiment}</span>` : ''}
-                            <span class="log-time">${new Date(log.created_at).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit'})}</span>
+                            <span class="log-time">${new Date(log.created_at).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}</span>
                         </div>
                         <div class="log-title">${log.title}</div>
                         <div class="log-content">${this.truncateText(log.content, 150)}</div>
