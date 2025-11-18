@@ -14,9 +14,13 @@ module.exports = (authenticateToken) => {
     // 持仓分析API - 调用DeepSeek分析持仓
     router.post('/portfolio', authenticateToken, async (req, res) => {
         const userId = req.user.id;
+        const { todayTrades } = req.body;
 
         try {
             console.log(`📊 开始分析用户 ${userId} 的持仓...`);
+            if (todayTrades && todayTrades.length > 0) {
+                console.log(`📊 今日交易操作: ${todayTrades.length} 条`);
+            }
 
             // 1. 获取用户持仓数据
             const positions = await positionModel.findByUserId(userId);
@@ -104,6 +108,19 @@ module.exports = (authenticateToken) => {
             // 3. 构建详细的持仓数据摘要（使用刷新后的最新价格）
             const portfolioSummary = buildPortfolioSummary(positions);
 
+            // 3.5 构建今日交易记录
+            let todayTradesSection = '';
+            if (todayTrades && todayTrades.length > 0) {
+                todayTradesSection = `
+【今日交易操作】
+${todayTrades.map((trade, index) => {
+    const action = trade.trade_type === 'buy' ? '买入' : trade.trade_type === 'sell' ? '卖出' : trade.trade_type;
+    return `${index + 1}. ${action} ${trade.stock_name}(${trade.stock_code}) ${trade.quantity}股 @ ¥${trade.price} (手续费¥${trade.fee || 0})`;
+}).join('\n')}
+
+`;
+            }
+
             // 4. 调用DeepSeek AI进行分析
             const analysisPrompt = `请作为专业的股票投资顾问，对以下持仓进行全面深入的分析：
 
@@ -116,20 +133,26 @@ module.exports = (authenticateToken) => {
 
 【详细持仓】
 ${portfolioSummary.detailedPositions}
-
+${todayTradesSection}
 请从以下几个方面进行详细分析：
 
-1. **整体持仓评估**
+1. **今日操作评价**${todayTrades && todayTrades.length > 0 ? ` ⭐ **重要**` : ''}
+   ${todayTrades && todayTrades.length > 0 ? `- 详细分析今天的每一笔交易操作是否合理
+   - 评价买入/卖出的时机选择
+   - 判断操作是否符合风险控制原则
+   - 指出操作中的亮点和需要改进的地方` : `- 今日无交易操作`}
+
+2. **整体持仓评估**
    - 分析当前持仓结构的合理性
    - 评估整体风险水平（高/中/低）
    - 判断持仓集中度是否合理
 
-2. **个股分析**
+3. **个股分析**
    - 分析表现最好和最差的股票
    - 指出哪些股票值得继续持有
    - 指出哪些股票需要警惕或减仓
 
-3. **风险预警** ⚠️ **【关键】此部分必须包含且格式必须严格遵守！**
+4. **风险预警** ⚠️ **【关键】此部分必须包含且格式必须严格遵守！**
 
    **重要格式要求：**
    - 必须使用独立的二级标题：## 【风险预警】（必须独占一行，前后各空一行）
@@ -146,17 +169,17 @@ ${portfolioSummary.detailedPositions}
    - ⚠️ 【中风险】持仓过于集中在XX行业（占比XX%），建议分散投资到其他板块
    - ⚠️ 【注意】XX股票短期涨幅过大（已上涨XX%），注意回调风险，建议适当减仓
 
-4. **操作建议**
+5. **操作建议**
    - 短期（1-2周）操作建议
    - 中期（1-3个月）操作建议
    - 仓位调整建议
 
-5. **市场环境**
+6. **市场环境**
    - 结合当前A股市场环境
    - 分析对持仓的影响
    - 提出应对策略
 
-6. **风险控制规则建议** 🛡️ **【关键】此部分必须包含且格式必须严格遵守！**
+7. **风险控制规则建议** 🛡️ **【关键】此部分必须包含且格式必须严格遵守！**
 
    基于当前持仓分析，请在分析的最后以JSON格式提供智能的风险控制规则建议。
 

@@ -1080,12 +1080,19 @@ const RecapManager = {
         try {
             container.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p>正在分析持仓...</p></div>';
 
+            // 获取今天的交易记录
+            const recap = this.currentRecap;
+            const tradingLogs = recap ? JSON.parse(recap.trading_logs_data || '[]') : [];
+
             const response = await fetch('/api/analysis/portfolio', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+                },
+                body: JSON.stringify({
+                    todayTrades: tradingLogs
+                })
             });
 
             const result = await response.json();
