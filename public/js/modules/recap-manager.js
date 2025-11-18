@@ -83,7 +83,8 @@ const RecapManager = {
         if (!isTradingDay) {
             statusDot.className = 'recap-status-dot disabled';
             statusText.textContent = '非交易日';
-            if (entranceBtn) entranceBtn.disabled = true;
+            // 允许在非交易日访问复盘
+            if (entranceBtn) entranceBtn.disabled = false;
             return;
         }
 
@@ -91,7 +92,8 @@ const RecapManager = {
         if (!isAfterClose) {
             statusDot.className = 'recap-status-dot trading';
             statusText.textContent = '交易中';
-            if (entranceBtn) entranceBtn.disabled = true;
+            // 允许在交易时间访问复盘
+            if (entranceBtn) entranceBtn.disabled = false;
             return;
         }
 
