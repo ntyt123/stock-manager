@@ -452,17 +452,6 @@ const RecapManager = {
                 </div>
             </div>
 
-            <!-- 持仓股票基本面分析 -->
-            <div class="recap-section">
-                <div class="recap-section-title">
-                    <span class="icon">📊</span>
-                    持仓股票基本面分析
-                </div>
-                <div id="fundamentalAnalysisContainer">
-                    ${positionData.length > 0 ? this.renderFundamentalAnalysisButtons(positionData, recap.fundamental_analysis_data) : '<p style="color: #999; text-align: center;">暂无持仓数据</p>'}
-                </div>
-            </div>
-
             <!-- 持仓股票趋势分析 -->
             <div class="recap-section">
                 <div class="recap-section-title">
@@ -999,48 +988,6 @@ const RecapManager = {
     },
 
     /**
-     * 渲染基本面分析按钮
-     */
-    renderFundamentalAnalysisButtons(positions, savedDataJson) {
-        // 解析保存的分析数据
-        let savedData = {};
-        if (savedDataJson) {
-            try {
-                savedData = JSON.parse(savedDataJson);
-            } catch (e) {
-                console.error('解析基本面分析数据失败:', e);
-            }
-        }
-
-        return `
-            <div class="stock-analysis-buttons">
-                ${positions.map(pos => {
-                    const saved = savedData[pos.code];
-                    const hasAnalysis = saved && saved.analysis;
-                    return `
-                        <div class="stock-analysis-item" data-stock-code="${pos.code}">
-                            <div class="stock-info">
-                                <span class="stock-name">${pos.name || pos.code}</span>
-                                <span class="stock-code">${pos.code}</span>
-                            </div>
-                            <button class="btn btn-small btn-secondary" onclick="RecapManager.analyzeFundamental('${pos.code}', '${pos.name || pos.code}')">
-                                ${hasAnalysis ? '重新分析' : '分析'}
-                            </button>
-                            <div class="analysis-result" id="fundamental-${pos.code}" style="${hasAnalysis ? 'display: block;' : 'display: none;'}">
-                                ${hasAnalysis ? `
-                                    <div class="ai-analysis-content">
-                                        ${this.renderMarkdown(saved.analysis)}
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        `;
-    },
-
-    /**
      * 渲染趋势分析按钮
      */
     renderTrendAnalysisButtons(positions, savedDataJson) {
@@ -1157,47 +1104,6 @@ const RecapManager = {
         } catch (error) {
             console.error('持仓分析错误:', error);
             container.innerHTML = `<div class="error-message">持仓分析失败: ${error.message}</div>`;
-        }
-    },
-
-    /**
-     * 基本面分析
-     */
-    async analyzeFundamental(stockCode, stockName) {
-        const resultContainer = document.getElementById(`fundamental-${stockCode}`);
-        if (!resultContainer) return;
-
-        try {
-            resultContainer.style.display = 'block';
-            resultContainer.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p>正在分析基本面...</p></div>';
-
-            const response = await fetch('/api/fundamental/analyze', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ query: stockCode })
-            });
-
-            const result = await response.json();
-
-            if (result.success) {
-                const analysis = result.data.analysis;
-                resultContainer.innerHTML = `
-                    <div class="ai-analysis-content">
-                        ${this.renderMarkdown(analysis)}
-                    </div>
-                `;
-
-                // 保存分析结果
-                await this.saveAnalysisResult('fundamental', analysis, stockCode, stockName);
-            } else {
-                throw new Error(result.error || '基本面分析失败');
-            }
-        } catch (error) {
-            console.error('基本面分析错误:', error);
-            resultContainer.innerHTML = `<div class="error-message">基本面分析失败: ${error.message}</div>`;
         }
     },
 
