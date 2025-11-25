@@ -290,16 +290,21 @@ const RecapManager = {
     },
 
     /**
-     * 渲染复盘内容
+     * 渲染复盘内容（V2版本 - 集成新模块）
      */
-    renderRecapContent() {
+    async renderRecapContent() {
         const body = document.getElementById('recapPanelBody');
         if (!body) return;
 
         const recap = this.currentRecap;
         const marketData = JSON.parse(recap.market_data || '{}');
         const positionData = JSON.parse(recap.position_data || '[]');
+        const tradeData = JSON.parse(recap.trade_data || '[]');
         const tradingLogs = JSON.parse(recap.trading_logs_data || '[]');
+
+        // 异步加载周月统计
+        const weekStatsHTML = await this.renderWeekStatsComparison();
+        const monthStatsHTML = await this.renderMonthStatsComparison();
 
         body.innerHTML = `
             <!-- 复盘概览 -->
@@ -324,93 +329,30 @@ const RecapManager = {
                     <div class="value">${recap.trade_count}</div>
                     <div class="desc">笔交易</div>
                 </div>
-                <div class="recap-overview-card ${tradingLogs.length > 0 ? 'positive' : ''}">
-                    <div class="label">操作记录</div>
-                    <div class="value">${tradingLogs.length}</div>
-                    <div class="desc">${tradingLogs.length > 0 ? '已录入' : '未录入'}</div>
-                </div>
             </div>
 
-            <!-- 操作录入提醒 -->
-            ${tradingLogs.length === 0 && !recap.no_trading_today ? `
-                <div class="recap-alert-warning">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span>⚠️ 尚未录入今日操作</span>
-                        <button class="recap-no-trading-btn" onclick="RecapManager.markNoTrading()">
-                            今日无操作
-                        </button>
-                    </div>
-                </div>
-            ` : ''}
-
-            ${recap.no_trading_today ? `
-                <div class="recap-alert-info">
-                    ✅ 已标记：今日无操作
-                </div>
-            ` : ''}
-
-            <!-- 市场回顾 -->
+            <!-- V2新增：周月数据对比 -->
             <div class="recap-section">
                 <div class="recap-section-title">
-                    <span class="icon">📈</span>
-                    市场回顾
+                    <span class="icon">📊</span>
+                    数据对比
                 </div>
-                <div class="market-data-card">
-                    <div class="market-item">
-                        <span class="name">上证指数</span>
-                        <span class="change ${marketData.sh_index?.change_percent >= 0 ? 'positive' : 'negative'}">
-                            ${marketData.sh_index?.change_percent >= 0 ? '+' : ''}${(marketData.sh_index?.change_percent || 0).toFixed(2)}%
-                        </span>
-                    </div>
-                    <div class="market-item">
-                        <span class="name">深证成指</span>
-                        <span class="change ${marketData.sz_index?.change_percent >= 0 ? 'positive' : 'negative'}">
-                            ${marketData.sz_index?.change_percent >= 0 ? '+' : ''}${(marketData.sz_index?.change_percent || 0).toFixed(2)}%
-                        </span>
-                    </div>
-                    <div class="market-item">
-                        <span class="name">创业板指</span>
-                        <span class="change ${marketData.cy_index?.change_percent >= 0 ? 'positive' : 'negative'}">
-                            ${marketData.cy_index?.change_percent >= 0 ? '+' : ''}${(marketData.cy_index?.change_percent || 0).toFixed(2)}%
-                        </span>
-                    </div>
-                    ${marketData.note ? `<div class="market-item"><span class="name" style="color: #999; font-size: 12px;">${marketData.note}</span></div>` : ''}
+                <div class="stats-comparison-container">
+                    ${weekStatsHTML}
+                    ${monthStatsHTML}
                 </div>
             </div>
 
-            <!-- 持仓表现 -->
-            <div class="recap-section">
-                <div class="recap-section-title">
-                    <span class="icon">💼</span>
-                    持仓表现
-                </div>
-                <div class="position-stats">
-                    <div class="position-stat-item rise">
-                        <div class="count">${recap.rise_count}</div>
-                        <div class="label">上涨</div>
-                    </div>
-                    <div class="position-stat-item">
-                        <div class="count">${recap.flat_count}</div>
-                        <div class="label">平盘</div>
-                    </div>
-                    <div class="position-stat-item fall">
-                        <div class="count">${recap.fall_count}</div>
-                        <div class="label">下跌</div>
-                    </div>
-                </div>
-                ${positionData.length > 0 ? this.renderPositionList(positionData) : '<p style="text-align: center; color: #999;">暂无持仓数据</p>'}
-            </div>
+            <!-- V2扩展：市场环境模块 -->
+            ${this.renderMarketEnvironmentSection(recap, marketData)}
 
-            <!-- 今日操作记录 -->
-            <div class="recap-section">
-                <div class="recap-section-title">
-                    <span class="icon">📝</span>
-                    今日操作记录
-                </div>
-                ${tradingLogs.length > 0 ? this.renderTradingLogs(tradingLogs) : this.renderNoTradingLogs()}
-            </div>
+            <!-- V2新增：交易回顾模块 -->
+            ${this.renderTradeReviewSection(recap, tradeData)}
 
-            <!-- 集合竞价分析 -->
+            <!-- V2新增：持仓分析模块 -->
+            ${this.renderPositionAnalysisSection(recap, positionData)}
+
+            <!-- 集合竞价分析（保留现有功能） -->
             <div class="recap-section">
                 <div class="recap-section-title">
                     <span class="icon">🌅</span>
@@ -432,7 +374,7 @@ const RecapManager = {
                 </div>
             </div>
 
-            <!-- 持仓分析报告 -->
+            <!-- 持仓分析报告（保留现有功能） -->
             <div class="recap-section">
                 <div class="recap-section-title">
                     <span class="icon">💼</span>
@@ -454,18 +396,13 @@ const RecapManager = {
                 </div>
             </div>
 
-            <!-- 持仓股票趋势分析 -->
-            <div class="recap-section">
-                <div class="recap-section-title">
-                    <span class="icon">📈</span>
-                    持仓股票趋势分析
-                </div>
-                <div id="trendAnalysisContainer">
-                    ${positionData.length > 0 ? this.renderTrendAnalysisButtons(positionData, recap.trend_analysis_data) : '<p style="color: #999; text-align: center;">暂无持仓数据</p>'}
-                </div>
-            </div>
+            <!-- V2新增：复盘反思模块 -->
+            ${this.renderReflectionSection(recap)}
 
-            <!-- 每日总结 -->
+            <!-- V2新增：明日计划模块 -->
+            ${this.renderTomorrowPlanSection(recap)}
+
+            <!-- 每日总结（保留现有功能） -->
             <div class="recap-section">
                 <div class="recap-section-title">
                     <span class="icon">📋</span>
@@ -1191,6 +1128,830 @@ const RecapManager = {
             }
         } catch (error) {
             console.error('保存分析结果错误:', error);
+        }
+    },
+
+    /**
+     * 渲染周统计对比（V2新增）
+     */
+    async renderWeekStatsComparison() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await fetch(`/api/recap/week-stats?date=${today}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                const stats = result.data;
+                return `
+                    <div class="stats-comparison">
+                        <div class="stats-header">本周数据</div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-label">交易日</div>
+                                <div class="stat-value">${stats.trading_days}天</div>
+                            </div>
+                            <div class="stat-item ${stats.total_profit >= 0 ? 'positive' : 'negative'}">
+                                <div class="stat-label">总盈亏</div>
+                                <div class="stat-value">${stats.total_profit >= 0 ? '+' : ''}¥${stats.total_profit.toFixed(2)}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">胜率</div>
+                                <div class="stat-value">${stats.win_rate}%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">交易次数</div>
+                                <div class="stat-value">${stats.total_trades}笔</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('获取周统计失败:', error);
+            return '<p style="color: #999;">暂无周统计数据</p>';
+        }
+    },
+
+    /**
+     * 渲染月统计对比（V2新增）
+     */
+    async renderMonthStatsComparison() {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const response = await fetch(`/api/recap/month-stats?date=${today}`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                const stats = result.data;
+                return `
+                    <div class="stats-comparison">
+                        <div class="stats-header">本月数据</div>
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <div class="stat-label">交易日</div>
+                                <div class="stat-value">${stats.trading_days}天</div>
+                            </div>
+                            <div class="stat-item ${stats.total_profit >= 0 ? 'positive' : 'negative'}">
+                                <div class="stat-label">总盈亏</div>
+                                <div class="stat-value">${stats.total_profit >= 0 ? '+' : ''}¥${stats.total_profit.toFixed(2)}</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">胜率</div>
+                                <div class="stat-value">${stats.win_rate}%</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">交易次数</div>
+                                <div class="stat-value">${stats.total_trades}笔</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('获取月统计失败:', error);
+            return '<p style="color: #999;">暂无月统计数据</p>';
+        }
+    },
+
+    /**
+     * 渲染市场环境模块（V2扩展版）
+     */
+    renderMarketEnvironmentSection(recap, marketData) {
+        const marketEmotion = recap.market_emotion || '';
+        const limitUpCount = recap.limit_up_count || 0;
+        const limitDownCount = recap.limit_down_count || 0;
+        const blownBoardRate = recap.blown_board_rate || 0;
+        const activeThemes = recap.active_themes ? JSON.parse(recap.active_themes) : [];
+        const marketNotes = recap.market_notes || '';
+
+        return `
+            <div class="recap-section" id="marketEnvironmentSection">
+                <div class="recap-section-title">
+                    <span class="icon">📈</span>
+                    市场环境
+                </div>
+
+                <!-- 指数表现 -->
+                <div class="market-data-card">
+                    <div class="market-item">
+                        <span class="name">上证指数</span>
+                        <span class="change ${marketData.sh_index?.change_percent >= 0 ? 'positive' : 'negative'}">
+                            ${marketData.sh_index?.change_percent >= 0 ? '+' : ''}${(marketData.sh_index?.change_percent || 0).toFixed(2)}%
+                        </span>
+                    </div>
+                    <div class="market-item">
+                        <span class="name">深证成指</span>
+                        <span class="change ${marketData.sz_index?.change_percent >= 0 ? 'positive' : 'negative'}">
+                            ${marketData.sz_index?.change_percent >= 0 ? '+' : ''}${(marketData.sz_index?.change_percent || 0).toFixed(2)}%
+                        </span>
+                    </div>
+                    <div class="market-item">
+                        <span class="name">创业板指</span>
+                        <span class="change ${marketData.cy_index?.change_percent >= 0 ? 'positive' : 'negative'}">
+                            ${marketData.cy_index?.change_percent >= 0 ? '+' : ''}${(marketData.cy_index?.change_percent || 0).toFixed(2)}%
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 市场情绪和涨跌停数据 -->
+                <div class="market-details">
+                    <div class="form-group">
+                        <label>市场情绪</label>
+                        <select id="marketEmotionInput" class="form-control">
+                            <option value="">请选择</option>
+                            <option value="冰点" ${marketEmotion === '冰点' ? 'selected' : ''}>冰点</option>
+                            <option value="冷清" ${marketEmotion === '冷清' ? 'selected' : ''}>冷清</option>
+                            <option value="正常" ${marketEmotion === '正常' ? 'selected' : ''}>正常</option>
+                            <option value="活跃" ${marketEmotion === '活跃' ? 'selected' : ''}>活跃</option>
+                            <option value="火热" ${marketEmotion === '火热' ? 'selected' : ''}>火热</option>
+                        </select>
+                    </div>
+                    <div class="stats-row">
+                        <div class="form-group">
+                            <label>涨停数</label>
+                            <input type="number" id="limitUpCountInput" class="form-control" value="${limitUpCount}" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>跌停数</label>
+                            <input type="number" id="limitDownCountInput" class="form-control" value="${limitDownCount}" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>炸板率 (%)</label>
+                            <input type="number" id="blownBoardRateInput" class="form-control" value="${blownBoardRate}" placeholder="0" step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 活跃题材 -->
+                <div class="form-group">
+                    <label>活跃题材</label>
+                    <textarea id="activeThemesInput" class="form-control" rows="2" placeholder="输入活跃题材，多个题材用逗号分隔">${activeThemes.join(', ')}</textarea>
+                </div>
+
+                <!-- 市场观察备注 -->
+                <div class="form-group">
+                    <label>市场观察</label>
+                    <textarea id="marketNotesInput" class="form-control" rows="3" placeholder="记录今日市场的特点、异常情况等">${marketNotes}</textarea>
+                </div>
+
+                <button class="btn btn-primary btn-small" onclick="RecapManager.saveMarketEnvironment()">
+                    保存市场环境
+                </button>
+            </div>
+        `;
+    },
+
+    /**
+     * 保存市场环境数据
+     */
+    async saveMarketEnvironment() {
+        if (!this.currentRecap) return;
+
+        try {
+            const marketEmotion = document.getElementById('marketEmotionInput').value;
+            const limitUpCount = parseInt(document.getElementById('limitUpCountInput').value) || 0;
+            const limitDownCount = parseInt(document.getElementById('limitDownCountInput').value) || 0;
+            const blownBoardRate = parseFloat(document.getElementById('blownBoardRateInput').value) || 0;
+            const activeThemesText = document.getElementById('activeThemesInput').value;
+            const activeThemes = activeThemesText.split(',').map(t => t.trim()).filter(t => t);
+            const marketNotes = document.getElementById('marketNotesInput').value;
+
+            const response = await fetch('/api/recap/save-market-env', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    recap_id: this.currentRecap.id,
+                    market_emotion: marketEmotion,
+                    limit_up_count: limitUpCount,
+                    limit_down_count: limitDownCount,
+                    blown_board_rate: blownBoardRate,
+                    active_themes: activeThemes,
+                    market_notes: marketNotes
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UIUtils.showToast('市场环境已保存', 'success');
+            } else {
+                throw new Error(result.message || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存市场环境失败:', error);
+            UIUtils.showToast('保存失败', 'error');
+        }
+    },
+
+    /**
+     * 渲染交易回顾模块（V2新增）
+     */
+    renderTradeReviewSection(recap, tradeData) {
+        const tradeReflections = recap.trade_reflections ? JSON.parse(recap.trade_reflections) : [];
+        const noTradeReason = recap.no_trade_reason || '';
+
+        return `
+            <div class="recap-section" id="tradeReviewSection">
+                <div class="recap-section-title">
+                    <span class="icon">💼</span>
+                    交易回顾
+                </div>
+
+                ${tradeData.length > 0 ? `
+                    <div class="trade-list">
+                        ${tradeData.map((trade, index) => {
+                            const reflection = tradeReflections.find(r => r.trade_id === trade.id) || {};
+                            return `
+                                <div class="trade-item">
+                                    <div class="trade-header">
+                                        <span class="trade-type ${trade.trade_type === 'buy' ? 'buy' : 'sell'}">
+                                            ${trade.trade_type === 'buy' ? '买入' : '卖出'}
+                                        </span>
+                                        <span class="trade-stock">${trade.stock_name} (${trade.stock_code})</span>
+                                        <span class="trade-time">${new Date(trade.created_at).toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'})}</span>
+                                    </div>
+                                    <div class="trade-details">
+                                        <span>数量：${trade.quantity}股</span>
+                                        <span>价格：¥${trade.price}</span>
+                                        <span>金额：¥${trade.amount.toFixed(2)}</span>
+                                    </div>
+                                    <div class="trade-reflection">
+                                        <label>交易反思</label>
+                                        <textarea class="form-control trade-reflection-input"
+                                            data-trade-id="${trade.id}"
+                                            placeholder="记录这笔交易的思路、问题、改进点..."
+                                            rows="2">${reflection.notes || ''}</textarea>
+                                        <div class="trade-tags">
+                                            <label>
+                                                <input type="checkbox" ${reflection.is_good ? 'checked' : ''}
+                                                    onchange="RecapManager.toggleTradeTag(${trade.id}, 'is_good', this.checked)">
+                                                执行良好
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" ${reflection.has_error ? 'checked' : ''}
+                                                    onchange="RecapManager.toggleTradeTag(${trade.id}, 'has_error', this.checked)">
+                                                有失误
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : `
+                    <div class="no-trade-section">
+                        <p style="color: #999;">今日无交易</p>
+                        <div class="form-group">
+                            <label>无交易原因</label>
+                            <textarea id="noTradeReasonInput" class="form-control" rows="3"
+                                placeholder="记录今日为什么没有交易（如：观望、没有机会、执行力不足等）">${noTradeReason}</textarea>
+                        </div>
+                    </div>
+                `}
+
+                <button class="btn btn-primary btn-small" onclick="RecapManager.saveTradeReflections()">
+                    保存交易回顾
+                </button>
+            </div>
+        `;
+    },
+
+    /**
+     * 切换交易标签
+     */
+    toggleTradeTag(tradeId, tag, checked) {
+        // 临时存储标签状态，在保存时一起提交
+        if (!this.tempTradeReflections) {
+            this.tempTradeReflections = {};
+        }
+        if (!this.tempTradeReflections[tradeId]) {
+            this.tempTradeReflections[tradeId] = {};
+        }
+        this.tempTradeReflections[tradeId][tag] = checked;
+    },
+
+    /**
+     * 保存交易反思
+     */
+    async saveTradeReflections() {
+        if (!this.currentRecap) return;
+
+        try {
+            // 收集所有交易的反思数据
+            const reflections = [];
+            const tradeInputs = document.querySelectorAll('.trade-reflection-input');
+
+            tradeInputs.forEach(input => {
+                const tradeId = input.getAttribute('data-trade-id');
+                const notes = input.value;
+                const tempData = this.tempTradeReflections?.[tradeId] || {};
+
+                reflections.push({
+                    trade_id: parseInt(tradeId),
+                    notes: notes,
+                    is_good: tempData.is_good || false,
+                    has_error: tempData.has_error || false
+                });
+            });
+
+            // 获取无交易原因
+            const noTradeReasonInput = document.getElementById('noTradeReasonInput');
+            const noTradeReason = noTradeReasonInput ? noTradeReasonInput.value : '';
+
+            const response = await fetch('/api/recap/save-trade-reflections', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    recap_id: this.currentRecap.id,
+                    trade_reflections: reflections,
+                    no_trade_reason: noTradeReason
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UIUtils.showToast('交易回顾已保存', 'success');
+                this.tempTradeReflections = {}; // 清空临时数据
+            } else {
+                throw new Error(result.message || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存交易反思失败:', error);
+            UIUtils.showToast('保存失败', 'error');
+        }
+    },
+
+    /**
+     * 渲染持仓分析模块（V2新增）
+     */
+    renderPositionAnalysisSection(recap, positionData) {
+        const positionNotes = recap.position_notes ? JSON.parse(recap.position_notes) : {};
+
+        return `
+            <div class="recap-section" id="positionAnalysisSection">
+                <div class="recap-section-title">
+                    <span class="icon">📊</span>
+                    持仓分析
+                </div>
+
+                ${positionData.length > 0 ? `
+                    <div class="position-analysis-list">
+                        ${positionData.map(pos => {
+                            const notes = positionNotes[pos.code] || '';
+                            const profitRate = pos.profit_rate || 0;
+                            const todayProfit = pos.today_profit || 0;
+
+                            return `
+                                <div class="position-analysis-item">
+                                    <div class="position-header">
+                                        <div class="position-info">
+                                            <span class="position-name">${pos.name}</span>
+                                            <span class="position-code">${pos.code}</span>
+                                        </div>
+                                        <div class="position-stats">
+                                            <span class="profit-stat ${profitRate >= 0 ? 'positive' : 'negative'}">
+                                                持仓盈亏：${profitRate >= 0 ? '+' : ''}${profitRate.toFixed(2)}%
+                                            </span>
+                                            <span class="today-stat ${todayProfit >= 0 ? 'positive' : 'negative'}">
+                                                今日：${todayProfit >= 0 ? '+' : ''}¥${todayProfit.toFixed(2)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="position-details">
+                                        <span>持仓：${pos.quantity}股</span>
+                                        <span>成本：¥${pos.cost_price}</span>
+                                        <span>现价：¥${pos.current_price}</span>
+                                        <span>市值：¥${(pos.current_price * pos.quantity).toFixed(2)}</span>
+                                    </div>
+                                    <div class="position-notes">
+                                        <label>持仓备注</label>
+                                        <textarea class="form-control position-notes-input"
+                                            data-stock-code="${pos.code}"
+                                            placeholder="记录持仓理由、操作计划、风险点..."
+                                            rows="2">${notes}</textarea>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                ` : `
+                    <p style="text-align: center; color: #999;">暂无持仓数据</p>
+                `}
+
+                ${positionData.length > 0 ? `
+                    <button class="btn btn-primary btn-small" onclick="RecapManager.savePositionNotes()">
+                        保存持仓备注
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    },
+
+    /**
+     * 保存持仓备注
+     */
+    async savePositionNotes() {
+        if (!this.currentRecap) return;
+
+        try {
+            const positionNotes = {};
+            const noteInputs = document.querySelectorAll('.position-notes-input');
+
+            noteInputs.forEach(input => {
+                const stockCode = input.getAttribute('data-stock-code');
+                const notes = input.value;
+                if (notes.trim()) {
+                    positionNotes[stockCode] = notes;
+                }
+            });
+
+            const response = await fetch('/api/recap/save-position-notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    recap_id: this.currentRecap.id,
+                    position_notes: positionNotes
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UIUtils.showToast('持仓备注已保存', 'success');
+            } else {
+                throw new Error(result.message || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存持仓备注失败:', error);
+            UIUtils.showToast('保存失败', 'error');
+        }
+    },
+
+    /**
+     * 渲染复盘反思模块（V2新增）
+     */
+    renderReflectionSection(recap) {
+        const whatWentRight = recap.what_went_right ? JSON.parse(recap.what_went_right) : [];
+        const whatWentWrong = recap.what_went_wrong ? JSON.parse(recap.what_went_wrong) : [];
+        const errorDetails = recap.error_details ? JSON.parse(recap.error_details) : {};
+        const reflectionNotes = recap.reflection_notes || '';
+        const selfRating = recap.self_rating ? JSON.parse(recap.self_rating) : {};
+
+        const rightOptions = [
+            '严格执行交易计划', '及时止损', '控制仓位合理', '情绪管理良好',
+            '选股精准', '买卖时机把握好', '保持纪律性'
+        ];
+
+        const wrongOptions = [
+            '追高买入', '恐慌性卖出', '仓位过重', '未设止损',
+            '频繁交易', '情绪化操作', '逆势而为', '盲目跟风'
+        ];
+
+        return `
+            <div class="recap-section" id="reflectionSection">
+                <div class="recap-section-title">
+                    <span class="icon">💭</span>
+                    复盘反思
+                </div>
+
+                <!-- 做对的事 -->
+                <div class="reflection-group">
+                    <label class="reflection-label">今日做对的事</label>
+                    <div class="checkbox-grid">
+                        ${rightOptions.map(option => `
+                            <label class="checkbox-item positive">
+                                <input type="checkbox" value="${option}"
+                                    ${whatWentRight.includes(option) ? 'checked' : ''}
+                                    onchange="RecapManager.updateReflectionCheckbox('right', '${option}', this.checked)">
+                                ${option}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- 犯的错误 -->
+                <div class="reflection-group">
+                    <label class="reflection-label">今日犯的错误</label>
+                    <div class="checkbox-grid">
+                        ${wrongOptions.map(option => `
+                            <label class="checkbox-item negative">
+                                <input type="checkbox" value="${option}"
+                                    ${whatWentWrong.includes(option) ? 'checked' : ''}
+                                    onchange="RecapManager.updateReflectionCheckbox('wrong', '${option}', this.checked)">
+                                ${option}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- 错误详情展开 -->
+                ${whatWentWrong.length > 0 ? `
+                    <div class="error-details-section">
+                        <label class="reflection-label">错误详情</label>
+                        ${whatWentWrong.map(error => `
+                            <div class="error-detail-item">
+                                <strong>${error}</strong>
+                                <textarea class="form-control error-detail-input"
+                                    data-error-key="${error}"
+                                    placeholder="详细说明这个错误的情况、原因、教训..."
+                                    rows="2">${errorDetails[error] || ''}</textarea>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+
+                <!-- 今日感悟 -->
+                <div class="form-group">
+                    <label>今日感悟</label>
+                    <textarea id="reflectionNotesInput" class="form-control" rows="4"
+                        placeholder="记录今日的心得体会、重要领悟...">${reflectionNotes}</textarea>
+                </div>
+
+                <!-- 自我评分 -->
+                <div class="self-rating-section">
+                    <label class="reflection-label">自我评分</label>
+                    <div class="rating-grid">
+                        <div class="rating-item">
+                            <span>纪律性</span>
+                            <select class="form-control rating-select" data-rating-key="discipline">
+                                <option value="">-</option>
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${selfRating.discipline == n ? 'selected' : ''}>${n}分</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="rating-item">
+                            <span>执行力</span>
+                            <select class="form-control rating-select" data-rating-key="execution">
+                                <option value="">-</option>
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${selfRating.execution == n ? 'selected' : ''}>${n}分</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="rating-item">
+                            <span>情绪控制</span>
+                            <select class="form-control rating-select" data-rating-key="emotion">
+                                <option value="">-</option>
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${selfRating.emotion == n ? 'selected' : ''}>${n}分</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="rating-item">
+                            <span>学习态度</span>
+                            <select class="form-control rating-select" data-rating-key="learning">
+                                <option value="">-</option>
+                                ${[1,2,3,4,5].map(n => `<option value="${n}" ${selfRating.learning == n ? 'selected' : ''}>${n}分</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-small" onclick="RecapManager.saveReflectionData()">
+                    保存复盘反思
+                </button>
+            </div>
+        `;
+    },
+
+    /**
+     * 更新反思复选框（临时存储）
+     */
+    updateReflectionCheckbox(type, option, checked) {
+        if (!this.tempReflection) {
+            this.tempReflection = { right: [], wrong: [] };
+        }
+
+        if (checked) {
+            if (!this.tempReflection[type].includes(option)) {
+                this.tempReflection[type].push(option);
+            }
+        } else {
+            const index = this.tempReflection[type].indexOf(option);
+            if (index > -1) {
+                this.tempReflection[type].splice(index, 1);
+            }
+        }
+    },
+
+    /**
+     * 保存复盘反思数据
+     */
+    async saveReflectionData() {
+        if (!this.currentRecap) return;
+
+        try {
+            // 收集做对的事
+            const rightCheckboxes = document.querySelectorAll('.checkbox-item.positive input:checked');
+            const whatWentRight = Array.from(rightCheckboxes).map(cb => cb.value);
+
+            // 收集犯的错误
+            const wrongCheckboxes = document.querySelectorAll('.checkbox-item.negative input:checked');
+            const whatWentWrong = Array.from(wrongCheckboxes).map(cb => cb.value);
+
+            // 收集错误详情
+            const errorDetails = {};
+            const errorInputs = document.querySelectorAll('.error-detail-input');
+            errorInputs.forEach(input => {
+                const key = input.getAttribute('data-error-key');
+                const value = input.value;
+                if (value.trim()) {
+                    errorDetails[key] = value;
+                }
+            });
+
+            // 收集今日感悟
+            const reflectionNotes = document.getElementById('reflectionNotesInput').value;
+
+            // 收集自我评分
+            const selfRating = {};
+            const ratingSelects = document.querySelectorAll('.rating-select');
+            ratingSelects.forEach(select => {
+                const key = select.getAttribute('data-rating-key');
+                const value = select.value;
+                if (value) {
+                    selfRating[key] = parseInt(value);
+                }
+            });
+
+            const response = await fetch('/api/recap/save-reflection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    recap_id: this.currentRecap.id,
+                    what_went_right: whatWentRight,
+                    what_went_wrong: whatWentWrong,
+                    error_details: errorDetails,
+                    reflection_notes: reflectionNotes,
+                    self_rating: selfRating
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UIUtils.showToast('复盘反思已保存', 'success');
+                this.tempReflection = null;
+            } else {
+                throw new Error(result.message || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存复盘反思失败:', error);
+            UIUtils.showToast('保存失败', 'error');
+        }
+    },
+
+    /**
+     * 渲染明日计划模块（V2新增）
+     */
+    renderTomorrowPlanSection(recap) {
+        const tomorrowPlans = recap.tomorrow_plans ? JSON.parse(recap.tomorrow_plans) : [];
+        const tomorrowNotes = recap.tomorrow_notes || '';
+
+        return `
+            <div class="recap-section" id="tomorrowPlanSection">
+                <div class="recap-section-title">
+                    <span class="icon">📅</span>
+                    明日计划
+                </div>
+
+                <div class="tomorrow-plans-list" id="tomorrowPlansList">
+                    ${tomorrowPlans.map((plan, index) => `
+                        <div class="plan-item">
+                            <input type="checkbox" ${plan.completed ? 'checked' : ''}
+                                onchange="RecapManager.togglePlanStatus(${index}, this.checked)">
+                            <input type="text" class="form-control plan-input"
+                                value="${plan.text}"
+                                data-plan-index="${index}"
+                                placeholder="输入明日计划...">
+                            <button class="btn-icon" onclick="RecapManager.removePlan(${index})">×</button>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <button class="btn btn-secondary btn-small" onclick="RecapManager.addPlan()">
+                    + 添加计划
+                </button>
+
+                <div class="form-group" style="margin-top: 15px;">
+                    <label>明日注意事项</label>
+                    <textarea id="tomorrowNotesInput" class="form-control" rows="3"
+                        placeholder="记录明日需要特别注意的事项、风险提示...">${tomorrowNotes}</textarea>
+                </div>
+
+                <button class="btn btn-primary btn-small" onclick="RecapManager.saveTomorrowPlans()">
+                    保存明日计划
+                </button>
+            </div>
+        `;
+    },
+
+    /**
+     * 添加计划
+     */
+    addPlan() {
+        const plansList = document.getElementById('tomorrowPlansList');
+        const newIndex = plansList.children.length;
+
+        const planItem = document.createElement('div');
+        planItem.className = 'plan-item';
+        planItem.innerHTML = `
+            <input type="checkbox" onchange="RecapManager.togglePlanStatus(${newIndex}, this.checked)">
+            <input type="text" class="form-control plan-input"
+                data-plan-index="${newIndex}"
+                placeholder="输入明日计划...">
+            <button class="btn-icon" onclick="RecapManager.removePlan(${newIndex})">×</button>
+        `;
+
+        plansList.appendChild(planItem);
+    },
+
+    /**
+     * 移除计划
+     */
+    removePlan(index) {
+        const plansList = document.getElementById('tomorrowPlansList');
+        const planItems = plansList.children;
+        if (planItems[index]) {
+            planItems[index].remove();
+        }
+    },
+
+    /**
+     * 切换计划状态
+     */
+    togglePlanStatus(index, completed) {
+        // 状态在保存时一起提交，这里只需要更新UI
+    },
+
+    /**
+     * 保存明日计划
+     */
+    async saveTomorrowPlans() {
+        if (!this.currentRecap) return;
+
+        try {
+            // 收集所有计划
+            const plans = [];
+            const planItems = document.querySelectorAll('.plan-item');
+
+            planItems.forEach((item, index) => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const input = item.querySelector('.plan-input');
+                const text = input.value.trim();
+
+                if (text) {
+                    plans.push({
+                        text: text,
+                        completed: checkbox.checked
+                    });
+                }
+            });
+
+            // 获取明日注意事项
+            const tomorrowNotes = document.getElementById('tomorrowNotesInput').value;
+
+            const response = await fetch('/api/recap/save-tomorrow-plans', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    recap_id: this.currentRecap.id,
+                    tomorrow_plans: plans,
+                    tomorrow_notes: tomorrowNotes
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                UIUtils.showToast('明日计划已保存', 'success');
+            } else {
+                throw new Error(result.message || '保存失败');
+            }
+        } catch (error) {
+            console.error('保存明日计划失败:', error);
+            UIUtils.showToast('保存失败', 'error');
         }
     },
 

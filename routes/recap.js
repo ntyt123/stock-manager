@@ -32,5 +32,30 @@ module.exports = (authenticateToken) => {
     // 标记今日无操作
     router.post('/no-trading', authenticateToken, recapController.markNoTrading);
 
+    // V2版本新增接口
+    // 保存市场环境数据
+    router.post('/save-market-env', authenticateToken, recapController.saveMarketEnvironment);
+
+    // 保存交易反思数据
+    router.post('/save-trade-reflections', authenticateToken, recapController.saveTradeReflections);
+
+    // 保存持仓备注数据
+    router.post('/save-position-notes', authenticateToken, recapController.savePositionNotes);
+
+    // 保存复盘反思数据
+    router.post('/save-reflection', authenticateToken, recapController.saveReflectionData);
+
+    // 保存明日计划数据
+    router.post('/save-tomorrow-plans', authenticateToken, recapController.saveTomorrowPlans);
+
+    // 获取本周统计数据
+    router.get('/week-stats', authenticateToken, recapController.getWeekStats);
+
+    // 获取本月统计数据
+    router.get('/month-stats', authenticateToken, recapController.getMonthStats);
+
+    // 更新复盘完成状态
+    router.post('/update-status', authenticateToken, recapController.updateCompletionStatus);
+
     return router;
 };

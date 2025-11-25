@@ -1337,6 +1337,420 @@ async function markNoTrading(req, res) {
     }
 }
 
+/**
+ * 保存市场环境数据
+ */
+async function saveMarketEnvironment(req, res) {
+    try {
+        const {
+            recap_id,
+            market_emotion,
+            limit_up_count,
+            limit_down_count,
+            blown_board_rate,
+            active_themes,
+            market_notes
+        } = req.body;
+        const userId = req.user.id;
+
+        db.prepare(`
+            UPDATE daily_recap
+            SET market_emotion = ?,
+                limit_up_count = ?,
+                limit_down_count = ?,
+                blown_board_rate = ?,
+                active_themes = ?,
+                market_notes = ?,
+                last_section_edited = 'market_environment',
+                draft_saved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(
+            market_emotion,
+            limit_up_count,
+            limit_down_count,
+            blown_board_rate,
+            JSON.stringify(active_themes),
+            market_notes,
+            recap_id,
+            userId
+        );
+
+        res.json({
+            success: true,
+            message: '市场环境数据已保存'
+        });
+    } catch (error) {
+        console.error('保存市场环境数据失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '保存市场环境数据失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 保存交易反思数据
+ */
+async function saveTradeReflections(req, res) {
+    try {
+        const { recap_id, trade_reflections, no_trade_reason } = req.body;
+        const userId = req.user.id;
+
+        db.prepare(`
+            UPDATE daily_recap
+            SET trade_reflections = ?,
+                no_trade_reason = ?,
+                last_section_edited = 'trade_review',
+                draft_saved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(
+            JSON.stringify(trade_reflections),
+            no_trade_reason,
+            recap_id,
+            userId
+        );
+
+        res.json({
+            success: true,
+            message: '交易反思已保存'
+        });
+    } catch (error) {
+        console.error('保存交易反思失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '保存交易反思失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 保存持仓备注数据
+ */
+async function savePositionNotes(req, res) {
+    try {
+        const { recap_id, position_notes } = req.body;
+        const userId = req.user.id;
+
+        db.prepare(`
+            UPDATE daily_recap
+            SET position_notes = ?,
+                last_section_edited = 'position_analysis',
+                draft_saved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(
+            JSON.stringify(position_notes),
+            recap_id,
+            userId
+        );
+
+        res.json({
+            success: true,
+            message: '持仓备注已保存'
+        });
+    } catch (error) {
+        console.error('保存持仓备注失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '保存持仓备注失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 保存复盘反思数据
+ */
+async function saveReflectionData(req, res) {
+    try {
+        const {
+            recap_id,
+            what_went_right,
+            what_went_wrong,
+            error_details,
+            reflection_notes,
+            self_rating
+        } = req.body;
+        const userId = req.user.id;
+
+        db.prepare(`
+            UPDATE daily_recap
+            SET what_went_right = ?,
+                what_went_wrong = ?,
+                error_details = ?,
+                reflection_notes = ?,
+                self_rating = ?,
+                last_section_edited = 'reflection',
+                draft_saved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(
+            JSON.stringify(what_went_right),
+            JSON.stringify(what_went_wrong),
+            JSON.stringify(error_details),
+            reflection_notes,
+            JSON.stringify(self_rating),
+            recap_id,
+            userId
+        );
+
+        res.json({
+            success: true,
+            message: '复盘反思已保存'
+        });
+    } catch (error) {
+        console.error('保存复盘反思失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '保存复盘反思失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 保存明日计划数据
+ */
+async function saveTomorrowPlans(req, res) {
+    try {
+        const { recap_id, tomorrow_plans, tomorrow_notes } = req.body;
+        const userId = req.user.id;
+
+        db.prepare(`
+            UPDATE daily_recap
+            SET tomorrow_plans = ?,
+                tomorrow_notes = ?,
+                last_section_edited = 'tomorrow_plan',
+                draft_saved_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND user_id = ?
+        `).run(
+            JSON.stringify(tomorrow_plans),
+            tomorrow_notes,
+            recap_id,
+            userId
+        );
+
+        res.json({
+            success: true,
+            message: '明日计划已保存'
+        });
+    } catch (error) {
+        console.error('保存明日计划失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '保存明日计划失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 获取本周统计数据
+ */
+async function getWeekStats(req, res) {
+    try {
+        const { date } = req.query;
+        const targetDate = date || new Date().toISOString().split('T')[0];
+        const userId = req.user.id;
+
+        // 计算本周的起始日期（周一）
+        const target = new Date(targetDate);
+        const dayOfWeek = target.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        const monday = new Date(target);
+        monday.setDate(target.getDate() + mondayOffset);
+        const weekStart = monday.toISOString().split('T')[0];
+
+        // 获取本周所有复盘记录
+        const weekRecaps = db.prepare(`
+            SELECT * FROM daily_recap
+            WHERE user_id = ?
+              AND recap_date >= ?
+              AND recap_date <= ?
+            ORDER BY recap_date ASC
+        `).all(userId, weekStart, targetDate);
+
+        // 计算统计数据
+        let totalProfit = 0;
+        let totalTrades = 0;
+        let winDays = 0;
+        let lossDays = 0;
+        const dailyProfits = [];
+
+        weekRecaps.forEach(recap => {
+            const dayProfit = recap.today_profit || 0;
+            totalProfit += dayProfit;
+            totalTrades += recap.trade_count || 0;
+
+            if (dayProfit > 0) winDays++;
+            else if (dayProfit < 0) lossDays++;
+
+            dailyProfits.push({
+                date: recap.recap_date,
+                profit: dayProfit
+            });
+        });
+
+        const weekStats = {
+            week_start: weekStart,
+            week_end: targetDate,
+            trading_days: weekRecaps.length,
+            total_profit: totalProfit,
+            total_trades: totalTrades,
+            win_days: winDays,
+            loss_days: lossDays,
+            win_rate: weekRecaps.length > 0 ? (winDays / weekRecaps.length * 100).toFixed(2) : 0,
+            daily_profits: dailyProfits
+        };
+
+        res.json({
+            success: true,
+            data: weekStats
+        });
+    } catch (error) {
+        console.error('获取本周统计失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取本周统计失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 获取本月统计数据
+ */
+async function getMonthStats(req, res) {
+    try {
+        const { date } = req.query;
+        const targetDate = date || new Date().toISOString().split('T')[0];
+        const userId = req.user.id;
+
+        // 计算本月的起始日期
+        const target = new Date(targetDate);
+        const monthStart = `${target.getFullYear()}-${String(target.getMonth() + 1).padStart(2, '0')}-01`;
+
+        // 获取本月所有复盘记录
+        const monthRecaps = db.prepare(`
+            SELECT * FROM daily_recap
+            WHERE user_id = ?
+              AND recap_date >= ?
+              AND recap_date <= ?
+            ORDER BY recap_date ASC
+        `).all(userId, monthStart, targetDate);
+
+        // 计算统计数据
+        let totalProfit = 0;
+        let totalTrades = 0;
+        let winDays = 0;
+        let lossDays = 0;
+        const weeklyProfits = {};
+
+        monthRecaps.forEach(recap => {
+            const dayProfit = recap.today_profit || 0;
+            totalProfit += dayProfit;
+            totalTrades += recap.trade_count || 0;
+
+            if (dayProfit > 0) winDays++;
+            else if (dayProfit < 0) lossDays++;
+
+            // 按周分组
+            const recapDate = new Date(recap.recap_date);
+            const weekNum = Math.ceil((recapDate.getDate() + new Date(monthStart).getDay()) / 7);
+            if (!weeklyProfits[weekNum]) {
+                weeklyProfits[weekNum] = 0;
+            }
+            weeklyProfits[weekNum] += dayProfit;
+        });
+
+        const monthStats = {
+            month_start: monthStart,
+            month_end: targetDate,
+            trading_days: monthRecaps.length,
+            total_profit: totalProfit,
+            total_trades: totalTrades,
+            win_days: winDays,
+            loss_days: lossDays,
+            win_rate: monthRecaps.length > 0 ? (winDays / monthRecaps.length * 100).toFixed(2) : 0,
+            weekly_profits: Object.entries(weeklyProfits).map(([week, profit]) => ({
+                week: parseInt(week),
+                profit
+            }))
+        };
+
+        res.json({
+            success: true,
+            data: monthStats
+        });
+    } catch (error) {
+        console.error('获取本月统计失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '获取本月统计失败',
+            error: error.message
+        });
+    }
+}
+
+/**
+ * 更新复盘完成状态
+ */
+async function updateCompletionStatus(req, res) {
+    try {
+        const { recap_id, completion_status } = req.body;
+        const userId = req.user.id;
+
+        // 验证状态值
+        if (!['draft', 'completed'].includes(completion_status)) {
+            return res.status(400).json({
+                success: false,
+                message: '无效的完成状态'
+            });
+        }
+
+        const updateData = {
+            completion_status,
+            updated_at: 'CURRENT_TIMESTAMP'
+        };
+
+        // 如果标记为完成，更新completed_at和is_completed
+        if (completion_status === 'completed') {
+            db.prepare(`
+                UPDATE daily_recap
+                SET completion_status = ?,
+                    is_completed = 1,
+                    completed_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ?
+            `).run(completion_status, recap_id, userId);
+        } else {
+            db.prepare(`
+                UPDATE daily_recap
+                SET completion_status = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ?
+            `).run(completion_status, recap_id, userId);
+        }
+
+        res.json({
+            success: true,
+            message: '状态已更新'
+        });
+    } catch (error) {
+        console.error('更新完成状态失败:', error);
+        res.status(500).json({
+            success: false,
+            message: '更新完成状态失败',
+            error: error.message
+        });
+    }
+}
+
 module.exports = {
     generateRecapData,
     analyzeWithAI,
@@ -1345,5 +1759,13 @@ module.exports = {
     markAsCompleted,
     getHistory,
     saveAnalysisResult,
-    markNoTrading
+    markNoTrading,
+    saveMarketEnvironment,
+    saveTradeReflections,
+    savePositionNotes,
+    saveReflectionData,
+    saveTomorrowPlans,
+    getWeekStats,
+    getMonthStats,
+    updateCompletionStatus
 };

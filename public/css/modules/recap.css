@@ -1146,3 +1146,502 @@
         width: 100%;
     }
 }
+
+/* ==================== V2 复盘反思模块样式 ==================== */
+
+/* 复盘反思组 */
+.reflection-group {
+    margin-bottom: 24px;
+}
+
+.reflection-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+/* 复选框网格 */
+.checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+}
+
+.checkbox-item:hover {
+    background: #e9ecef;
+    border-color: #dee2e6;
+}
+
+.checkbox-item.positive {
+    border-left: 4px solid #4caf50;
+}
+
+.checkbox-item.negative {
+    border-left: 4px solid #f44336;
+}
+
+.checkbox-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.checkbox-item input[type="checkbox"]:checked {
+    accent-color: #667eea;
+}
+
+/* 错误详情区域 */
+.error-details-section {
+    background: #fff3e0;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #ff9800;
+    margin-bottom: 16px;
+}
+
+.error-detail-item {
+    margin-bottom: 16px;
+}
+
+.error-detail-item:last-child {
+    margin-bottom: 0;
+}
+
+.error-detail-item strong {
+    display: block;
+    font-size: 13px;
+    color: #e65100;
+    margin-bottom: 8px;
+}
+
+.error-detail-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ffb74d;
+    border-radius: 6px;
+    font-size: 13px;
+    resize: vertical;
+    background: white;
+}
+
+.error-detail-input:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1);
+}
+
+/* 自我评分区域 */
+.self-rating-section {
+    margin-bottom: 16px;
+}
+
+.rating-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.rating-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rating-item span {
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+}
+
+.rating-select {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    background: white;
+}
+
+.rating-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+/* ==================== V2 周月统计对比样式 ==================== */
+.stats-comparison-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.stats-comparison {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.stats-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+}
+
+.stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+}
+
+.stat-item.positive .stat-value {
+    color: #f44336;
+}
+
+.stat-item.negative .stat-value {
+    color: #4caf50;
+}
+
+/* ==================== V2 市场环境扩展样式 ==================== */
+.market-details {
+    margin-top: 16px;
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+
+/* ==================== V2 交易回顾样式 ==================== */
+.trade-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.trade-item {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 14px;
+    transition: all 0.2s ease;
+}
+
+.trade-item:hover {
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.trade-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.trade-type {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 4px;
+}
+
+.trade-type.buy {
+    background: #ffe5e5;
+    color: #f44336;
+}
+
+.trade-type.sell {
+    background: #e5f5e5;
+    color: #4caf50;
+}
+
+.trade-stock {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.trade-time {
+    font-size: 12px;
+    color: #999;
+    margin-left: auto;
+}
+
+.trade-details {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.trade-reflection {
+    margin-top: 10px;
+}
+
+.trade-reflection label {
+    display: block;
+    font-size: 13px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 6px;
+}
+
+.trade-reflection-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    resize: vertical;
+}
+
+.trade-reflection-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.trade-tags {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.trade-tags label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.no-trade-section {
+    background: #f8f9fa;
+    padding: 16px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.no-trade-section p {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+/* 交易回顾section内的保存按钮 */
+#tradeReviewSection .btn {
+    margin-top: 20px;
+}
+
+/* ==================== V2 持仓分析详细列表样式 ==================== */
+.position-analysis-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.position-analysis-item {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+.position-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.position-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.position-profit-rate {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.position-profit-rate.positive {
+    color: #f44336;
+}
+
+.position-profit-rate.negative {
+    color: #4caf50;
+}
+
+.position-stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.position-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.position-stat-label {
+    font-size: 11px;
+    color: #999;
+}
+
+.position-stat-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+}
+
+.position-notes-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 13px;
+    resize: vertical;
+    margin-top: 8px;
+}
+
+.position-notes-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+/* 持仓分析section内的保存按钮 */
+#positionAnalysisSection .btn {
+    margin-top: 20px;
+}
+
+/* ==================== V2 明日计划样式 ==================== */
+.tomorrow-plans-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.plan-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.plan-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.plan-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.plan-input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: #fff;
+    color: #f44336;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border: 1px solid #ddd;
+}
+
+.btn-icon:hover {
+    background: #f44336;
+    color: white;
+    border-color: #f44336;
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .stats-comparison-container {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .checkbox-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .rating-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .position-stats-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}
