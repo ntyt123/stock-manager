@@ -154,11 +154,23 @@ const userModel = {
                         planExecutions: 0,
                         costRecords: 0,
                         costAdjustments: 0,
-                        positionUpdates: 0
+                        positionUpdates: 0,
+                        tradingLogs: 0,
+                        dailyRecaps: 0,
+                        fundAccounts: 0,
+                        fundTransactions: 0,
+                        riskWarnings: 0,
+                        riskEvents: 0,
+                        stockPools: 0,
+                        stockPoolItems: 0,
+                        portfolioOptimizations: 0,
+                        predictionHistory: 0,
+                        threeDaySelectionResults: 0,
+                        callAuctionAnalysis: 0
                     };
 
-                    // 1. 删除持仓数据
-                    stats.positions = db.prepare("DELETE FROM user_positions WHERE user_id = ?").run(userId).changes;
+                    // 1. 删除持仓数据（positions表）
+                    stats.positions = db.prepare("DELETE FROM positions WHERE user_id = ?").run(userId).changes;
 
                     // 2. 删除自选股
                     stats.watchlist = db.prepare("DELETE FROM user_watchlist WHERE user_id = ?").run(userId).changes;
@@ -187,7 +199,43 @@ const userModel = {
                     // 10. 删除持仓更新记录
                     stats.positionUpdates = db.prepare("DELETE FROM user_position_updates WHERE user_id = ?").run(userId).changes;
 
-                    // 11. 重置用户总资金
+                    // 11. 删除交易日志
+                    stats.tradingLogs = db.prepare("DELETE FROM trading_logs WHERE user_id = ?").run(userId).changes;
+
+                    // 12. 删除每日复盘
+                    stats.dailyRecaps = db.prepare("DELETE FROM daily_recap WHERE user_id = ?").run(userId).changes;
+
+                    // 13. 删除资金账户
+                    stats.fundAccounts = db.prepare("DELETE FROM fund_accounts WHERE user_id = ?").run(userId).changes;
+
+                    // 14. 删除资金交易记录
+                    stats.fundTransactions = db.prepare("DELETE FROM fund_transactions WHERE user_id = ?").run(userId).changes;
+
+                    // 15. 删除风险预警
+                    stats.riskWarnings = db.prepare("DELETE FROM risk_warnings WHERE user_id = ?").run(userId).changes;
+
+                    // 16. 删除风险事件
+                    stats.riskEvents = db.prepare("DELETE FROM risk_events WHERE user_id = ?").run(userId).changes;
+
+                    // 17. 删除股票池项目（需要先删除，因为外键依赖）
+                    stats.stockPoolItems = db.prepare("DELETE FROM stock_pool_items WHERE pool_id IN (SELECT id FROM stock_pools WHERE user_id = ?)").run(userId).changes;
+
+                    // 18. 删除股票池
+                    stats.stockPools = db.prepare("DELETE FROM stock_pools WHERE user_id = ?").run(userId).changes;
+
+                    // 19. 删除组合优化
+                    stats.portfolioOptimizations = db.prepare("DELETE FROM portfolio_optimizations WHERE user_id = ?").run(userId).changes;
+
+                    // 20. 删除预测历史
+                    stats.predictionHistory = db.prepare("DELETE FROM prediction_history WHERE user_id = ?").run(userId).changes;
+
+                    // 21. 删除三日选股结果
+                    stats.threeDaySelectionResults = db.prepare("DELETE FROM three_day_selection_results WHERE user_id = ?").run(userId).changes;
+
+                    // 22. 删除集合竞价分析（注意：此表没有user_id字段，删除所有数据）
+                    stats.callAuctionAnalysis = db.prepare("DELETE FROM call_auction_analysis").run().changes;
+
+                    // 23. 重置用户总资金
                     db.prepare("UPDATE users SET total_capital = 0 WHERE id = ?").run(userId);
 
                     return stats;

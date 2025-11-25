@@ -256,16 +256,16 @@ async function displayUploadedPositions(positions, summary = null) {
     }
     
     if (!positions || positions.length === 0) {
-        container.innerHTML = '<div class="loading-text">未找到持仓数据</div>';
+        container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无持仓数据</div>';
         totalValueEl.textContent = '¥0.00';
         profitLossEl.textContent = '总盈亏: ¥0.00 (0.00%)';
-        
+
         // 移除更新时间信息
         const updateInfo = document.getElementById('positionUpdateInfo');
         if (updateInfo) {
             updateInfo.remove();
         }
-        
+
         return;
     }
     
@@ -454,6 +454,14 @@ async function loadUserPositions() {
                 console.log('✅ 用户持仓数据加载成功');
             } else {
                 console.log('用户暂无持仓数据');
+                // 显示空状态
+                displayUploadedPositions([], null);
+
+                // 移除更新时间信息
+                const updateInfo = document.getElementById('positionUpdateInfo');
+                if (updateInfo) {
+                    updateInfo.remove();
+                }
             }
         } else {
             console.error('获取持仓数据失败:', response.status);
@@ -478,7 +486,7 @@ function displayEBSCNPositions(data) {
     // 显示持仓列表
     const positionsContainer = document.getElementById('ebscnPositions');
     if (positions.length === 0) {
-        positionsContainer.innerHTML = '<div class="loading-text">暂无持仓数据</div>';
+        positionsContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无持仓数据</div>';
         return;
     }
 
@@ -744,6 +752,10 @@ async function refreshPositionsDisplay() {
                 // 重新显示持仓数据（会自动使用最新的总资金计算仓位）
                 displayUploadedPositions(result.data.positions, result.data.summary);
                 console.log('✅ 持仓显示已刷新');
+            } else {
+                // 显示空状态
+                displayUploadedPositions([], null);
+                console.log('💡 无持仓数据');
             }
         }
     } catch (error) {

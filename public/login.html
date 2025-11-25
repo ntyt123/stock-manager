@@ -356,12 +356,18 @@
                 if (response.ok) {
                     // 已登录，直接跳转到首页
                     window.location.href = '/';
+                } else {
+                    // token无效（401、403、404等），清除本地存储
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    console.log('Token无效，已清除本地存储');
                 }
             })
-            .catch(() => {
-                // token无效，清除本地存储
+            .catch((error) => {
+                // 网络错误，清除本地存储
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                console.error('验证token时发生错误:', error);
             });
         }
     </script>

@@ -88,17 +88,106 @@ module.exports = (authenticateToken) => {
             }
 
             // 判断股票市场（沪市或深市）
-            let market;
+            // 东方财富API格式：secid=市场代码.股票代码
+            // 市场代码：0=深市，1=沪市
+            let marketCode;
             if (stockCode === '000001') {
-                market = 'sh';  // 上证指数
+                marketCode = '1';  // 上证指数
             } else if (stockCode.startsWith('6')) {
-                market = 'sh';  // 沪市股票
+                marketCode = '1';  // 沪市股票
+            } else if (stockCode.startsWith('0') || stockCode.startsWith('3')) {
+                marketCode = '0';  // 深市股票（包括创业板）
             } else {
-                market = 'sz';  // 深市股票和指数
+                marketCode = '0';  // 默认深市
             }
+            const secid = `${marketCode}.${stockCode}`;
+
+            // 优先使用东方财富API获取实时行情（包含完整的量比、换手率等数据）
+            try {
+                const eastmoneyUrl = `http://push2.eastmoney.com/api/qt/stock/get`;
+                const params = {
+                    secid: secid,
+                    fields: 'f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f57,f58,f59,f60,f107,f152,f161,f162,f168,f169,f170,f171',
+                    // f43=最新价 f44=最高 f45=最低 f46=今开 f47=成交量(手) f48=成交额
+                    // f49=涨跌幅% f50=量比 f51=换手率 f52=市盈率动态
+                    // f57=代码 f58=名称 f59=昨收 f60=涨跌额
+                    // f107=流通市值 f152=市净率 f161=均价
+                    // f162=市盈率动态 f168=换手率% f169=涨跌额 f170=涨跌幅% f171=振幅%
+                };
+
+                const response = await axios.get(eastmoneyUrl, {
+                    params: params,
+                    timeout: 5000,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                        'Referer': 'http://quote.eastmoney.com/'
+                    }
+                });
+
+                // 解析东方财富API返回的数据
+                if (response.data && response.data.data) {
+                    const apiData = response.data.data;
+
+                    // 解析数据（东方财富API返回的数据是整数*100形式，需要除以100）
+                    const currentPrice = (parseFloat(apiData.f43) || 0) / 100;  // 最新价
+                    const yesterdayClose = (parseFloat(apiData.f59) || 0) / 100;  // 昨收
+                    const todayOpen = (parseFloat(apiData.f46) || 0) / 100;  // 今开
+                    const todayHigh = (parseFloat(apiData.f44) || 0) / 100;  // 最高
+                    const todayLow = (parseFloat(apiData.f45) || 0) / 100;  // 最低
+                    const volume = parseInt(apiData.f47) || 0;  // 成交量（手）- 不需要除以100
+                    const amount = parseFloat(apiData.f48) || 0;  // 成交额（元）- 不需要除以100
+                    const changePercent = (parseFloat(apiData.f170) || 0) / 100;  // 涨跌幅%
+                    const change = (parseFloat(apiData.f169) || 0) / 100;  // 涨跌额
+                    const amplitude = (parseFloat(apiData.f171) || 0) / 100;  // 振幅%
+                    const turnoverRate = (parseFloat(apiData.f168) || parseFloat(apiData.f51) || 0) / 100;  // 换手率%
+                    const volumeRatio = (parseFloat(apiData.f50) || 0) / 100;  // 量比
+                    const avgPrice = (parseFloat(apiData.f161) || 0) / 100;  // 均价
+
+                    const stockData = {
+                        stockCode: stockCode,
+                        stockName: apiData.f58 || '',  // 股票名称
+                        todayOpen: todayOpen,
+                        yesterdayClose: yesterdayClose,
+                        currentPrice: currentPrice,
+                        todayHigh: todayHigh,
+                        todayLow: todayLow,
+                        avgPrice: avgPrice,
+                        buyPrice: currentPrice,  // 东方财富API不提供买一价，用最新价代替
+                        sellPrice: currentPrice,  // 东方财富API不提供卖一价，用最新价代替
+                        volume: volume,
+                        amount: amount,
+                        change: change,
+                        changePercent: changePercent.toFixed(2),
+                        amplitude: amplitude.toFixed(2),
+                        turnoverRate: turnoverRate.toFixed(2),
+                        volumeRatio: volumeRatio.toFixed(2),
+                        high: todayHigh,
+                        low: todayLow,
+                        pe: parseFloat(apiData.f162) || parseFloat(apiData.f52) || 0,  // 市盈率
+                        pb: parseFloat(apiData.f152) || 0,  // 市净率
+                        circulationMarketValue: parseFloat(apiData.f107) || 0,  // 流通市值
+                        date: new Date().toISOString().split('T')[0],
+                        time: new Date().toTimeString().split(' ')[0],
+                        dataSource: 'eastmoney'
+                    };
+
+                    // 缓存数据
+                    stockCache.setQuote(stockCode, stockData);
+
+                    return res.json({
+                        success: true,
+                        data: stockData,
+                        cached: false
+                    });
+                }
+            } catch (eastmoneyError) {
+                console.log('东方财富API失败，回退到新浪财经API:', eastmoneyError.message);
+            }
+
+            // 如果东方财富API失败，回退到新浪财经API
+            const market = marketCode === '1' ? 'sh' : 'sz';
             const fullCode = `${market}${stockCode}`;
 
-            // 使用新浪财经API获取实时行情
             const sinaUrl = `https://hq.sinajs.cn/list=${fullCode}`;
             const response = await axios.get(sinaUrl, {
                 headers: { 'Referer': 'https://finance.sina.com.cn' },
@@ -127,22 +216,49 @@ module.exports = (authenticateToken) => {
             }
 
             // 解析股票数据
+            const todayOpen = parseFloat(values[1]);
+            const yesterdayClose = parseFloat(values[2]);
+            const currentPrice = parseFloat(values[3]);
+            const todayHigh = parseFloat(values[4]);
+            const todayLow = parseFloat(values[5]);
+            const volume = parseInt(values[8]);
+            const amount = parseFloat(values[9]);
+
+            // 计算涨跌幅
+            const change = currentPrice - yesterdayClose;
+            const changePercent = yesterdayClose !== 0 ? (change / yesterdayClose * 100).toFixed(2) : '0.00';
+
+            // 计算振幅
+            const amplitude = yesterdayClose !== 0
+                ? (((todayHigh - todayLow) / yesterdayClose) * 100).toFixed(2)
+                : '0.00';
+
+            // 新浪API没有量比和换手率，使用估算值
+            const turnoverRate = '0.00';  // 无法准确计算
+            const volumeRatio = '1.00';  // 无法准确计算
+
             const stockData = {
                 stockCode: stockCode,
                 stockName: values[0],
-                todayOpen: parseFloat(values[1]),
-                yesterdayClose: parseFloat(values[2]),
-                currentPrice: parseFloat(values[3]),
-                todayHigh: parseFloat(values[4]),
-                todayLow: parseFloat(values[5]),
+                todayOpen: todayOpen,
+                yesterdayClose: yesterdayClose,
+                currentPrice: currentPrice,
+                todayHigh: todayHigh,
+                todayLow: todayLow,
                 buyPrice: parseFloat(values[6]),
                 sellPrice: parseFloat(values[7]),
-                volume: parseInt(values[8]),
-                amount: parseFloat(values[9]),
-                change: parseFloat(values[3]) - parseFloat(values[2]),
-                changePercent: ((parseFloat(values[3]) - parseFloat(values[2])) / parseFloat(values[2]) * 100).toFixed(2),
+                volume: volume,
+                amount: amount,
+                change: change,
+                changePercent: changePercent,
+                amplitude: amplitude,
+                turnoverRate: turnoverRate,
+                volumeRatio: volumeRatio,
+                high: todayHigh,
+                low: todayLow,
                 date: values[30],
-                time: values[31]
+                time: values[31],
+                dataSource: 'sina'
             };
 
             // 缓存数据
@@ -541,6 +657,88 @@ module.exports = (authenticateToken) => {
             res.status(500).json({
                 success: false,
                 error: '获取数据失败: ' + error.message
+            });
+        }
+    });
+
+    // 获取股票行业信息
+    router.get('/industry/:stockCode', async (req, res) => {
+        try {
+            const { stockCode } = req.params;
+
+            // 使用东方财富网API获取股票基本信息
+            const secid = getEastmoneySecid(stockCode);
+            const url = 'https://push2.eastmoney.com/api/qt/stock/get';
+
+            const params = {
+                secid: secid,
+                fields: 'f12,f13,f14,f127,f128,f129', // f127:板块,f128:概念,f129:行业
+                _: Date.now()
+            };
+
+            const response = await axios.get(url, {
+                params,
+                timeout: 10000,
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                    'Referer': 'https://quote.eastmoney.com/'
+                },
+                httpsAgent: new (require('https')).Agent({
+                    rejectUnauthorized: false
+                })
+            });
+
+            if (!response.data || !response.data.data) {
+                return res.json({
+                    success: true,
+                    data: {
+                        industries: [],
+                        concepts: []
+                    }
+                });
+            }
+
+            const data = response.data.data;
+            const industries = [];
+            const concepts = [];
+
+            // f129是行业
+            if (data.f129) {
+                industries.push(data.f129);
+            }
+
+            // f127是板块
+            if (data.f127) {
+                industries.push(data.f127);
+            }
+
+            // f128是概念，可能是逗号分隔的多个概念
+            if (data.f128) {
+                const conceptList = data.f128.split(',').map(c => c.trim()).filter(c => c);
+                concepts.push(...conceptList);
+            }
+
+            // 组合所有标签
+            const allTags = [...new Set([...industries, ...concepts])];
+
+            res.json({
+                success: true,
+                data: {
+                    industries: industries,
+                    concepts: concepts,
+                    allTags: allTags.join(',')
+                }
+            });
+
+        } catch (error) {
+            console.error('获取股票行业信息失败:', error.message);
+            res.json({
+                success: true,
+                data: {
+                    industries: [],
+                    concepts: [],
+                    allTags: ''
+                }
             });
         }
     });

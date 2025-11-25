@@ -163,7 +163,7 @@ async function loadMarketIndices() {
 
     } catch (error) {
         console.error('加载市场指数错误:', error);
-        container.innerHTML = '<div class="loading-text">暂无指数数据</div>';
+        container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无指数数据</div>';
     }
 }
 
@@ -294,17 +294,17 @@ async function loadHotNews(category = 'latest') {
         } else {
             // 没有新闻数据
             if (category === 'positions') {
-                container.innerHTML = '<div class="loading-text">暂无持仓相关新闻<br><small>请先导入持仓数据</small></div>';
+                container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无持仓相关新闻<br><small>请先导入持仓数据</small></div>';
             } else {
-                container.innerHTML = '<div class="loading-text">暂无新闻</div>';
+                container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无新闻</div>';
             }
         }
     } catch (error) {
         console.error('加载热点新闻错误:', error);
         if (category === 'positions') {
-            container.innerHTML = '<div class="loading-text">暂无持仓相关新闻</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无持仓相关新闻</div>';
         } else {
-            container.innerHTML = '<div class="loading-text">暂无新闻</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无新闻</div>';
         }
     }
 }
@@ -363,8 +363,8 @@ async function loadTopGainersLosers() {
         const watchlistResult = await watchlistResponse.json();
 
         if (!watchlistResult.success || !watchlistResult.data || watchlistResult.data.length === 0) {
-            gainersContainer.innerHTML = '<div class="loading-text">暂无自选股数据</div>';
-            losersContainer.innerHTML = '<div class="loading-text">暂无自选股数据</div>';
+            gainersContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无自选股数据</div>';
+            losersContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无自选股数据</div>';
             return;
         }
 
@@ -388,8 +388,8 @@ async function loadTopGainersLosers() {
         const quotesResult = await quotesResponse.json();
 
         if (!quotesResult.success || !quotesResult.data || quotesResult.data.length === 0) {
-            gainersContainer.innerHTML = '<div class="loading-text">暂无行情数据</div>';
-            losersContainer.innerHTML = '<div class="loading-text">暂无行情数据</div>';
+            gainersContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无行情数据</div>';
+            losersContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无行情数据</div>';
             return;
         }
 
@@ -494,7 +494,7 @@ async function loadChangeDistribution() {
         const watchlistResult = await watchlistResponse.json();
 
         if (!watchlistResult.success || !watchlistResult.data || watchlistResult.data.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无自选股数据</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无自选股数据</div>';
             return;
         }
 
@@ -518,7 +518,7 @@ async function loadChangeDistribution() {
         const quotesResult = await quotesResponse.json();
 
         if (!quotesResult.success || !quotesResult.data || quotesResult.data.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无行情数据</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无行情数据</div>';
             return;
         }
 
@@ -673,7 +673,7 @@ async function loadPortfolioStats() {
         const result = await response.json();
 
         if (!result.success || !result.data.positions || result.data.positions.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无持仓数据</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无持仓数据</div>';
             return;
         }
 
@@ -1061,7 +1061,7 @@ async function loadIndustryDistribution() {
         const { distribution, totalMarketValue, positionCount } = result.data;
 
         if (distribution.length === 0) {
-            container.innerHTML = '<div class="loading-text">暂无持仓数据</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无持仓数据</div>';
             return;
         }
 
@@ -1307,69 +1307,72 @@ async function loadSentimentOverview() {
             return;
         }
 
-        // 获取自选股行情数据用于计算情绪指数
-        const watchlistResponse = await fetch('/api/watchlist', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        // 1. 获取市场主要指数数据（上证、深证、创业板）用于计算整体市场情绪
+        const indexCodes = ['000001', '399001', '399006'];
 
-        if (!watchlistResponse.ok) throw new Error('获取自选股列表失败');
-
-        const watchlistResult = await watchlistResponse.json();
-        if (!watchlistResult.success || !watchlistResult.data || watchlistResult.data.length === 0) {
-            updateSentimentCard('sentimentIndex', '--', '暂无自选股数据');
-            updateSentimentCard('gainLossRatio', '--', '暂无自选股数据');
-            updateSentimentCard('northboundFunds', '--', '数据获取中...');
-            updateSentimentCard('marketHeat', '--', '数据获取中...');
-            return;
-        }
-
-        const stockCodes = watchlistResult.data.map(stock => stock.stock_code);
-
-        // 获取行情数据
         const quotesResponse = await fetch('/api/stock/quotes', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ stockCodes })
+            body: JSON.stringify({ stockCodes: indexCodes })
         });
 
-        if (!quotesResponse.ok) throw new Error('获取行情数据失败');
+        if (!quotesResponse.ok) throw new Error('获取指数数据失败');
 
         const quotesResult = await quotesResponse.json();
-        if (!quotesResult.success || !quotesResult.data) throw new Error('行情数据为空');
+        if (!quotesResult.success || !quotesResult.data) throw new Error('指数数据为空');
 
         const quotes = quotesResult.data;
 
-        // 计算涨跌比例
-        let upCount = 0, downCount = 0, flatCount = 0;
+        // 计算指数平均涨跌幅（用于情绪指数）
         let totalChange = 0;
-
         quotes.forEach(quote => {
-            const change = parseFloat(quote.changePercent);
-            totalChange += change;
-            if (change > 0) upCount++;
-            else if (change < 0) downCount++;
-            else flatCount++;
+            totalChange += parseFloat(quote.changePercent);
         });
-
-        const gainLossRatio = upCount / (upCount + downCount + flatCount);
         const avgChange = totalChange / quotes.length;
 
-        // 计算市场情绪指数 (基于涨跌比例和平均涨幅)
-        const sentimentIndex = Math.round((gainLossRatio * 60 + (avgChange + 10) * 2));
-        const sentimentLevel = sentimentIndex >= 70 ? '极度乐观' :
-                               sentimentIndex >= 55 ? '乐观' :
-                               sentimentIndex >= 45 ? '中性' :
-                               sentimentIndex >= 30 ? '谨慎' : '恐慌';
+        // 2. 获取市场涨跌家数统计（用于涨跌比例）
+        let upCount = 0, downCount = 0, flatCount = 0;
 
-        // 计算市场热度 (基于成交额和涨停数量)
-        const bigUpCount = quotes.filter(q => parseFloat(q.changePercent) > 5).length;
-        const marketHeat = Math.round((bigUpCount / quotes.length) * 100);
-        const heatLevel = marketHeat >= 15 ? '🔥 极热' :
-                         marketHeat >= 10 ? '🌡️ 活跃' :
-                         marketHeat >= 5 ? '😐 温和' : '❄️ 清淡';
+        try {
+            const statsResponse = await fetch('/api/market-sentiment/market-stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (statsResponse.ok) {
+                const statsResult = await statsResponse.json();
+                if (statsResult.success && statsResult.data) {
+                    upCount = statsResult.data.upCount;
+                    downCount = statsResult.data.downCount;
+                    flatCount = statsResult.data.flatCount;
+                    const dataType = statsResult.data.isHistorical ? '历史数据' : '实时数据';
+                    console.log(`📊 市场涨跌统计(${dataType}): 上涨${upCount}, 下跌${downCount}, 平盘${flatCount}`);
+                }
+            }
+        } catch (error) {
+            console.warn('⚠️ 获取市场统计失败:', error);
+        }
+
+        const gainLossRatio = (upCount + downCount + flatCount) > 0
+            ? upCount / (upCount + downCount + flatCount)
+            : 0.5;
+
+        // 计算市场情绪指数 (基于三大指数的涨跌幅)
+        // 将平均涨跌幅映射到0-100的情绪指数
+        const sentimentIndex = Math.round(50 + (avgChange * 10));
+        const sentimentLevel = sentimentIndex >= 60 ? '极度乐观' :
+                               sentimentIndex >= 52 ? '乐观' :
+                               sentimentIndex >= 48 ? '中性' :
+                               sentimentIndex >= 40 ? '谨慎' : '恐慌';
+
+        // 计算市场热度 (基于指数波动幅度)
+        const maxChange = Math.max(...quotes.map(q => Math.abs(parseFloat(q.changePercent))));
+        const marketHeat = Math.round(Math.min(100, maxChange * 20));
+        const heatLevel = marketHeat >= 40 ? '🔥 极热' :
+                         marketHeat >= 25 ? '🌡️ 活跃' :
+                         marketHeat >= 15 ? '😐 温和' : '❄️ 清淡';
 
         // 更新市场情绪指数
         updateSentimentCard('sentimentIndex', sentimentIndex.toString(), sentimentLevel);
@@ -1573,11 +1576,11 @@ async function loadDragonTigerData() {
     if (!container) return;
 
     try {
-        container.innerHTML = '<div class="loading-text">正在加载龙虎榜数据...</div>';
+        container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">正在加载龙虎榜数据...</div>';
 
         const token = localStorage.getItem('token');
         if (!token) {
-            container.innerHTML = '<div class="loading-text">请登录查看龙虎榜</div>';
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">请登录查看龙虎榜</div>';
             return;
         }
 
@@ -1591,8 +1594,12 @@ async function loadDragonTigerData() {
         }
 
         const result = await response.json();
-        if (!result.success || !result.data) {
-            throw new Error('龙虎榜数据为空');
+
+        // 处理空数据情况
+        if (!result.data || result.data.length === 0) {
+            const message = result.message || '暂无龙虎榜数据';
+            container.innerHTML = `<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">${message}</div>`;
+            return;
         }
 
         const dragonTigerData = result.data.map(item => ({
@@ -1631,7 +1638,7 @@ async function loadDragonTigerData() {
 
     } catch (error) {
         console.error('❌ 加载龙虎榜失败:', error);
-        container.innerHTML = '<div class="loading-text">加载失败</div>';
+        container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">龙虎榜数据暂时无法获取</div>';
     }
 }
 

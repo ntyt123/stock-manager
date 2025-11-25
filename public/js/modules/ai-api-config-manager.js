@@ -278,6 +278,10 @@ const AIApiConfigManager = {
                 api_url: 'https://api.anthropic.com/v1/messages',
                 model: 'claude-3-sonnet'
             },
+            'qwen': {
+                api_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+                model: 'qwen-max'
+            },
             'gemini': {
                 api_url: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
                 model: 'gemini-pro'
@@ -532,6 +536,7 @@ const AIApiConfigManager = {
             'deepseek': 'DeepSeek',
             'openai': 'OpenAI',
             'anthropic': 'Anthropic',
+            'qwen': '通义千问 (QWen)',
             'gemini': 'Google Gemini',
             'custom': '自定义'
         };

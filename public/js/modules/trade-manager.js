@@ -45,9 +45,16 @@ function openTradeRecordModal() {
     document.getElementById('tradeFormStatus').textContent = '';
     document.getElementById('tradeFormStatus').className = 'form-status';
 
-    // 设置交易日期默认为今天
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('tradeDate').value = today;
+    // 设置交易时间默认为当前时间（精确到秒）
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const seconds = String(now.getSeconds()).padStart(2, '0');
+    const currentDateTime = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    document.getElementById('tradeDate').value = currentDateTime;
 
     // 绑定实时计算事件
     bindTradeAmountCalculation();

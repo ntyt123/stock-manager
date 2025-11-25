@@ -312,6 +312,20 @@ function loadSubTabData(subtabId) {
                 ReportManager.loadYearlyReportInline();
             }
             break;
+        // 短线交易相关子页签
+        case 'short-term-pool':
+        case 'short-term-stop-loss':
+        case 'short-term-t0':
+        case 'short-term-decision':
+        case 'short-term-plan':
+        case 'short-term-review':
+        case 'short-term-money':
+        case 'short-term-dashboard':
+            // 加载短线子页签数据
+            if (typeof loadShortTermSubTab === 'function') {
+                loadShortTermSubTab(subtabId);
+            }
+            break;
         // 可以在这里添加其他子页签的数据加载逻辑
         default:
             break;
@@ -333,6 +347,12 @@ function loadTabData(tabName) {
             // 加载选股页签时，自动加载三日选股法数据
             if (typeof ThreeDaySelectionManager !== 'undefined' && typeof ThreeDaySelectionManager.init === 'function') {
                 ThreeDaySelectionManager.init();
+            }
+            break;
+        case 'short-term':
+            // 加载短线页签时，初始化短线功能
+            if (typeof initShortTerm === 'function') {
+                initShortTerm();
             }
             break;
         case 'analysis':

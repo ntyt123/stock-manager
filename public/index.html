@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/css/modules/capital-modal.css">
     <link rel="stylesheet" href="/css/modules/settings-modal.css">
     <link rel="stylesheet" href="/css/modules/common-modal.css">
+    <link rel="stylesheet" href="/css/modules/short-term.css">
     <script src="/js/lib/chart.umd.min.js"></script>
     <script src="/js/lib/marked.min.js"></script>
     <script src="/js/lib/xlsx.full.min.js"></script>
@@ -155,6 +156,10 @@
             <button class="tab-btn" data-tab="stock-selection">
                 <span class="tab-icon">🔍</span>
                 <span class="tab-text">选股</span>
+            </button>
+            <button class="tab-btn" data-tab="short-term">
+                <span class="tab-icon">⚡</span>
+                <span class="tab-text">短线</span>
             </button>
             <button class="tab-btn" data-tab="analysis">
                 <span class="tab-icon">📈</span>
@@ -369,7 +374,7 @@
                                 </div>
                             </div>
                             <div class="trading-plans-container" id="tradingPlansContainer">
-                                <div class="loading-text">正在加载交易计划...</div>
+                                <div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">点击➕新建计划按钮创建交易计划</div>
                             </div>
                         </div>
                     </div>
@@ -390,7 +395,7 @@
                                 </div>
                             </div>
                             <div id="costManagementContent">
-                                <div class="loading-text">正在加载持仓成本数据...</div>
+                                <div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">暂无成本数据</div>
                             </div>
                         </div>
                     </div>
@@ -771,10 +776,251 @@
                                 <div class="card-icon">🔍</div>
                                 <div class="card-title">三日选股法</div>
                             </div>
+                            <div class="card-content">
+                                <!-- 使用指南 -->
+                                <div style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 8px; color: white;" id="usageGuideBox">
+                                    <div style="display: flex; align-items: center; gap: 10px; cursor: pointer;" onclick="const content = document.getElementById('guideContent'); const icon = document.querySelector('.guide-toggle-icon'); const isHidden = content.style.display === 'none'; content.style.display = isHidden ? 'block' : 'none'; icon.textContent = isHidden ? '▲' : '▼'; localStorage.setItem('threeDayGuideExpanded', isHidden ? '1' : '0');">
+                                        <h4 style="margin: 0; color: white; display: flex; align-items: center; gap: 8px; flex: 1;">
+                                            📚 三日选股法使用指南
+                                            <span class="guide-toggle-icon" style="font-size: 12px;">▼</span>
+                                        </h4>
+                                        <span style="font-size: 12px; opacity: 0.9; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 12px;">点击展开/收起</span>
+                                    </div>
+                                    <div id="guideContent" style="margin-top: 15px; display: none;">
+                                        <div style="background: rgba(255, 255, 255, 0.15); padding: 15px; border-radius: 6px; backdrop-filter: blur(10px);">
+                                            <div style="margin-bottom: 15px;">
+                                                <h5 style="margin: 0 0 10px 0; font-size: 15px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px;">💡 方法说明</h5>
+                                                <p style="margin: 8px 0; line-height: 1.8; font-size: 13px;">
+                                                    三日选股法是一种短线选股策略，通过观察连续三天的股票表现，筛选出符合条件的强势股。
+                                                    该方法强调量价配合、换手率适中、涨幅合理，避免追高和过度炒作的股票。
+                                                </p>
+                                            </div>
 
-                            <!-- 三日选股法内容区域 -->
-                            <div id="threeDaySelectionContent">
-                                <div class="loading-text">正在加载三日选股法...</div>
+                                            <div style="margin-bottom: 15px;">
+                                                <h5 style="margin: 0 0 10px 0; font-size: 15px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px;">📋 操作步骤</h5>
+                                                <div style="padding-left: 12px;">
+                                                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px; border-left: 3px solid #fff;">
+                                                        <strong>第一天：</strong>选股入池
+                                                        <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.8; font-size: 13px;">
+                                                            <li>在盘后选出符合标准的股票（量比>1.5、换手率3%-8%、涨幅3%-7%）</li>
+                                                            <li>批量添加股票代码，系统会自动检测是否符合标准</li>
+                                                            <li>记录当日收盘价作为第一天价格</li>
+                                                            <li>⚠️ 不符合标准的股票会显示警告，但仍可添加</li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px; border-left: 3px solid #fff;">
+                                                        <strong>第二天：</strong>观察确认
+                                                        <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.8; font-size: 13px;">
+                                                            <li>观察股票走势，是否继续强势</li>
+                                                            <li>点击"推进到第二天"按钮，记录第二天价格</li>
+                                                            <li>淘汰走弱的股票（点击"归档"或"删除"）</li>
+                                                            <li>可添加备注记录观察心得</li>
+                                                        </ul>
+                                                    </div>
+
+                                                    <div style="margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 4px; border-left: 3px solid #fff;">
+                                                        <strong>第三天：</strong>决策执行
+                                                        <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.8; font-size: 13px;">
+                                                            <li>连续三天保持强势的股票，考虑买入</li>
+                                                            <li>点击"推进到第三天"完成观察周期</li>
+                                                            <li>实时查看持仓盈亏（相对第一天价格）</li>
+                                                            <li>完成后点击"归档"将股票移出观察池</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div style="margin-bottom: 15px;">
+                                                <h5 style="margin: 0 0 10px 0; font-size: 15px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px;">⚙️ 选股标准配置</h5>
+                                                <p style="margin: 8px 0; line-height: 1.8; font-size: 13px;">
+                                                    点击下方"📋 选股标准"区域的"⚙️ 配置"按钮，可以自定义选股标准：
+                                                </p>
+                                                <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.8; font-size: 13px;">
+                                                    <li><strong>量比：</strong>建议1.5-5倍，量能温和放大</li>
+                                                    <li><strong>换手率：</strong>建议3%-8%，避免过度换手</li>
+                                                    <li><strong>涨跌幅：</strong>建议3%-7%，稳健上涨不追高</li>
+                                                    <li><strong>振幅：</strong>可选，控制盘中波动范围</li>
+                                                    <li><strong>价格范围：</strong>可选，筛选特定价位股票</li>
+                                                </ul>
+                                            </div>
+
+                                            <div>
+                                                <h5 style="margin: 0 0 10px 0; font-size: 15px; color: #fff; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px;">⚡ 快捷操作</h5>
+                                                <ul style="margin: 8px 0; padding-left: 20px; line-height: 1.8; font-size: 13px;">
+                                                    <li><strong>批量添加：</strong>支持逗号、空格、换行分隔多个股票代码</li>
+                                                    <li><strong>推进按钮：</strong>一键推进到下一个观察日</li>
+                                                    <li><strong>归档功能：</strong>将完成观察的股票归档，保持列表整洁</li>
+                                                    <li><strong>删除功能：</strong>移除不符合条件的股票</li>
+                                                    <li><strong>实时行情：</strong>自动显示最新价格、涨跌幅和持仓盈亏</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 选股标准提示 -->
+                                <div style="margin-bottom: 20px; padding: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white;" id="selectionCriteriaBox">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="display: flex; align-items: center; gap: 10px; flex: 1; cursor: pointer;" onclick="const content = document.getElementById('criteriaContent'); const icon = document.querySelector('.toggle-icon'); content.style.display = content.style.display === 'none' ? 'block' : 'none'; icon.textContent = content.style.display === 'none' ? '▼' : '▲';">
+                                            <h4 style="margin: 0; color: white; display: flex; align-items: center; gap: 8px;">
+                                                📋 选股标准 <span id="criteriaStatusText" style="font-size: 12px; opacity: 0.9;"></span>
+                                                <span class="toggle-icon" style="font-size: 12px;">▲</span>
+                                            </h4>
+                                        </div>
+                                        <button
+                                            onclick="event.stopPropagation(); ThreeDaySelection.openCriteriaSettings();"
+                                            style="padding: 6px 16px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s;"
+                                            onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+                                            onmouseout="this.style.background='rgba(255,255,255,0.2)'"
+                                        >
+                                            ⚙️ 配置
+                                        </button>
+                                    </div>
+                                    <div id="criteriaContent" style="margin-top: 15px;">
+                                        <div id="criteriaDisplay" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px;">
+                                            <!-- 动态加载配置内容 -->
+                                        </div>
+                                        <div style="margin-top: 12px; padding: 10px; background: rgba(255, 255, 255, 0.2); border-radius: 6px; text-align: center; font-size: 13px;">
+                                            💡 提示：添加股票时会自动检测是否符合标准，不符合的会显示⚠️警告
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 批量添加股票 -->
+                                <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                    <h4 style="margin-top: 0; margin-bottom: 15px; color: #333;">📝 批量添加股票</h4>
+                                    <div style="margin-bottom: 10px;">
+                                        <label style="display: block; margin-bottom: 5px; color: #666; font-size: 14px;">
+                                            股票代码（支持逗号、空格、换行分隔）
+                                        </label>
+                                        <textarea
+                                            id="threeDayBatchInput"
+                                            placeholder="例如：&#10;600000,600001,600002&#10;或&#10;600000 600001 600002&#10;或每行一个代码"
+                                            style="width: 100%; min-height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 14px; resize: vertical;"
+                                        ></textarea>
+                                    </div>
+                                    <div style="margin-bottom: 10px;">
+                                        <label style="display: block; margin-bottom: 5px; color: #666; font-size: 14px;">
+                                            备注（可选）
+                                        </label>
+                                        <input
+                                            type="text"
+                                            id="threeDayBatchNotes"
+                                            placeholder="例如：20250124选股"
+                                            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"
+                                        />
+                                    </div>
+                                    <button
+                                        id="threeDayBatchAddBtn"
+                                        class="btn-primary"
+                                        style="padding: 8px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;"
+                                    >
+                                        添加股票
+                                    </button>
+                                </div>
+
+                                <!-- 股票列表 -->
+                                <div id="threeDayStockList">
+                                    <div class="loading-text">正在加载股票列表...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 短线页签 -->
+        <div id="short-term-tab" class="tab-content">
+            <div class="tab-content-layout">
+                <!-- 左侧子页签导航 -->
+                <div class="sub-tab-navigation">
+                    <button class="sub-tab-btn active" data-subtab="short-term-pool">
+                        <span class="sub-tab-icon">🎯</span>
+                        <span class="sub-tab-text">短线池</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="short-term-stop-loss">
+                        <span class="sub-tab-icon">🛡️</span>
+                        <span class="sub-tab-text">止盈止损</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="short-term-decision">
+                        <span class="sub-tab-icon">⚡</span>
+                        <span class="sub-tab-text">快速决策</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="short-term-review">
+                        <span class="sub-tab-icon">📝</span>
+                        <span class="sub-tab-text">复盘笔记</span>
+                    </button>
+                    <button class="sub-tab-btn" data-subtab="short-term-dashboard">
+                        <span class="sub-tab-icon">📊</span>
+                        <span class="sub-tab-text">数据看板</span>
+                    </button>
+                </div>
+
+                <!-- 右侧内容区域 -->
+                <div class="sub-tab-content-area">
+                    <!-- 短线池 -->
+                    <div class="sub-tab-content active" id="short-term-pool">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🎯</div>
+                                <div class="card-title">短线池</div>
+                            </div>
+                            <div class="card-content" id="shortTermPoolContent">
+                                <div class="loading-text">正在加载短线池...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 止盈止损 -->
+                    <div class="sub-tab-content" id="short-term-stop-loss">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">🛡️</div>
+                                <div class="card-title">智能止盈止损</div>
+                            </div>
+                            <div class="card-content" id="shortTermStopLossContent">
+                                <div class="loading-text">正在加载止盈止损设置...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快速决策面板 -->
+                    <div class="sub-tab-content" id="short-term-decision">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">⚡</div>
+                                <div class="card-title">5分钟快速决策面板</div>
+                            </div>
+                            <div class="card-content" id="shortTermDecisionContent">
+                                <div class="loading-text">正在加载快速决策面板...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 复盘笔记 -->
+                    <div class="sub-tab-content" id="short-term-review">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📝</div>
+                                <div class="card-title">每日复盘笔记</div>
+                            </div>
+                            <div class="card-content" id="shortTermReviewContent">
+                                <div class="loading-text">正在加载复盘笔记...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 数据看板 -->
+                    <div class="sub-tab-content" id="short-term-dashboard">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-icon">📊</div>
+                                <div class="card-title">短线交易数据看板</div>
+                            </div>
+                            <div class="card-content" id="shortTermDashboardContent">
+                                <div class="loading-text">正在加载数据看板...</div>
                             </div>
                         </div>
                     </div>
@@ -2456,8 +2702,8 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="tradeDate">交易日期 *</label>
-                                <input type="date" id="tradeDate" class="form-input" required>
+                                <label for="tradeDate">交易时间 *</label>
+                                <input type="datetime-local" id="tradeDate" class="form-input" step="1" required>
                             </div>
                         </div>
 
@@ -3367,6 +3613,7 @@
                                     <option value="deepseek">🌊 DeepSeek</option>
                                     <option value="openai">🤖 OpenAI</option>
                                     <option value="anthropic">🧠 Anthropic Claude</option>
+                                    <option value="qwen">🎯 通义千问 (QWen)</option>
                                     <option value="gemini">💎 Google Gemini</option>
                                     <option value="custom">⚙️ 自定义</option>
                                 </select>
@@ -3964,6 +4211,66 @@
         </div>
     </div>
 
+    <!-- 股票筛选弹窗 -->
+    <div id="stockFilterModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal-content" style="background: white; border-radius: 12px; width: 90%; max-width: 1200px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
+            <!-- 标题栏 -->
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #e5e7eb;">
+                <h3 style="margin: 0; font-size: 20px; color: #1f2937; display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">🔍</span>
+                    <span>股票筛选</span>
+                </h3>
+                <button onclick="closeStockFilterModal()" style="background: none; border: none; font-size: 28px; cursor: pointer; color: #9ca3af; padding: 0; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
+            </div>
+
+            <!-- 主内容区域 -->
+            <div style="display: flex; flex: 1; overflow: hidden;">
+                <!-- 左侧筛选项 -->
+                <div style="width: 200px; border-right: 1px solid #e5e7eb; padding: 20px; overflow-y: auto; background: #f9fafb;">
+                    <div style="margin-bottom: 15px;">
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 8px; font-weight: 600;">筛选类别</div>
+                    </div>
+                    <div id="filterCategoryList" style="display: flex; flex-direction: column; gap: 8px;">
+                        <button class="filter-category-btn active" data-category="continuous-limit" onclick="selectFilterCategory('continuous-limit')" style="padding: 12px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+                            <span>🔥</span>
+                            <span>连板股票</span>
+                        </button>
+                        <button class="filter-category-btn" data-category="concept" onclick="selectFilterCategory('concept')" style="padding: 12px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+                            <span>💡</span>
+                            <span>概念板块</span>
+                        </button>
+                        <button class="filter-category-btn" data-category="industry" onclick="selectFilterCategory('industry')" style="padding: 12px 16px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer; text-align: left; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+                            <span>🏢</span>
+                            <span>行业板块</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 右侧结果区域 -->
+                <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                    <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; background: white;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="font-size: 16px; font-weight: 600; color: #1f2937;">
+                                <span id="filterResultTitle">连板股票</span>
+                                <span id="filterResultCount" style="color: #6b7280; font-size: 14px; margin-left: 8px;">(0)</span>
+                            </div>
+                            <button id="refreshFilterBtn" onclick="refreshFilterData()" style="padding: 8px 16px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 6px; cursor: pointer; font-size: 13px; color: #374151; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">
+                                <span>🔄</span>
+                                <span>刷新</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="filterResultContent" style="flex: 1; padding: 20px; overflow-y: auto; background: #fafbfc;">
+                        <div style="text-align: center; padding: 60px 20px; color: #9ca3af;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📊</div>
+                            <div style="font-size: 14px;">加载中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 股票图表模块 -->
     <script src="/js/stockChart.js"></script>
 
@@ -4004,6 +4311,10 @@
     <script src="/js/modules/stock-pool-manager.js"></script>
     <!-- 三日选股法模块 -->
     <script src="/js/modules/three-day-selection-manager.js"></script>
+    <!-- 选股模块 -->
+    <script src="/js/modules/stock-selection.js"></script>
+    <!-- 短线交易模块 -->
+    <script src="/js/modules/short-term.js"></script>
     <!-- AI提示词管理模块 -->
     <script src="/js/modules/ai-prompt-manager.js"></script>
     <!-- 组合优化管理模块 -->

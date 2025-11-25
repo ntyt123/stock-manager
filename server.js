@@ -82,6 +82,11 @@ const aiApiConfigRoutes = require('./routes/ai-api-config')(authenticateToken);
 const recapRoutes = require('./routes/recap')(authenticateToken);
 const reportRoutes = require('./routes/report')(authenticateToken);
 const threeDaySelectionRoutes = require('./routes/three-day-selection')(authenticateToken);
+const stopLossRoutes = require('./routes/stop-loss')(authenticateToken);
+const priceAlertsRoutes = require('./routes/price-alerts')(authenticateToken);
+const shortTermPoolRoutes = require('./routes/short-term-pool')(authenticateToken);
+const shortTermRoutes = require('./routes/short-term')(authenticateToken);
+const marketDataRoutes = require('./routes/market-data')(authenticateToken);
 
 // 挂载路由
 app.use('/api/auth', authRoutes);
@@ -109,6 +114,11 @@ app.use('/api/ai-api', aiApiConfigRoutes);
 app.use('/api/recap', recapRoutes);
 app.use('/api/report', reportRoutes);
 app.use('/api/three-day-selection', threeDaySelectionRoutes);
+app.use('/api/stop-loss', stopLossRoutes);
+app.use('/api/price-alerts', priceAlertsRoutes);
+app.use('/api/short-term-pool', shortTermPoolRoutes);
+app.use('/api/short-term', shortTermRoutes);
+app.use('/api/market-data', marketDataRoutes);
 
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）
@@ -148,6 +158,55 @@ cron.schedule('30 9 * * 1-5', async () => {
     } catch (error) {
         console.error('❌ 定时集合竞价分析失败:', error.message);
     }
+});
+
+// 每天下午2:59捕获市场统计数据（收盘前一分钟，仅A股交易日）
+cron.schedule('59 14 * * 1-5', async () => {
+    const today = getTodayString();
+
+    // 检查是否为交易日
+    if (!isTradingDay()) {
+        console.log(`⏰ ${today} 不是交易日，跳过市场统计捕获`);
+        return;
+    }
+
+    console.log(`⏰ ${today} 14:59 开始捕获市场统计数据...`);
+    try {
+        const { fetchMarketStats } = require('./scheduled-tasks/capture-market-stats');
+        await fetchMarketStats();
+    } catch (error) {
+        console.error('❌ 定时捕获市场统计失败:', error.message);
+    }
+}, {
+    timezone: 'Asia/Shanghai'
+});
+
+// 交易时间内每5分钟检查止盈止损条件
+cron.schedule('*/5 * * * *', async () => {
+    const now = new Date();
+    const day = now.getDay(); // 0=周日, 1-5=周一到周五, 6=周六
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+
+    // 跳过周末
+    if (day === 0 || day === 6) {
+        return;
+    }
+
+    // 检查是否在交易时间（9:30-11:30, 13:00-15:00）
+    const morningTrade = (hour === 9 && minute >= 30) || (hour === 10) || (hour === 11 && minute < 30);
+    const afternoonTrade = (hour === 13) || (hour === 14);
+
+    if (morningTrade || afternoonTrade) {
+        try {
+            const { checkStopLossConditions } = require('./scheduled-tasks/monitor-stop-loss');
+            await checkStopLossConditions();
+        } catch (error) {
+            console.error('❌ 价格监控检查失败:', error.message);
+        }
+    }
+}, {
+    timezone: 'Asia/Shanghai'
 });
 
 // ==================== 数据库初始化和服务器启动 ====================

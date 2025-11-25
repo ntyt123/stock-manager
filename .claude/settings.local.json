@@ -50,7 +50,10 @@
       "Bash(cmd /c \"cd scripts\\deploy && deploy.bat\")",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(check-pos-table.js)",
+      "Bash(verify.js)",
+      "Bash(temp-check.js)"
     ],
     "deny": [],
     "ask": []

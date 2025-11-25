@@ -944,16 +944,33 @@ const SettingsManager = {
                 statsMessage += `✓ 成本记录: ${stats.costRecords || 0} 条\n`;
                 statsMessage += `✓ 成本调整记录: ${stats.costAdjustments || 0} 条\n`;
                 statsMessage += `✓ 持仓更新记录: ${stats.positionUpdates || 0} 条\n`;
+                statsMessage += `✓ 交易日志: ${stats.tradingLogs || 0} 条\n`;
+                statsMessage += `✓ 每日复盘: ${stats.dailyRecaps || 0} 条\n`;
+                statsMessage += `✓ 资金账户: ${stats.fundAccounts || 0} 条\n`;
+                statsMessage += `✓ 资金交易: ${stats.fundTransactions || 0} 条\n`;
+                statsMessage += `✓ 风险预警: ${stats.riskWarnings || 0} 条\n`;
+                statsMessage += `✓ 风险事件: ${stats.riskEvents || 0} 条\n`;
+                statsMessage += `✓ 股票池: ${stats.stockPools || 0} 条\n`;
+                statsMessage += `✓ 股票池项目: ${stats.stockPoolItems || 0} 条\n`;
+                statsMessage += `✓ 组合优化: ${stats.portfolioOptimizations || 0} 条\n`;
+                statsMessage += `✓ 预测历史: ${stats.predictionHistory || 0} 条\n`;
+                statsMessage += `✓ 三日选股结果: ${stats.threeDaySelectionResults || 0} 条\n`;
+                statsMessage += `✓ 集合竞价分析: ${stats.callAuctionAnalysis || 0} 条\n`;
+                statsMessage += `✓ 总资金已重置为: ¥0\n`;
 
                 alert(statsMessage);
-                showNotification('所有数据已清除', 'success');
+                showNotification('所有数据已清除，即将退出登录...', 'success');
 
-                // 清除本地缓存
-                this.clearCache();
+                // 清除本地缓存（不弹确认框，直接清除所有缓存包括token）
+                const allKeys = Object.keys(localStorage);
+                allKeys.forEach(key => {
+                    localStorage.removeItem(key);
+                });
+                console.log('✅ 本地缓存已清除（包括登录状态）');
 
-                // 2秒后刷新页面
+                // 2秒后跳转到登录页
                 setTimeout(() => {
-                    location.reload();
+                    window.location.href = '/login.html';
                 }, 2000);
             } else {
                 showNotification(result.error || '清除数据失败', 'error');

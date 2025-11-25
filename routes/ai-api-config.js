@@ -321,6 +321,13 @@ module.exports = (authenticateToken) => {
                     default_model: 'claude-3-sonnet'
                 },
                 {
+                    id: 'qwen',
+                    name: '通义千问 (QWen)',
+                    api_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions',
+                    models: ['qwen-max', 'qwen-plus', 'qwen-turbo', 'qwen-long', 'qwen2.5-72b-instruct', 'qwen2.5-32b-instruct'],
+                    default_model: 'qwen-max'
+                },
+                {
                     id: 'custom',
                     name: '自定义API',
                     api_url: '',

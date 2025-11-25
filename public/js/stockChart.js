@@ -408,12 +408,62 @@ class StockChartManager {
             existingChart.destroy();
         }
 
-        const closePrices = historyData.map(item => item.close);
+        // 获取当前时间，判断是否为实时分时图
+        const now = new Date();
+        const currentHour = now.getHours();
+        const currentMin = now.getMinutes();
+        const isRealtime = historyData.length > 0 && historyData[historyData.length - 1].time &&
+                          historyData[historyData.length - 1].time.includes(now.toISOString().split('T')[0]);
+
+        // 生成完整的交易时间标签，每5分钟一个点（始终显示全天）
+        const fullTimeLabels = [];
+        const fullPrices = [];
+
+        // 上午交易时间 9:30-11:30
+        for (let hour = 9; hour <= 11; hour++) {
+            const startMin = hour === 9 ? 30 : 0;
+            const endMin = hour === 11 ? 30 : 55;
+            for (let min = startMin; min <= endMin; min += 5) {
+                const timeLabel = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+                fullTimeLabels.push(timeLabel);
+
+                // 查找对应时间的数据
+                const dataIndex = labels.findIndex(l => l === timeLabel);
+
+                // 如果是实时数据且超过当前时间，则设置为null（不显示未来数据）
+                if (isRealtime && (hour > currentHour || (hour === currentHour && min > currentMin))) {
+                    fullPrices.push(null);
+                } else {
+                    fullPrices.push(dataIndex >= 0 ? historyData[dataIndex].close : null);
+                }
+            }
+        }
+
+        // 下午交易时间 13:00-15:00（始终添加到x轴）
+        for (let hour = 13; hour <= 15; hour++) {
+            const endMin = hour === 15 ? 0 : 55;
+            for (let min = 0; min <= endMin; min += 5) {
+                const timeLabel = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+                fullTimeLabels.push(timeLabel);
+
+                // 查找对应时间的数据
+                const dataIndex = labels.findIndex(l => l === timeLabel);
+
+                // 如果是实时数据且超过当前时间，则设置为null（不显示未来数据）
+                if (isRealtime && (hour > currentHour || (hour === currentHour && min > currentMin))) {
+                    fullPrices.push(null);
+                } else {
+                    fullPrices.push(dataIndex >= 0 ? historyData[dataIndex].close : null);
+                }
+            }
+        }
+
+        const closePrices = fullPrices;
 
         return new Chart(canvas, {
             type: 'line',
             data: {
-                labels: labels,
+                labels: fullTimeLabels,
                 datasets: [{
                     label: '价格',
                     data: closePrices,
@@ -462,6 +512,7 @@ class StockChartManager {
                 },
                 scales: {
                     x: {
+                        type: 'category',
                         grid: {
                             display: false
                         },
@@ -470,8 +521,13 @@ class StockChartManager {
                             color: '#95a5a6',
                             font: {
                                 size: 10
-                            }
-                        }
+                            },
+                            autoSkip: true,
+                            maxRotation: 0,
+                            minRotation: 0
+                        },
+                        min: 0,
+                        max: fullTimeLabels.length - 1
                     },
                     y: {
                         display: true,

@@ -1266,8 +1266,8 @@ const TradingPlanManager = {
                 return;
             }
 
-            // 显示加载状态
-            container.innerHTML = '<div class="loading-text">正在加载交易计划...</div>';
+            // 显示加载状态（不使用转圈动画）
+            container.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 40px; font-size: 16px;">正在加载交易计划...</div>';
 
             // 并行加载今日计划和所有计划
             const [todayResponse, allPlansResponse] = await Promise.all([

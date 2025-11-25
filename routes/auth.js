@@ -282,6 +282,23 @@ module.exports = (JWT_SECRET) => {
                 message: '所有数据已清除',
                 stats: result.stats
             });
+
+            // 延迟3秒后重启服务器，确保响应已发送
+            setTimeout(() => {
+                console.log('🔄 数据已清除，正在重启服务器...');
+
+                // 触发nodemon重启：修改server.js的修改时间
+                const fs = require('fs');
+                const serverFile = require('path').join(__dirname, '../server.js');
+                const now = new Date();
+                try {
+                    fs.utimesSync(serverFile, now, now);
+                    console.log('✅ 已触发服务器重启');
+                } catch (err) {
+                    console.error('❌ 触发重启失败，使用退出方式:', err.message);
+                    process.exit(1);
+                }
+            }, 3000);
         } catch (error) {
             console.error('清除数据错误:', error);
             return res.status(500).json({ error: '清除数据失败，请稍后重试' });
