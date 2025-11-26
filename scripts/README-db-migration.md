@@ -56,6 +56,7 @@ bash scripts/deploy-db-migration.sh
 4. **如果有缺失字段，运行迁移脚本**
    ```bash
    node database/migrations/010_extend_daily_recap_for_v2.js
+   node database/migrations/012_add_blown_board_count.js
    ```
 
 5. **验证迁移结果**

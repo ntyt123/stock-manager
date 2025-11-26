@@ -453,7 +453,35 @@ function initModalCloseOnBackgroundClick() {
 const UIUtils = {
     // 显示Toast提示（简化版通知）
     showToast: function(message, type = 'info') {
-        showNotification(message, type);
+        // 创建toast元素
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+
+        // 添加图标
+        let icon = '';
+        if (type === 'success') icon = '✓';
+        else if (type === 'error') icon = '✗';
+        else if (type === 'info') icon = 'ℹ';
+
+        toast.innerHTML = `
+            <span class="toast-icon">${icon}</span>
+            <span class="toast-message">${message}</span>
+        `;
+
+        // 添加到页面
+        document.body.appendChild(toast);
+
+        // 触发动画
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        // 根据类型设置不同的停留时间
+        const duration = type === 'error' ? 5000 : 3000;
+
+        // 自动移除
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
     },
 
     // 格式化数字
@@ -489,6 +517,62 @@ const UIUtils = {
 (function() {
     const style = document.createElement('style');
     style.textContent = `
+        /* Toast 提示样式 */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            max-width: 500px;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-icon {
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .toast-message {
+            flex: 1;
+        }
+
+        .toast-success {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+        }
+
+        .toast-error {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .toast-info {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        /* 旧版通知样式（兼容） */
         .notification {
             position: fixed;
             top: 20px;
@@ -502,7 +586,7 @@ const UIUtils = {
         }
 
         .notification.success {
-            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
         }
 
         .notification.info {
@@ -510,7 +594,7 @@ const UIUtils = {
         }
 
         .notification.error {
-            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
         }
 
         @keyframes slideIn {

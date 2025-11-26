@@ -1347,6 +1347,7 @@ async function saveMarketEnvironment(req, res) {
             market_emotion,
             limit_up_count,
             limit_down_count,
+            blown_board_count,
             blown_board_rate,
             active_themes,
             market_notes
@@ -1358,6 +1359,7 @@ async function saveMarketEnvironment(req, res) {
             SET market_emotion = ?,
                 limit_up_count = ?,
                 limit_down_count = ?,
+                blown_board_count = ?,
                 blown_board_rate = ?,
                 active_themes = ?,
                 market_notes = ?,
@@ -1369,6 +1371,7 @@ async function saveMarketEnvironment(req, res) {
             market_emotion,
             limit_up_count,
             limit_down_count,
+            blown_board_count,
             blown_board_rate,
             JSON.stringify(active_themes),
             market_notes,

@@ -22,6 +22,7 @@ try {
         'market_emotion',
         'limit_up_count',
         'limit_down_count',
+        'blown_board_count',      // V2.1新增：炸板数
         'blown_board_rate',
         'active_themes',
         'market_notes',

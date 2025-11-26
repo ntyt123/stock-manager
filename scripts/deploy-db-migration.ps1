@@ -41,11 +41,21 @@ if ($continue -ne "y" -and $continue -ne "Y") {
 # 步骤3: 运行迁移
 Write-Host ""
 Write-Host "📤 步骤3: 运行远程迁移脚本..." -ForegroundColor Green
-$migrateCmd = "ssh ${RemoteUser}@${RemoteHost} `"cd ${RemotePath} && node database/migrations/010_extend_daily_recap_for_v2.js`""
-Write-Host "执行: $migrateCmd" -ForegroundColor Gray
-Invoke-Expression $migrateCmd
+
+# 运行V2基础迁移
+$migrateCmd1 = "ssh ${RemoteUser}@${RemoteHost} `"cd ${RemotePath} && node database/migrations/010_extend_daily_recap_for_v2.js`""
+Write-Host "执行: $migrateCmd1" -ForegroundColor Gray
+Invoke-Expression $migrateCmd1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "❌ 迁移失败！" -ForegroundColor Red
+    Write-Host "⚠️ V2迁移可能已执行，继续..." -ForegroundColor Yellow
+}
+
+# 运行炸板数迁移
+$migrateCmd2 = "ssh ${RemoteUser}@${RemoteHost} `"cd ${RemotePath} && node database/migrations/012_add_blown_board_count.js`""
+Write-Host "执行: $migrateCmd2" -ForegroundColor Gray
+Invoke-Expression $migrateCmd2
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ 炸板数迁移失败！" -ForegroundColor Red
     exit 1
 }
 

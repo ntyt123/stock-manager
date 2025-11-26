@@ -435,6 +435,9 @@ const RecapManager = {
                 </div>
             </div>
         `;
+
+        // 设置市场环境表单的自动计算功能
+        this.setupMarketEnvironmentAutoCalc();
     },
 
     /**
@@ -998,12 +1001,14 @@ const RecapManager = {
 
                 // 保存分析结果
                 await this.saveAnalysisResult('call_auction', analysis);
+                UIUtils.showToast('集合竞价分析完成', 'success');
             } else {
                 throw new Error(result.error || '集合竞价分析失败');
             }
         } catch (error) {
             console.error('集合竞价分析错误:', error);
             container.innerHTML = `<div class="error-message">集合竞价分析失败: ${error.message}</div>`;
+            UIUtils.showToast('集合竞价分析失败', 'error');
         }
     },
 
@@ -1044,12 +1049,14 @@ const RecapManager = {
 
                 // 保存分析结果
                 await this.saveAnalysisResult('portfolio', analysis);
+                UIUtils.showToast('持仓分析完成', 'success');
             } else {
                 throw new Error(result.error || '持仓分析失败');
             }
         } catch (error) {
             console.error('持仓分析错误:', error);
             container.innerHTML = `<div class="error-message">持仓分析失败: ${error.message}</div>`;
+            UIUtils.showToast('持仓分析失败', 'error');
         }
     },
 
@@ -1088,12 +1095,14 @@ const RecapManager = {
 
                 // 保存分析结果
                 await this.saveAnalysisResult('trend', prediction, stockCode, stockName);
+                UIUtils.showToast(`${stockName} 趋势分析完成`, 'success');
             } else {
                 throw new Error(result.error || '趋势分析失败');
             }
         } catch (error) {
             console.error('趋势分析错误:', error);
             resultContainer.innerHTML = `<div class="error-message">趋势分析失败: ${error.message}</div>`;
+            UIUtils.showToast(`${stockName} 趋势分析失败`, 'error');
         }
     },
 
@@ -1230,6 +1239,7 @@ const RecapManager = {
         const marketEmotion = recap.market_emotion || '';
         const limitUpCount = recap.limit_up_count || 0;
         const limitDownCount = recap.limit_down_count || 0;
+        const blownBoardCount = recap.blown_board_count || 0;
         const blownBoardRate = recap.blown_board_rate || 0;
         const activeThemes = recap.active_themes ? JSON.parse(recap.active_themes) : [];
         const marketNotes = recap.market_notes || '';
@@ -1286,8 +1296,12 @@ const RecapManager = {
                             <input type="number" id="limitDownCountInput" class="form-control" value="${limitDownCount}" placeholder="0">
                         </div>
                         <div class="form-group">
+                            <label>炸板数</label>
+                            <input type="number" id="blownBoardCountInput" class="form-control" value="${blownBoardCount}" placeholder="0">
+                        </div>
+                        <div class="form-group">
                             <label>炸板率 (%)</label>
-                            <input type="number" id="blownBoardRateInput" class="form-control" value="${blownBoardRate}" placeholder="0" step="0.1">
+                            <input type="text" id="blownBoardRateDisplay" class="form-control" value="${blownBoardRate > 0 ? blownBoardRate.toFixed(1) : '0.0'}" readonly style="background-color: #f5f5f5;">
                         </div>
                     </div>
                 </div>
@@ -1321,7 +1335,14 @@ const RecapManager = {
             const marketEmotion = document.getElementById('marketEmotionInput').value;
             const limitUpCount = parseInt(document.getElementById('limitUpCountInput').value) || 0;
             const limitDownCount = parseInt(document.getElementById('limitDownCountInput').value) || 0;
-            const blownBoardRate = parseFloat(document.getElementById('blownBoardRateInput').value) || 0;
+            const blownBoardCount = parseInt(document.getElementById('blownBoardCountInput').value) || 0;
+
+            // 计算炸板率：炸板数 / (涨停数 + 炸板数) * 100
+            let blownBoardRate = 0;
+            if (limitUpCount + blownBoardCount > 0) {
+                blownBoardRate = (blownBoardCount / (limitUpCount + blownBoardCount)) * 100;
+            }
+
             const activeThemesText = document.getElementById('activeThemesInput').value;
             const activeThemes = activeThemesText.split(',').map(t => t.trim()).filter(t => t);
             const marketNotes = document.getElementById('marketNotesInput').value;
@@ -1337,6 +1358,7 @@ const RecapManager = {
                     market_emotion: marketEmotion,
                     limit_up_count: limitUpCount,
                     limit_down_count: limitDownCount,
+                    blown_board_count: blownBoardCount,
                     blown_board_rate: blownBoardRate,
                     active_themes: activeThemes,
                     market_notes: marketNotes
@@ -1354,6 +1376,33 @@ const RecapManager = {
             console.error('保存市场环境失败:', error);
             UIUtils.showToast('保存失败', 'error');
         }
+    },
+
+    /**
+     * 设置市场环境表单的自动计算功能
+     */
+    setupMarketEnvironmentAutoCalc() {
+        const limitUpInput = document.getElementById('limitUpCountInput');
+        const blownBoardInput = document.getElementById('blownBoardCountInput');
+        const blownRateDisplay = document.getElementById('blownBoardRateDisplay');
+
+        if (!limitUpInput || !blownBoardInput || !blownRateDisplay) return;
+
+        const calculateBlownBoardRate = () => {
+            const limitUpCount = parseInt(limitUpInput.value) || 0;
+            const blownBoardCount = parseInt(blownBoardInput.value) || 0;
+
+            let blownBoardRate = 0;
+            if (limitUpCount + blownBoardCount > 0) {
+                blownBoardRate = (blownBoardCount / (limitUpCount + blownBoardCount)) * 100;
+            }
+
+            blownRateDisplay.value = blownBoardRate.toFixed(1);
+        };
+
+        // 绑定输入事件
+        limitUpInput.addEventListener('input', calculateBlownBoardRate);
+        blownBoardInput.addEventListener('input', calculateBlownBoardRate);
     },
 
     /**
