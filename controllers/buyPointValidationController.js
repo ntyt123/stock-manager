@@ -341,28 +341,77 @@ function calculatePatternScore(stockData) {
     const lastHigh = highs[len - 1];
     const lastLow = lows[len - 1];
 
-    // 阳线
+    // 1.1 单根K线形态分析
+    const bodySize = Math.abs(lastClose - lastOpen);
+    const totalRange = lastHigh - lastLow;
+    const bodyRatio = totalRange > 0 ? bodySize / totalRange : 0;
+    const upperShadow = lastHigh - Math.max(lastOpen, lastClose);
+    const lowerShadow = Math.min(lastOpen, lastClose) - lastLow;
+    const shadowRatio = totalRange > 0 ? (upperShadow + lowerShadow) / totalRange : 0;
+
+    // 阳线分析
     if (lastClose > lastOpen) {
         klineScore += 3;
-        const bodyRatio = (lastClose - lastOpen) / (lastHigh - lastLow);
 
-        // 大阳线
+        // 大阳线（实体占比>70%）
         if (bodyRatio > 0.7) {
             klineScore += 4;
-            klineDetails.push(`✅ 收出大阳线 (实体占比 ${(bodyRatio * 100).toFixed(1)}% > 70%)，多头力量强劲 (+7分)`);
+            klineDetails.push(`✅ 收出大阳线，实体占比 ${(bodyRatio * 100).toFixed(1)}% > 70%，多头力量强劲，买盘积极 (+7分)`);
+
+            // 光头光脚大阳线（影线极短）
+            if (shadowRatio < 0.1) {
+                klineDetails.push(`🌟 光头光脚大阳线！影线极短 (${(shadowRatio * 100).toFixed(1)}%)，多头完全控盘，强势突破信号`);
+            }
         } else if (bodyRatio > 0.5) {
             klineScore += 2;
-            klineDetails.push(`✅ 收出中阳线 (实体占比 ${(bodyRatio * 100).toFixed(1)}%)，买盘较强 (+5分)`);
+            klineDetails.push(`✅ 收出中阳线，实体占比 ${(bodyRatio * 100).toFixed(1)}%，买盘较强 (+5分)`);
+
+            // 分析上下影线
+            if (upperShadow > bodySize) {
+                klineDetails.push(`⚠️ 上影线较长 (${upperShadow.toFixed(2)})，上方存在一定抛压`);
+            }
+            if (lowerShadow > bodySize) {
+                klineDetails.push(`✅ 下影线较长 (${lowerShadow.toFixed(2)})，下方支撑强劲，多头反击有力`);
+            }
         } else {
-            klineDetails.push(`✅ 收阳线 (实体占比 ${(bodyRatio * 100).toFixed(1)}%)，略有上影线 (+3分)`);
+            klineDetails.push(`✅ 收小阳线，实体占比 ${(bodyRatio * 100).toFixed(1)}%，略有上影线 (+3分)`);
+
+            // 锤子线（下影线长，上影线短，实体小）
+            if (lowerShadow > bodySize * 2 && upperShadow < bodySize * 0.5) {
+                klineDetails.push(`🔨 形成锤子线形态！下影线长度是实体的 ${(lowerShadow / bodySize).toFixed(1)} 倍，底部反转信号`);
+            }
         }
-    } else if (lastClose < lastOpen) {
-        klineDetails.push(`❌ 收阴线 (${lastClose.toFixed(2)} < ${lastOpen.toFixed(2)})，短期承压 (0分)`);
-    } else {
-        klineDetails.push(`⚠️ 收十字星，多空博弈激烈 (0分)`);
+    }
+    // 阴线分析
+    else if (lastClose < lastOpen) {
+        klineDetails.push(`❌ 收阴线 (收盘 ${lastClose.toFixed(2)} < 开盘 ${lastOpen.toFixed(2)})，短期承压 (0分)`);
+
+        // 阴线的详细分析
+        if (bodyRatio > 0.7) {
+            klineDetails.push(`⚠️ 大阴线 (实体占比 ${(bodyRatio * 100).toFixed(1)}%)，空头力量强劲，需谨慎`);
+        } else if (lowerShadow > bodySize * 2) {
+            klineDetails.push(`💡 虽收阴线，但下影线很长 (${lowerShadow.toFixed(2)})，表明下方有强支撑，可能是假跌`);
+        }
+    }
+    // 十字星分析
+    else {
+        klineDetails.push(`⚠️ 收十字星 (开盘 ${lastOpen.toFixed(2)} = 收盘 ${lastClose.toFixed(2)})，多空博弈激烈，方向不明 (0分)`);
+
+        // 十字星位置分析
+        const recentLows = lows.slice(-20);
+        const recentHighs = highs.slice(-20);
+        const lowestPrice = Math.min(...recentLows);
+        const highestPrice = Math.max(...recentHighs);
+        const position = (lastClose - lowestPrice) / (highestPrice - lowestPrice);
+
+        if (position < 0.3) {
+            klineDetails.push(`🌟 十字星出现在底部区域 (相对位置 ${(position * 100).toFixed(1)}%)，可能是见底信号`);
+        } else if (position > 0.7) {
+            klineDetails.push(`⚠️ 十字星出现在高位 (相对位置 ${(position * 100).toFixed(1)}%)，警惕见顶风险`);
+        }
     }
 
-    // 连续上涨
+    // 1.2 连续K线形态分析
     let consecutive = 0;
     for (let i = len - 1; i > 0 && i > len - 4; i--) {
         if (closes[i] > closes[i - 1]) {
@@ -372,68 +421,158 @@ function calculatePatternScore(stockData) {
         }
     }
 
-    if (consecutive >= 2) {
+    if (consecutive >= 3) {
         klineScore += 3;
-        klineDetails.push(`✅ 连续${consecutive}日上涨，形成短期上升趋势 (+3分)`);
+        klineDetails.push(`✅ 连续${consecutive}日阳线，形成明显的上升通道，多头趋势强劲 (+3分)`);
+    } else if (consecutive >= 2) {
+        klineScore += 3;
+        klineDetails.push(`✅ 连续${consecutive}日上涨，短期上升趋势初步形成 (+3分)`);
     } else if (consecutive === 1) {
-        klineDetails.push(`⚠️ 仅1日上涨，趋势延续性待观察 (0分)`);
+        klineDetails.push(`⚠️ 仅1日上涨，趋势延续性待观察，需关注后续走势 (0分)`);
     } else {
-        klineDetails.push(`❌ 未形成连续上涨，走势偏弱 (0分)`);
+        klineDetails.push(`❌ 未形成连续上涨，走势偏弱，建议等待企稳信号 (0分)`);
+    }
+
+    // 1.3 特殊K线形态识别
+    if (len >= 3) {
+        const prevClose2 = closes[len - 3];
+        const prevClose1 = closes[len - 2];
+
+        // 早晨之星（底部三根K线：大阴线+小十字星+大阳线）
+        if (prevClose2 < opens[len - 3] && // 第一根是阴线
+            Math.abs(prevClose1 - opens[len - 2]) < bodySize * 0.3 && // 第二根是小实体
+            lastClose > lastOpen && bodyRatio > 0.6) { // 第三根是大阳线
+            klineDetails.push(`🌅 疑似形成"早晨之星"形态，底部反转信号强烈！`);
+        }
+
+        // 红三兵（连续三根阳线，逐步上涨）
+        if (len >= 3 &&
+            closes[len - 3] > opens[len - 3] &&
+            closes[len - 2] > opens[len - 2] &&
+            lastClose > lastOpen &&
+            closes[len - 2] > closes[len - 3] &&
+            lastClose > closes[len - 2]) {
+            klineDetails.push(`🎖️ 形成"红三兵"形态，连续三根阳线步步高升，多方力量强大！`);
+        }
     }
 
     // 2. 支撑位得分 (15分)
     const currentPrice = closes[len - 1];
 
-    // 寻找最近的支撑位（前期低点）
+    // 2.1 相对位置分析（近20日）
     const recentLows = lows.slice(-20);
     const lowestPrice = Math.min(...recentLows);
     const highestPrice = Math.max(...highs.slice(-20));
+    const priceRange = highestPrice - lowestPrice;
+    const pricePosition = priceRange > 0 ? (currentPrice - lowestPrice) / priceRange : 0.5;
 
-    // 距离底部的位置
-    const pricePosition = (currentPrice - lowestPrice) / (highestPrice - lowestPrice);
-
-    if (pricePosition <= 0.3) {
+    if (pricePosition <= 0.2) {
         supportScore += 8;
-        supportDetails.push(`✅ 价格位于近期底部区域 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，上涨空间大 (+8分)`);
+        supportDetails.push(`✅ 价格位于近20日极低位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，安全边际极高，上涨空间巨大 (+8分)`);
+        supportDetails.push(`📊 当前价 ¥${currentPrice.toFixed(2)}，20日最低 ¥${lowestPrice.toFixed(2)}，20日最高 ¥${highestPrice.toFixed(2)}`);
+    } else if (pricePosition <= 0.3) {
+        supportScore += 8;
+        supportDetails.push(`✅ 价格位于近期底部区域 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，安全边际较高，上涨空间大 (+8分)`);
     } else if (pricePosition <= 0.5) {
         supportScore += 5;
-        supportDetails.push(`✅ 价格处于中低位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，有一定上涨空间 (+5分)`);
+        supportDetails.push(`✅ 价格处于中低位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，有一定上涨空间，风险适中 (+5分)`);
     } else if (pricePosition <= 0.7) {
         supportScore += 3;
-        supportDetails.push(`⚠️ 价格处于中位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，上涨空间一般 (+3分)`);
+        supportDetails.push(`⚠️ 价格处于中位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，上涨空间一般，需谨慎评估 (+3分)`);
+    } else if (pricePosition <= 0.85) {
+        supportDetails.push(`⚠️ 价格处于相对高位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，追高风险增加，建议等待回调 (0分)`);
     } else {
-        supportDetails.push(`❌ 价格位于相对高位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，追高风险较大 (0分)`);
+        supportDetails.push(`❌ 价格位于近期高位区域 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，追高风险较大，不建议此时介入 (0分)`);
     }
 
-    // 回踩支撑位
+    // 2.2 均线支撑分析
+    const ma5 = calculateSMA(closes, 5);
+    const ma10 = calculateSMA(closes, 10);
     const ma20 = calculateSMA(closes, 20);
-    if (ma20 && Math.abs(currentPrice - ma20) / ma20 < 0.02) {
-        supportScore += 4;
-        supportDetails.push(`✅ 价格回踩MA20均线支撑 (偏离度 ${(Math.abs(currentPrice - ma20) / ma20 * 100).toFixed(2)}%)，支撑有效 (+4分)`);
-    } else if (ma20 && currentPrice > ma20) {
-        const deviation = ((currentPrice - ma20) / ma20 * 100).toFixed(2);
-        supportDetails.push(`⚠️ 价格高于MA20均线 ${deviation}%，未触及支撑位 (0分)`);
-    } else if (ma20) {
-        supportDetails.push(`❌ 价格跌破MA20均线支撑，支撑失效 (0分)`);
+    const ma60 = calculateSMA(closes, 60);
+
+    // MA20支撑分析
+    if (ma20) {
+        const ma20Deviation = Math.abs(currentPrice - ma20) / ma20;
+
+        if (ma20Deviation < 0.01) {
+            supportScore += 4;
+            supportDetails.push(`✅ 价格精准触及MA20均线支撑 (偏离度仅 ${(ma20Deviation * 100).toFixed(2)}%)，支撑有效性极高 (+4分)`);
+            supportDetails.push(`📍 MA20 = ¥${ma20.toFixed(2)}，当前价 = ¥${currentPrice.toFixed(2)}`);
+        } else if (ma20Deviation < 0.02) {
+            supportScore += 4;
+            supportDetails.push(`✅ 价格回踩MA20均线支撑 (偏离度 ${(ma20Deviation * 100).toFixed(2)}%)，支撑有效 (+4分)`);
+        } else if (currentPrice > ma20 && ma20Deviation < 0.05) {
+            supportScore += 2;
+            supportDetails.push(`✅ 价格在MA20均线附近运行 (高于MA20 ${((currentPrice - ma20) / ma20 * 100).toFixed(2)}%)，支撑可靠 (+2分)`);
+        } else if (currentPrice > ma20) {
+            const deviation = ((currentPrice - ma20) / ma20 * 100).toFixed(2);
+            supportDetails.push(`⚠️ 价格高于MA20均线 ${deviation}%，未触及支撑位，可等待回调 (0分)`);
+        } else {
+            const breakdownPercent = ((ma20 - currentPrice) / ma20 * 100).toFixed(2);
+            supportDetails.push(`❌ 价格跌破MA20均线 ${breakdownPercent}%，支撑失效，需等待重新站上 (0分)`);
+        }
     }
 
-    // 前期平台
+    // MA60支撑分析（长期支撑）
+    if (ma60 && currentPrice > ma60 * 0.95 && currentPrice < ma60 * 1.05) {
+        supportDetails.push(`💡 价格在MA60半年线附近 (MA60 = ¥${ma60.toFixed(2)})，长期支撑位，关注度高`);
+    }
+
+    // 2.3 前期平台整理分析
     const recent10Closes = closes.slice(-10);
-    const volatility = (Math.max(...recent10Closes) - Math.min(...recent10Closes)) / Math.min(...recent10Closes);
-    if (volatility < 0.05) {
+    const recent10High = Math.max(...recent10Closes);
+    const recent10Low = Math.min(...recent10Closes);
+    const volatility = recent10Low > 0 ? (recent10High - recent10Low) / recent10Low : 0;
+
+    if (volatility < 0.03) {
         supportScore += 3;
-        supportDetails.push(`✅ 近10日窄幅整理 (波动率 ${(volatility * 100).toFixed(2)}% < 5%)，蓄势待发 (+3分)`);
-    } else if (volatility < 0.1) {
-        supportDetails.push(`⚠️ 近期波动率 ${(volatility * 100).toFixed(2)}%，整理幅度一般 (0分)`);
+        supportDetails.push(`✅ 近10日极窄幅整理 (波动率 ${(volatility * 100).toFixed(2)}% < 3%)，充分蓄势，随时可能突破 (+3分)`);
+        supportDetails.push(`📐 10日振幅: ¥${(recent10High - recent10Low).toFixed(2)} (${(volatility * 100).toFixed(2)}%)`);
+    } else if (volatility < 0.05) {
+        supportScore += 3;
+        supportDetails.push(`✅ 近10日窄幅整理 (波动率 ${(volatility * 100).toFixed(2)}% < 5%)，蓄势待发，形态良好 (+3分)`);
+    } else if (volatility < 0.08) {
+        supportScore += 1;
+        supportDetails.push(`⚠️ 近期小幅震荡 (波动率 ${(volatility * 100).toFixed(2)}%)，整理幅度一般，需继续观察 (+1分)`);
+    } else if (volatility < 0.15) {
+        supportDetails.push(`⚠️ 近期波动率 ${(volatility * 100).toFixed(2)}%，震荡幅度较大，走势不够稳定 (0分)`);
     } else {
-        supportDetails.push(`❌ 近期波动较大 (波动率 ${(volatility * 100).toFixed(2)}%)，走势不稳定 (0分)`);
+        supportDetails.push(`❌ 近期波动较大 (波动率 ${(volatility * 100).toFixed(2)}%)，走势不稳定，风险较高 (0分)`);
+    }
+
+    // 2.4 突破整理平台分析
+    if (len >= 20) {
+        const recent20High = Math.max(...closes.slice(-20, -1)); // 前19日最高
+        const recent20Low = Math.min(...closes.slice(-20, -1));  // 前19日最低
+
+        if (currentPrice > recent20High) {
+            const breakoutPercent = ((currentPrice - recent20High) / recent20High * 100).toFixed(2);
+            supportDetails.push(`🚀 突破近20日平台高点！(突破幅度 ${breakoutPercent}%)，形态向上突破，追涨信号`);
+        }
+    }
+
+    // 2.5 黄金分割位分析
+    const fibonacciLevels = {
+        '0.236': lowestPrice + priceRange * 0.236,
+        '0.382': lowestPrice + priceRange * 0.382,
+        '0.500': lowestPrice + priceRange * 0.500,
+        '0.618': lowestPrice + priceRange * 0.618
+    };
+
+    for (const [level, price] of Object.entries(fibonacciLevels)) {
+        const deviation = Math.abs(currentPrice - price) / price;
+        if (deviation < 0.02) {
+            supportDetails.push(`📐 价格位于黄金分割 ${level} 位 (¥${price.toFixed(2)})，关键支撑/压力位`);
+            break;
+        }
     }
 
     return {
         pattern_score: Math.min(25, klineScore + supportScore),
         kline_score: klineScore,
         support_score: supportScore,
-        // 新增：详细评分说明
+        // 详细评分说明
         kline_details: klineDetails,
         support_details: supportDetails
     };
@@ -446,40 +585,128 @@ function calculateMarketScore(indexData, sectorStrength) {
     let indexScore = 0;      // 大盘得分 (10分)
     let sectorScore = 0;     // 板块得分 (10分)
 
+    // 详细评分说明
+    const indexDetails = [];
+    const sectorDetails = [];
+
     // 1. 大盘得分 (10分)
     if (indexData && indexData.trend) {
         if (indexData.trend === 'up') {
             indexScore = 10;
+            indexDetails.push(`✅ 大盘趋势向上，市场情绪乐观，有利于个股表现 (+10分)`);
+
+            // 详细分析大盘强度
+            if (indexData.changePercent && indexData.changePercent > 2) {
+                indexDetails.push(`🚀 大盘涨幅 ${indexData.changePercent.toFixed(2)}% > 2%，强势上涨，做多氛围浓厚`);
+            } else if (indexData.changePercent && indexData.changePercent > 1) {
+                indexDetails.push(`📈 大盘温和上涨 ${indexData.changePercent.toFixed(2)}%，市场稳健向好`);
+            }
+
+            // 分析成交量
+            if (indexData.volumeRatio && indexData.volumeRatio > 1.2) {
+                indexDetails.push(`📊 大盘成交量放大 (量比 ${indexData.volumeRatio.toFixed(2)})，资金积极入场，上涨动能充足`);
+            }
         } else if (indexData.trend === 'neutral') {
             indexScore = 5;
+            indexDetails.push(`⚠️ 大盘横盘震荡，市场观望情绪浓厚，结构性机会为主 (+5分)`);
+
+            // 详细分析震荡区间
+            if (indexData.changePercent !== undefined) {
+                indexDetails.push(`📊 大盘涨跌幅 ${indexData.changePercent > 0 ? '+' : ''}${indexData.changePercent.toFixed(2)}%，窄幅波动`);
+            }
+
+            if (indexData.volumeRatio && indexData.volumeRatio < 0.8) {
+                indexDetails.push(`⚠️ 大盘成交量萎缩 (量比 ${indexData.volumeRatio.toFixed(2)})，场外资金观望，需等待方向选择`);
+            }
         } else {
             indexScore = 2;
+            indexDetails.push(`❌ 大盘趋势向下，市场情绪偏弱，不利于操作 (+2分)`);
+
+            // 详细分析下跌程度
+            if (indexData.changePercent && indexData.changePercent < -2) {
+                indexDetails.push(`⚠️ 大盘大幅下跌 ${indexData.changePercent.toFixed(2)}%，市场恐慌情绪蔓延，建议空仓观望`);
+            } else if (indexData.changePercent && indexData.changePercent < -1) {
+                indexDetails.push(`📉 大盘调整 ${indexData.changePercent.toFixed(2)}%，市场承压，需谨慎操作`);
+            }
+
+            // 分析是否超跌
+            if (indexData.oversold) {
+                indexDetails.push(`💡 大盘处于超卖区域，短期存在技术性反弹机会，但需确认企稳信号`);
+            }
         }
     } else {
-        // 默认给中性分数
+        // 默认给中性分数，并说明原因
         indexScore = 5;
+        indexDetails.push(`⚠️ 大盘数据暂缺，按中性环境评估 (+5分)`);
+        indexDetails.push(`💡 建议查看上证指数、深证成指、创业板指等主要指数走势，判断市场整体环境`);
+    }
+
+    // 补充大盘技术位分析
+    if (indexData && indexData.position) {
+        if (indexData.position === 'low') {
+            indexDetails.push(`🔽 大盘位于相对低位，安全边际较高，适合布局优质个股`);
+        } else if (indexData.position === 'high') {
+            indexDetails.push(`🔼 大盘位于相对高位，追高需谨慎，注意控制仓位`);
+        } else {
+            indexDetails.push(`📍 大盘位于中位，保持观察，根据个股强弱决定操作`);
+        }
     }
 
     // 2. 板块得分 (10分)
-    if (sectorStrength) {
+    if (sectorStrength !== null && sectorStrength !== undefined) {
         if (sectorStrength >= 0.7) {
             sectorScore = 10;
+            sectorDetails.push(`✅ 所属板块强势领涨 (板块强度 ${(sectorStrength * 100).toFixed(0)}%)，热点效应明显，个股易受关注 (+10分)`);
+            sectorDetails.push(`🔥 板块强度 >= 70%，资金高度集中，做多情绪高涨，适合积极参与`);
         } else if (sectorStrength >= 0.5) {
             sectorScore = 7;
+            sectorDetails.push(`✅ 所属板块表现良好 (板块强度 ${(sectorStrength * 100).toFixed(0)}%)，有一定资金关注 (+7分)`);
+            sectorDetails.push(`📊 板块强度 50-70%，板块热度适中，个股机会较多，可适度参与`);
         } else if (sectorStrength >= 0.3) {
             sectorScore = 4;
+            sectorDetails.push(`⚠️ 所属板块表现一般 (板块强度 ${(sectorStrength * 100).toFixed(0)}%)，资金关注度不高 (+4分)`);
+            sectorDetails.push(`💡 板块强度 30-50%，板块跟随市场，需精选个股，择优参与`);
         } else {
             sectorScore = 2;
+            sectorDetails.push(`❌ 所属板块表现疲弱 (板块强度 ${(sectorStrength * 100).toFixed(0)}%)，资金流出明显 (+2分)`);
+            sectorDetails.push(`⚠️ 板块强度 < 30%，板块整体承压，个股逆势上涨难度大，建议观望`);
         }
+
+        // 补充板块资金流向分析
+        sectorDetails.push(`💰 板块强度反映了板块内个股的整体表现，强度越高代表板块资金越活跃`);
     } else {
         // 默认给中性分数
         sectorScore = 5;
+        sectorDetails.push(`⚠️ 板块数据暂缺，按中性环境评估 (+5分)`);
+        sectorDetails.push(`💡 建议关注个股所属行业和概念板块的表现，判断板块热度和资金流向`);
+        sectorDetails.push(`📌 热门板块如新能源、半导体、医药、消费等通常资金关注度更高`);
+    }
+
+    // 补充市场环境综合建议
+    const marketDetails = [];
+
+    if (indexScore >= 8 && sectorScore >= 8) {
+        marketDetails.push(`🌟 市场环境极佳！大盘和板块双双强势，当前是绝佳的做多窗口`);
+    } else if (indexScore >= 5 && sectorScore >= 5) {
+        marketDetails.push(`✅ 市场环境尚可，具备一定操作机会，注意控制仓位和风险`);
+    } else if (indexScore < 5 || sectorScore < 5) {
+        marketDetails.push(`⚠️ 市场环境偏弱，操作难度较大，建议降低仓位或空仓观望`);
+    }
+
+    if (indexScore >= 8 && sectorScore < 5) {
+        marketDetails.push(`💡 大盘强但板块弱，可能是板块轮动，关注其他强势板块的机会`);
+    } else if (indexScore < 5 && sectorScore >= 8) {
+        marketDetails.push(`💡 大盘弱但板块强，个股存在逆市机会，但需严格止损`);
     }
 
     return {
         market_score: indexScore + sectorScore,
         index_score: indexScore,
-        sector_score: sectorScore
+        sector_score: sectorScore,
+        // 详细评分说明
+        index_details: indexDetails,
+        sector_details: sectorDetails,
+        market_details: marketDetails
     };
 }
 
@@ -491,64 +718,227 @@ function calculateRiskScore(stockData, indicators) {
     let volatilityRisk = 0;    // 波动风险 (5分)
     let signalRisk = 0;        // 信号风险 (5分)
 
+    // 详细评分说明
+    const positionRiskDetails = [];
+    const volatilityRiskDetails = [];
+    const signalRiskDetails = [];
+
     const { closes, highs, lows } = stockData;
     const currentPrice = closes[closes.length - 1];
 
-    // 1. 位置风险 (5分) - 越低风险越小
+    // 1. 位置风险分析 (5分) - 价格相对位置越低，风险越小
     const recent60Highs = highs.slice(-60);
     const recent60Lows = lows.slice(-60);
     const highest60 = Math.max(...recent60Highs);
     const lowest60 = Math.min(...recent60Lows);
+    const priceRange60 = highest60 - lowest60;
+    const pricePosition = priceRange60 > 0 ? (currentPrice - lowest60) / priceRange60 : 0.5;
 
-    const pricePosition = (currentPrice - lowest60) / (highest60 - lowest60);
-
-    if (pricePosition <= 0.3) {
-        positionRisk = 5; // 低位，风险小
+    if (pricePosition <= 0.2) {
+        positionRisk = 5;
+        positionRiskDetails.push(`✅ 价格位于近60日极低位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，安全边际极高 (+5分)`);
+        positionRiskDetails.push(`🛡️ 当前价 ¥${currentPrice.toFixed(2)} vs 60日最低 ¥${lowest60.toFixed(2)} vs 60日最高 ¥${highest60.toFixed(2)}`);
+        positionRiskDetails.push(`💡 处于历史低位，下跌空间有限，上涨潜力大，风险控制优秀`);
+    } else if (pricePosition <= 0.3) {
+        positionRisk = 5;
+        positionRiskDetails.push(`✅ 价格位于近60日低位区域 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，安全边际高 (+5分)`);
+        positionRiskDetails.push(`📊 60日振幅 ¥${priceRange60.toFixed(2)} (${(priceRange60 / lowest60 * 100).toFixed(1)}%)，当前接近底部`);
     } else if (pricePosition <= 0.5) {
         positionRisk = 4;
+        positionRiskDetails.push(`✅ 价格位于近60日中低位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，风险适中 (+4分)`);
+        positionRiskDetails.push(`💡 距离60日低点 ${((currentPrice - lowest60) / lowest60 * 100).toFixed(1)}%，距离高点 ${((highest60 - currentPrice) / currentPrice * 100).toFixed(1)}%`);
     } else if (pricePosition <= 0.7) {
         positionRisk = 3;
+        positionRiskDetails.push(`⚠️ 价格位于近60日中高位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，需警惕回调风险 (+3分)`);
+        positionRiskDetails.push(`📍 已上涨 ${((currentPrice - lowest60) / lowest60 * 100).toFixed(1)}%，需关注阻力位`);
     } else if (pricePosition <= 0.85) {
         positionRisk = 2;
+        positionRiskDetails.push(`⚠️ 价格位于近60日高位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，追高风险较大 (+2分)`);
+        positionRiskDetails.push(`🔴 距离60日高点仅 ${((highest60 - currentPrice) / currentPrice * 100).toFixed(1)}%，上方压力较重`);
+        positionRiskDetails.push(`💡 建议等待回调至中位再介入，降低持仓成本`);
     } else {
-        positionRisk = 1; // 高位，风险大
+        positionRisk = 1;
+        positionRiskDetails.push(`❌ 价格位于近60日极高位 (相对位置 ${(pricePosition * 100).toFixed(1)}%)，风险极高 (+1分)`);
+        positionRiskDetails.push(`⚠️ 当前价格接近或创出60日新高，回调风险大，不建议追高`);
+        positionRiskDetails.push(`💡 高位买入容易被套，建议等待明确回调后的支撑确认`);
     }
 
-    // 2. 波动风险 (5分) - 波动越小越好
+    // 补充止损位建议
+    const ma20 = calculateSMA(closes, 20);
+    if (ma20) {
+        const stopLossPrice = (ma20 * 0.95).toFixed(2);
+        const stopLossPercent = ((currentPrice - ma20 * 0.95) / currentPrice * 100).toFixed(1);
+        positionRiskDetails.push(`🎯 建议止损位: ¥${stopLossPrice} (MA20下方5%)，止损空间约 ${stopLossPercent}%`);
+    }
+
+    // 2. 波动风险分析 (5分) - 价格波动越小，风险越小
     const recent20Closes = closes.slice(-20);
-    const volatility = (Math.max(...recent20Closes) - Math.min(...recent20Closes)) / Math.min(...recent20Closes);
+    const high20 = Math.max(...recent20Closes);
+    const low20 = Math.min(...recent20Closes);
+    const volatility = low20 > 0 ? (high20 - low20) / low20 : 0;
 
     if (volatility <= 0.1) {
-        volatilityRisk = 5; // 低波动
+        volatilityRisk = 5;
+        volatilityRiskDetails.push(`✅ 近20日波动率极低 (${(volatility * 100).toFixed(2)}% ≤ 10%)，走势稳健 (+5分)`);
+        volatilityRiskDetails.push(`📊 20日振幅仅 ¥${(high20 - low20).toFixed(2)}，价格稳定，适合稳健型投资者`);
+        volatilityRiskDetails.push(`💡 低波动表明筹码锁定良好，突破后往往爆发力强`);
+    } else if (volatility <= 0.15) {
+        volatilityRisk = 5;
+        volatilityRiskDetails.push(`✅ 近20日波动率较低 (${(volatility * 100).toFixed(2)}% ≤ 15%)，风险可控 (+5分)`);
+        volatilityRiskDetails.push(`📐 20日振幅 ¥${(high20 - low20).toFixed(2)}，整理充分`);
     } else if (volatility <= 0.2) {
         volatilityRisk = 4;
+        volatilityRiskDetails.push(`✅ 近20日波动率正常 (${(volatility * 100).toFixed(2)}% ≤ 20%)，风险适中 (+4分)`);
+        volatilityRiskDetails.push(`📊 波动幅度在合理范围内，价格有一定弹性`);
     } else if (volatility <= 0.3) {
         volatilityRisk = 3;
+        volatilityRiskDetails.push(`⚠️ 近20日波动率偏高 (${(volatility * 100).toFixed(2)}% ≤ 30%)，需注意风险 (+3分)`);
+        volatilityRiskDetails.push(`📈 价格震荡幅度较大，短线波动风险增加，建议控制仓位`);
     } else if (volatility <= 0.5) {
         volatilityRisk = 2;
+        volatilityRiskDetails.push(`⚠️ 近20日波动率较大 (${(volatility * 100).toFixed(2)}% ≤ 50%)，风险较高 (+2分)`);
+        volatilityRiskDetails.push(`🔴 价格大幅震荡，高抛低吸难度大，不适合稳健投资者`);
+        volatilityRiskDetails.push(`💡 高波动意味着高风险高收益，需有较强的风险承受能力`);
     } else {
-        volatilityRisk = 1; // 高波动
+        volatilityRisk = 1;
+        volatilityRiskDetails.push(`❌ 近20日波动率极大 (${(volatility * 100).toFixed(2)}% > 50%)，风险极高 (+1分)`);
+        volatilityRiskDetails.push(`⚠️ 价格剧烈波动，可能存在重大消息或主力操控，极易造成亏损`);
+        volatilityRiskDetails.push(`🚨 建议观望，等待价格稳定后再考虑介入`);
     }
 
-    // 3. 信号风险 (5分) - 检查背离和超买
-    const rsi = indicators.rsi;
-    const { k } = indicators.kdj;
+    // 补充日内波动分析
+    if (closes.length >= 5) {
+        const recent5Volatility = (Math.max(...closes.slice(-5)) - Math.min(...closes.slice(-5))) / Math.min(...closes.slice(-5));
+        if (recent5Volatility > volatility * 1.5) {
+            volatilityRiskDetails.push(`⚠️ 近5日波动率 ${(recent5Volatility * 100).toFixed(2)}% 远超20日均值，短期波动加剧`);
+        } else if (recent5Volatility < volatility * 0.5) {
+            volatilityRiskDetails.push(`✅ 近5日波动收敛 (${(recent5Volatility * 100).toFixed(2)}%)，价格趋于稳定`);
+        }
+    }
 
-    if (rsi !== null && rsi > 80) {
-        signalRisk = 1; // 严重超买
-    } else if (rsi !== null && rsi > 70) {
-        signalRisk = 3; // 超买
-    } else if (k !== null && k > 90) {
-        signalRisk = 2; // KDJ超买
+    // 3. 技术信号风险分析 (5分) - 检查超买超卖和背离
+    const rsi = indicators.rsi;
+    const { k, d } = indicators.kdj;
+    const { dif, dea } = indicators.macd;
+
+    let riskSignalCount = 0;
+    let warningSignalCount = 0;
+
+    // RSI超买超卖分析
+    if (rsi !== null) {
+        if (rsi > 80) {
+            signalRisk = 1;
+            riskSignalCount++;
+            signalRiskDetails.push(`❌ RSI严重超买 (${rsi.toFixed(2)} > 80)，短期调整压力极大 (+1分)`);
+            signalRiskDetails.push(`🔴 超买区域持续时间过长，随时可能引发获利回吐，建议减仓或止盈`);
+        } else if (rsi > 70) {
+            signalRisk = Math.max(signalRisk, 3);
+            warningSignalCount++;
+            signalRiskDetails.push(`⚠️ RSI超买 (${rsi.toFixed(2)} > 70)，存在短期回调风险 (+3分)`);
+            signalRiskDetails.push(`💡 超买但未达极值，可持股观望，但需设好止盈位`);
+        } else if (rsi >= 50 && rsi <= 70) {
+            if (signalRisk < 4) signalRisk = 4;
+            signalRiskDetails.push(`✅ RSI健康区间 (${rsi.toFixed(2)}, 50-70)，多头强势但未超买 (+4分)`);
+        } else if (rsi >= 30 && rsi < 50) {
+            if (signalRisk < 5) signalRisk = 5;
+            signalRiskDetails.push(`✅ RSI中性偏弱 (${rsi.toFixed(2)}, 30-50)，技术面无风险信号 (+5分)`);
+        } else if (rsi >= 20 && rsi < 30) {
+            if (signalRisk < 5) signalRisk = 5;
+            signalRiskDetails.push(`💡 RSI接近超卖 (${rsi.toFixed(2)}, 20-30)，存在反弹机会，风险可控 (+5分)`);
+        } else {
+            if (signalRisk < 5) signalRisk = 5;
+            signalRiskDetails.push(`🌟 RSI深度超卖 (${rsi.toFixed(2)} < 20)，底部区域，反弹概率大 (+5分)`);
+        }
+    }
+
+    // KDJ超买超卖分析
+    if (k !== null && d !== null) {
+        if (k > 90 && d > 80) {
+            if (rsi === null || rsi <= 80) {
+                signalRisk = Math.min(signalRisk, 2);
+            }
+            riskSignalCount++;
+            signalRiskDetails.push(`⚠️ KDJ严重超买 (K=${k.toFixed(2)}, D=${d.toFixed(2)})，短期有调整需求`);
+        } else if (k > 80) {
+            warningSignalCount++;
+            signalRiskDetails.push(`⚠️ KDJ进入超买区 (K=${k.toFixed(2)})，注意高位震荡风险`);
+        } else if (k < 20 && d < 30) {
+            signalRiskDetails.push(`💡 KDJ超卖 (K=${k.toFixed(2)}, D=${d.toFixed(2)})，底部反弹机会，降低风险`);
+        } else if (k >= 20 && k <= 80) {
+            signalRiskDetails.push(`✅ KDJ健康区间 (K=${k.toFixed(2)})，指标无异常信号`);
+        }
+
+        // KDJ钝化分析
+        if (k > 90 && closes.length >= 5) {
+            let overboughtDays = 0;
+            // 检查KDJ高位钝化（简化逻辑）
+            if (k > 85 && d > 75) {
+                overboughtDays = 3; // 假设
+                signalRiskDetails.push(`⚠️ KDJ高位钝化迹象，强势上涨，但需警惕突然转向`);
+            }
+        }
+    }
+
+    // MACD背离分析
+    if (dif !== null && dea !== null && closes.length >= 10) {
+        const currentDif = dif;
+        const priceChange = (closes[closes.length - 1] - closes[closes.length - 5]) / closes[closes.length - 5];
+
+        // 顶背离：价格创新高，但DIF未创新高
+        if (priceChange > 0.05 && currentDif < dea) {
+            riskSignalCount++;
+            signalRiskDetails.push(`⚠️ 疑似MACD顶背离，价格新高但指标走弱，警惕见顶风险`);
+        }
+
+        // 底背离：价格创新低，但DIF未创新低
+        if (priceChange < -0.05 && currentDif > dea) {
+            signalRiskDetails.push(`💡 疑似MACD底背离，价格新低但指标走强，可能见底反弹`);
+        }
+
+        // MACD红柱收缩
+        if (dif > dea && (dif - dea) < 0.1) {
+            signalRiskDetails.push(`💡 MACD红柱缩短，上涨动能减弱，注意观察是否转弱`);
+        }
+    }
+
+    // 无风险信号时的默认得分
+    if (signalRisk === 0) {
+        signalRisk = 5;
+        signalRiskDetails.push(`✅ 技术指标无明显风险信号，安全性较高 (+5分)`);
+    }
+
+    // 综合风险评估
+    const riskDetails = [];
+    const totalRisk = positionRisk + volatilityRisk + signalRisk;
+
+    if (totalRisk >= 13) {
+        riskDetails.push(`🛡️ 综合风险控制优秀 (${totalRisk}/15分)，当前是较安全的买入时机`);
+    } else if (totalRisk >= 10) {
+        riskDetails.push(`✅ 综合风险控制良好 (${totalRisk}/15分)，风险处于可控范围`);
+    } else if (totalRisk >= 7) {
+        riskDetails.push(`⚠️ 综合风险适中 (${totalRisk}/15分)，需做好止损准备`);
     } else {
-        signalRisk = 5; // 无明显风险信号
+        riskDetails.push(`🔴 综合风险偏高 (${totalRisk}/15分)，建议谨慎操作或降低仓位`);
+    }
+
+    if (riskSignalCount >= 2) {
+        riskDetails.push(`⚠️ 检测到 ${riskSignalCount} 个高风险信号，强烈建议控制仓位或观望`);
+    } else if (warningSignalCount >= 2) {
+        riskDetails.push(`💡 检测到 ${warningSignalCount} 个预警信号，建议谨慎操作`);
+    } else if (riskSignalCount === 0 && warningSignalCount === 0) {
+        riskDetails.push(`✅ 未检测到明显风险信号，技术面健康`);
     }
 
     return {
         risk_score: positionRisk + volatilityRisk + signalRisk,
         position_risk: positionRisk,
         volatility_risk: volatilityRisk,
-        signal_risk: signalRisk
+        signal_risk: signalRisk,
+        // 详细评分说明
+        position_risk_details: positionRiskDetails,
+        volatility_risk_details: volatilityRiskDetails,
+        signal_risk_details: signalRiskDetails,
+        risk_details: riskDetails
     };
 }
 

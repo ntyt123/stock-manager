@@ -275,8 +275,11 @@ const BuyPointValidationManager = {
                     </div>
 
                     <div class="dimension-item">
-                        <div class="dimension-header">
-                            <span class="dimension-name">形态位置</span>
+                        <div class="dimension-header dimension-header-clickable" onclick="BuyPointValidationManager.toggleDimensionDetails(this)">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="expand-icon">▶</span>
+                                <span class="dimension-name">形态位置</span>
+                            </div>
                             <span class="dimension-score">${data.scores.pattern_score}/25</span>
                         </div>
                         <div class="progress-bar">
@@ -286,11 +289,41 @@ const BuyPointValidationManager = {
                             <span>K线形态: ${data.scores.kline_score}</span>
                             <span>支撑位: ${data.scores.support_score}</span>
                         </div>
+
+                        <!-- 详细评分说明（默认折叠） -->
+                        <div class="dimension-details" style="display: none;">
+                            ${data.scores.kline_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">📊</span>
+                                        <strong>K线形态分析 (${data.scores.kline_score}/10分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.kline_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${data.scores.support_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">📍</span>
+                                        <strong>支撑位分析 (${data.scores.support_score}/15分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.support_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
 
                     <div class="dimension-item">
-                        <div class="dimension-header">
-                            <span class="dimension-name">市场环境</span>
+                        <div class="dimension-header dimension-header-clickable" onclick="BuyPointValidationManager.toggleDimensionDetails(this)">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="expand-icon">▶</span>
+                                <span class="dimension-name">市场环境</span>
+                            </div>
                             <span class="dimension-score">${data.scores.market_score}/20</span>
                         </div>
                         <div class="progress-bar">
@@ -300,11 +333,53 @@ const BuyPointValidationManager = {
                             <span>大盘: ${data.scores.index_score}</span>
                             <span>板块: ${data.scores.sector_score}</span>
                         </div>
+
+                        <!-- 详细评分说明（默认折叠） -->
+                        <div class="dimension-details" style="display: none;">
+                            ${data.scores.index_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">📈</span>
+                                        <strong>大盘环境分析 (${data.scores.index_score}/10分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.index_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${data.scores.sector_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">🔥</span>
+                                        <strong>板块环境分析 (${data.scores.sector_score}/10分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.sector_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${data.scores.market_details && data.scores.market_details.length > 0 ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">💡</span>
+                                        <strong>市场环境综合评价</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.market_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
 
                     <div class="dimension-item">
-                        <div class="dimension-header">
-                            <span class="dimension-name">风险控制</span>
+                        <div class="dimension-header dimension-header-clickable" onclick="BuyPointValidationManager.toggleDimensionDetails(this)">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="expand-icon">▶</span>
+                                <span class="dimension-name">风险控制</span>
+                            </div>
                             <span class="dimension-score">${data.scores.risk_score}/15</span>
                         </div>
                         <div class="progress-bar">
@@ -314,6 +389,57 @@ const BuyPointValidationManager = {
                             <span>位置: ${data.scores.position_risk}</span>
                             <span>波动: ${data.scores.volatility_risk}</span>
                             <span>信号: ${data.scores.signal_risk}</span>
+                        </div>
+
+                        <!-- 详细评分说明（默认折叠） -->
+                        <div class="dimension-details" style="display: none;">
+                            ${data.scores.position_risk_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">📍</span>
+                                        <strong>位置风险分析 (${data.scores.position_risk}/5分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.position_risk_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${data.scores.volatility_risk_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">📊</span>
+                                        <strong>波动风险分析 (${data.scores.volatility_risk}/5分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.volatility_risk_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${data.scores.signal_risk_details ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">⚠️</span>
+                                        <strong>信号风险分析 (${data.scores.signal_risk}/5分)</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.signal_risk_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+
+                            ${data.scores.risk_details && data.scores.risk_details.length > 0 ? `
+                                <div class="detail-section">
+                                    <div class="detail-title">
+                                        <span class="detail-icon">🛡️</span>
+                                        <strong>综合风险评估</strong>
+                                    </div>
+                                    <ul class="detail-list">
+                                        ${data.scores.risk_details.map(detail => `<li>${detail}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
