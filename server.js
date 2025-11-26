@@ -87,6 +87,7 @@ const priceAlertsRoutes = require('./routes/price-alerts')(authenticateToken);
 const shortTermPoolRoutes = require('./routes/short-term-pool')(authenticateToken);
 const shortTermRoutes = require('./routes/short-term')(authenticateToken);
 const marketDataRoutes = require('./routes/market-data')(authenticateToken);
+const buyPointValidationRoutes = require('./routes/buy-point-validation')(authenticateToken);
 
 // 挂载路由
 app.use('/api/auth', authRoutes);
@@ -119,6 +120,7 @@ app.use('/api/price-alerts', priceAlertsRoutes);
 app.use('/api/short-term-pool', shortTermPoolRoutes);
 app.use('/api/short-term', shortTermRoutes);
 app.use('/api/market-data', marketDataRoutes);
+app.use('/api/buy-point-validation', buyPointValidationRoutes);
 
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）

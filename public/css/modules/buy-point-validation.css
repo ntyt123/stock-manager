@@ -1,0 +1,744 @@
+/**
+ * 买入点验证模块样式
+ */
+
+/* ==================== 遮罩层 ==================== */
+.validation-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+/* ==================== 加载状态 ==================== */
+.validation-loading {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 24px;
+    border: 4px solid #f3f4f6;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-text h3 {
+    font-size: 20px;
+    color: #111827;
+    margin: 0 0 12px;
+    font-weight: 600;
+}
+
+.loading-text p {
+    color: #6b7280;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.loading-tip {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-top: 16px !important;
+}
+
+/* ==================== 验证结果面板 ==================== */
+.validation-result-panel {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* 头部 */
+.validation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    border-radius: 16px 16px 0 0;
+}
+
+.validation-header h2 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f3f4f6;
+    border-radius: 8px;
+    font-size: 24px;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.close-btn:hover {
+    background: #e5e7eb;
+    color: #111827;
+}
+
+/* 股票信息 */
+.stock-info {
+    padding: 20px 32px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stock-basic {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.stock-code {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    font-family: 'Consolas', monospace;
+}
+
+.stock-name {
+    font-size: 16px;
+    color: #6b7280;
+}
+
+.stock-price {
+    margin-left: auto;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ef4444;
+}
+
+/* 总体评分 */
+.overall-rating {
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.rating-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 6px solid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.rating-score {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.rating-label {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.rating-details {
+    flex: 1;
+}
+
+.rating-level {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.rating-icon {
+    font-size: 20px;
+}
+
+.rating-text {
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.rating-recommendation {
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+/* 分维度得分 */
+.dimension-scores {
+    padding: 32px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.dimension-item {
+    background: #f9fafb;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+.dimension-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.dimension-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.dimension-score {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+
+.sub-scores {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.sub-scores span {
+    font-size: 12px;
+    color: #6b7280;
+    background: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+}
+
+/* 可展开的维度头部 */
+.dimension-header-clickable {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dimension-header-clickable:hover {
+    background: #f9fafb;
+}
+
+.expand-icon {
+    font-size: 12px;
+    color: #6b7280;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+
+/* 维度详情区域 */
+.dimension-details {
+    margin-top: 16px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.detail-section {
+    margin-bottom: 16px;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    color: #374151;
+    font-size: 14px;
+}
+
+.detail-icon {
+    font-size: 16px;
+}
+
+.detail-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detail-list li {
+    padding: 6px 0 6px 28px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4b5563;
+    position: relative;
+}
+
+.detail-list li:before {
+    content: '•';
+    position: absolute;
+    left: 12px;
+    color: #9ca3af;
+}
+
+/* 技术指标 */
+.indicators-section {
+    padding: 32px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.indicators-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 16px;
+}
+
+.indicators-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+.indicator-item {
+    background: #f9fafb;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.indicator-name {
+    font-size: 13px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.indicator-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+    font-family: 'Consolas', monospace;
+}
+
+/* 操作建议 */
+.advice-section {
+    padding: 32px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.advice-section h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 16px;
+}
+
+.advice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.advice-item {
+    background: #f9fafb;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.advice-item label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.advice-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.advice-value.price {
+    font-size: 16px;
+    color: #ef4444;
+    font-family: 'Consolas', monospace;
+}
+
+/* 风险提示 */
+.risk-warning {
+    margin: 32px;
+    padding: 16px 20px;
+    background: #fef3c7;
+    border: 1px solid #fbbf24;
+    border-radius: 8px;
+    display: flex;
+    align-items: start;
+    gap: 12px;
+}
+
+.warning-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.warning-text {
+    font-size: 14px;
+    color: #92400e;
+    line-height: 1.6;
+}
+
+/* 底部操作按钮 */
+.validation-actions {
+    padding: 20px 32px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #f9fafb;
+    border-radius: 0 0 16px 16px;
+    position: sticky;
+    bottom: 0;
+}
+
+.validation-actions .btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+/* ==================== 批量验证结果 ==================== */
+.batch-summary {
+    padding: 24px 32px;
+    display: flex;
+    gap: 32px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.summary-item {
+    flex: 1;
+    text-align: center;
+}
+
+.summary-item label {
+    display: block;
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.summary-item span {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.summary-item .success {
+    color: #10b981;
+}
+
+.summary-item .error {
+    color: #ef4444;
+}
+
+.batch-results-table {
+    padding: 32px;
+}
+
+.batch-results-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.batch-results-table th {
+    background: #f9fafb;
+    padding: 12px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.batch-results-table td {
+    padding: 12px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.result-row {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.result-row:hover {
+    background: #f9fafb;
+}
+
+.score-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-weight: 700;
+    color: white;
+    font-size: 14px;
+}
+
+.rating-badge {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #3b82f6;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.btn-link:hover {
+    color: #2563eb;
+}
+
+/* ==================== 历史记录表格 ==================== */
+.history-table {
+    padding: 32px;
+}
+
+.history-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th {
+    background: #f9fafb;
+    padding: 12px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.history-table td {
+    padding: 12px;
+    font-size: 14px;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.no-data {
+    text-align: center !important;
+    color: #9ca3af;
+    padding: 32px !important;
+}
+
+/* ==================== 响应式设计 ==================== */
+@media (max-width: 768px) {
+    .validation-result-panel {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .validation-header {
+        padding: 16px 20px;
+    }
+
+    .validation-header h2 {
+        font-size: 18px;
+    }
+
+    .overall-rating {
+        flex-direction: column;
+        padding: 24px 20px;
+        gap: 20px;
+    }
+
+    .rating-circle {
+        width: 100px;
+        height: 100px;
+    }
+
+    .rating-score {
+        font-size: 30px;
+    }
+
+    .rating-text {
+        font-size: 20px;
+    }
+
+    .dimension-scores {
+        grid-template-columns: 1fr;
+        padding: 24px 20px;
+        gap: 16px;
+    }
+
+    .indicators-section,
+    .advice-section {
+        padding: 24px 20px;
+    }
+
+    .indicators-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .advice-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .batch-summary {
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px;
+    }
+
+    .batch-results-table {
+        padding: 20px;
+        overflow-x: auto;
+    }
+
+    .validation-actions {
+        padding: 16px 20px;
+    }
+}
+
+/* ==================== 股票池页面集成 ==================== */
+.validate-btn {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+.validate-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4);
+}
+
+.validate-btn:active {
+    transform: translateY(0);
+}
+
+.batch-validate-btn {
+    background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.batch-validate-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}

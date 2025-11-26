@@ -599,6 +599,9 @@ const StockPoolManager = {
                 <!-- 操作按钮 -->
                 <div class="pool-stock-actions">
                     ${stock.notes ? `<div class="pool-stock-notes" style="flex: 1; text-align: left; margin-right: 10px;">备注: ${escapeHtml(stock.notes)}</div>` : '<div style="flex: 1;"></div>'}
+                    <button class="validate-btn" onclick="BuyPointValidationManager.validateBuyPoint('${stock.stock_code}', '${escapeHtml(stock.stock_name)}')">
+                        ✅ 验证买入点
+                    </button>
                     <button class="pool-stock-action-btn edit-btn" onclick="StockPoolManager.openEditStockModal(${poolId}, ${stock.id})">
                         ✏️ 编辑
                     </button>
@@ -664,6 +667,9 @@ const StockPoolManager = {
                         ${stock.notes ? `<div class="pool-stock-notes">${escapeHtml(stock.notes)}</div>` : ''}
                     </div>
                     <div class="pool-stock-actions">
+                        <button class="validate-btn" onclick="BuyPointValidationManager.validateBuyPoint('${stock.stock_code}', '${escapeHtml(stock.stock_name)}')">
+                            ✅ 验证买入点
+                        </button>
                         <button class="pool-stock-action-btn" onclick="StockPoolManager.openEditStockModal(${poolId}, ${stock.id})">
                             ✏️ 编辑
                         </button>
