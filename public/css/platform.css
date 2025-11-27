@@ -1,0 +1,515 @@
+/**
+ * 平台适配样式
+ * 针对不同平台（浏览器、PWA、APK）的差异化样式
+ */
+
+/* ==================== 安装提示横幅 ==================== */
+
+.install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+  z-index: 99999;
+  animation: slideUp 0.3s ease-out;
+  display: none;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.banner-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.banner-text {
+  flex: 1;
+  min-width: 200px;
+}
+
+.banner-text strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.banner-text span {
+  display: block;
+  font-size: 14px;
+  opacity: 0.9;
+}
+
+.banner-btn {
+  padding: 10px 24px;
+  background: white;
+  color: #667eea;
+  border: none;
+  border-radius: 24px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  display: none;
+}
+
+.banner-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+}
+
+.banner-btn:active {
+  transform: translateY(0);
+}
+
+.banner-close {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.banner-close:hover {
+  opacity: 1;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .banner-content {
+    gap: 12px;
+  }
+
+  .banner-icon {
+    font-size: 24px;
+  }
+
+  .banner-text strong {
+    font-size: 14px;
+  }
+
+  .banner-text span {
+    font-size: 12px;
+  }
+
+  .banner-btn {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+}
+
+/* ==================== 更新提示 ==================== */
+
+.update-prompt {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.update-prompt-content {
+  background: white;
+  border-radius: 16px;
+  padding: 32px 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  animation: slideUp 0.3s ease-out;
+}
+
+.update-prompt-icon {
+  font-size: 64px;
+  text-align: center;
+  margin-bottom: 16px;
+  animation: rotate 2s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.update-prompt-message {
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 24px;
+  white-space: pre-wrap;
+}
+
+.update-prompt-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.update-prompt-buttons button {
+  flex: 1;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.update-btn-confirm {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.update-btn-confirm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.update-btn-later {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.update-btn-later:hover {
+  background: #e8e8e8;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ==================== Toast 提示 ==================== */
+
+.web-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 24px;
+  font-size: 14px;
+  z-index: 99999;
+  animation: toastFadeIn 0.3s ease-out;
+  max-width: 80%;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+}
+
+/* ==================== 平台特定样式 ==================== */
+
+/* APK 模式：隐藏安装横幅 */
+body.platform-app .install-banner {
+  display: none !important;
+}
+
+/* APK 模式：适配安全区域（刘海屏、虚拟按键等） */
+body.platform-app {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* APK 模式：调整容器 */
+body.platform-app .container {
+  padding-top: 0;
+}
+
+/* APK 模式：隐藏浏览器特定元素 */
+body.platform-app .browser-only {
+  display: none !important;
+}
+
+/* 浏览器模式：显示浏览器特定元素 */
+body.platform-web .app-only {
+  display: none !important;
+}
+
+/* PWA 模式：全屏优化 */
+body.platform-pwa {
+  padding: 0;
+}
+
+body.platform-pwa .navbar {
+  border-radius: 0;
+}
+
+/* ==================== 移动端优化 ==================== */
+
+body.mobile {
+  /* 禁用长按选择 */
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* 禁用点击高亮 */
+  -webkit-tap-highlight-color: transparent;
+
+  /* 禁用长按菜单 */
+  -webkit-touch-callout: none;
+}
+
+/* 移动端：允许特定元素选择文本 */
+body.mobile input,
+body.mobile textarea,
+body.mobile [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* 移动端：优化滚动 */
+body.mobile {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* ==================== 离线状态指示 ==================== */
+
+body.offline::before {
+  content: '📴 离线模式';
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ff9800;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 0 0 8px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  z-index: 99998;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ==================== 加载状态 ==================== */
+
+.platform-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+}
+
+.platform-loading-icon {
+  font-size: 64px;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.platform-loading-text {
+  margin-top: 16px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* ==================== Android 特定样式 ==================== */
+
+body.android button,
+body.android input,
+body.android select {
+  /* 移除 Android 默认样式 */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* ==================== iOS 特定样式 ==================== */
+
+body.ios {
+  /* iOS 安全区域 */
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+body.ios button,
+body.ios input {
+  /* 移除 iOS 默认样式 */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* iOS 键盘弹出时的优化 */
+body.ios input:focus,
+body.ios textarea:focus {
+  /* 防止页面缩放 */
+  font-size: 16px;
+}
+
+/* ==================== 响应式设计 ==================== */
+
+/* 平板端 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .install-banner {
+    padding: 20px;
+  }
+
+  .banner-icon {
+    font-size: 40px;
+  }
+}
+
+/* 桌面端 */
+@media (min-width: 1025px) {
+  body.platform-web .install-banner {
+    display: none;
+  }
+
+  .update-prompt-content {
+    max-width: 500px;
+    padding: 40px 32px;
+  }
+}
+
+/* ==================== 深色模式支持（预留） ==================== */
+
+@media (prefers-color-scheme: dark) {
+  .update-prompt-content {
+    background: #2d2d2d;
+    color: #ffffff;
+  }
+
+  .update-prompt-message {
+    color: #e0e0e0;
+  }
+
+  .update-btn-later {
+    background: #3d3d3d;
+    color: #e0e0e0;
+  }
+
+  .update-btn-later:hover {
+    background: #4d4d4d;
+  }
+
+  .web-toast {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+  }
+}
+
+/* ==================== 辅助功能 ==================== */
+
+/* 减少动画（尊重用户偏好） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  .install-banner {
+    border-top: 2px solid white;
+  }
+
+  .banner-btn {
+    border: 2px solid #667eea;
+  }
+}
+
+/* ==================== 打印样式 ==================== */
+
+@media print {
+  .install-banner,
+  .update-prompt,
+  .web-toast {
+    display: none !important;
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "name": "个人股票信息系统",
+  "short_name": "股票系统",
+  "description": "个人股票信息管理与分析系统 - 提供实时行情、持仓管理、AI分析等功能",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#2196F3",
+  "icons": [
+    {
+      "src": "/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshot-mobile.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "移动端主界面"
+    },
+    {
+      "src": "/images/screenshot-desktop.png",
+      "sizes": "1920x1080",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "桌面端主界面"
+    }
+  ],
+  "categories": [
+    "finance",
+    "productivity",
+    "business"
+  ],
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "持仓管理",
+      "short_name": "持仓",
+      "description": "查看和管理股票持仓",
+      "url": "/?tab=positions",
+      "icons": [
+        {
+          "src": "/images/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "自选股",
+      "short_name": "自选",
+      "description": "查看自选股列表",
+      "url": "/?tab=watchlist",
+      "icons": [
+        {
+          "src": "/images/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "AI分析",
+      "short_name": "分析",
+      "description": "AI智能分析功能",
+      "url": "/?tab=analysis",
+      "icons": [
+        {
+          "src": "/images/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

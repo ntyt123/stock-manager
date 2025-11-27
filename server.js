@@ -122,6 +122,22 @@ app.use('/api/short-term', shortTermRoutes);
 app.use('/api/market-data', marketDataRoutes);
 app.use('/api/buy-point-validation', buyPointValidationRoutes);
 
+// ==================== 版本检查 API（PWA/Capacitor 更新机制） ====================
+app.get('/api/version', (req, res) => {
+  const packageJson = require('./package.json');
+  res.json({
+    version: packageJson.version,
+    buildTime: new Date().toISOString(),
+    notes: '系统运行正常',
+    platform: 'web',
+    features: {
+      pwa: true,
+      capacitor: true,
+      offline: true
+    }
+  });
+});
+
 // ==================== 定时任务 ====================
 // 每天下午5点自动分析持仓（仅A股交易日）
 cron.schedule('0 17 * * 1-5', async () => {
