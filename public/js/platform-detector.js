@@ -89,15 +89,24 @@ class PlatformDetector {
   }
 
   getOS() {
-    if (this.info?.isAndroid) return 'Android';
-    if (this.info?.isIOS) return 'iOS';
-    if (this.info?.isWindows) return 'Windows';
-    if (this.info?.isMac) return 'macOS';
+    const ua = navigator.userAgent;
+    if (/Android/i.test(ua)) return 'Android';
+    if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+    if (/Windows/i.test(ua)) return 'Windows';
+    if (/Macintosh|MacIntel|MacPPC|Mac68K/i.test(ua)) return 'macOS';
     return 'Unknown';
   }
 
   applyPlatformClass() {
     const body = document.body;
+
+    // 如果body还不存在，等待DOM加载完成
+    if (!body) {
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => this.applyPlatformClass());
+      }
+      return;
+    }
 
     // 添加平台类名
     body.classList.add(`platform-${this.info.platform}`);
