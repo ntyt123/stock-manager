@@ -25,6 +25,24 @@
     <link rel="stylesheet" href="/css/modules/common-modal.css">
     <link rel="stylesheet" href="/css/modules/short-term.css">
     <link rel="stylesheet" href="/css/modules/buy-point-validation.css">
+
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="股票系统">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
+    <meta name="theme-color" content="#2196F3">
+
+    <!-- 平台适配样式 -->
+    <link rel="stylesheet" href="/css/platform.css">
+
+    <!-- 平台检测和更新管理（必须在其他脚本之前） -->
+    <script src="/js/platform-detector.js"></script>
+    <script src="/js/update-manager.js"></script>
+    <script src="/js/capacitor-bridge.js"></script>
+
     <script src="/js/lib/chart.umd.min.js"></script>
     <script src="/js/lib/marked.min.js"></script>
     <script src="/js/lib/xlsx.full.min.js"></script>
@@ -4355,5 +4373,155 @@
 
     <!-- 核心初始化模块 -->
     <script src="/js/main-core.js"></script>
+    <!-- 安装提示横幅（仅浏览器显示） -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="banner-content">
+            <div class="banner-icon">📱</div>
+            <div class="banner-text">
+                <strong>安装股票系统</strong>
+                <span>快速访问，离线使用</span>
+            </div>
+            <button id="installPWABtn" class="banner-btn">安装 PWA</button>
+            <button id="downloadAPKBtn" class="banner-btn">下载 APK</button>
+            <button id="closeBannerBtn" class="banner-close">✕</button>
+        </div>
+    </div>
+
+    <script>
+    // 安装提示逻辑
+    (function() {
+        const banner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installPWABtn');
+        const downloadBtn = document.getElementById('downloadAPKBtn');
+        const closeBtn = document.getElementById('closeBannerBtn');
+
+        let deferredPrompt;
+
+        // 仅在浏览器中显示
+        if (Platform.info.isBrowser) {
+            // 检查是否已经关闭过
+            if (!localStorage.getItem('installBannerClosed')) {
+                banner.style.display = 'block';
+            }
+
+            // 根据平台显示对应按钮
+            if (Platform.info.canInstallPWA) {
+                installBtn.style.display = 'inline-block';
+            }
+            if (Platform.info.canShowAppDownload) {
+                downloadBtn.style.display = 'inline-block';
+            }
+        }
+
+        // PWA 安装提示
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-block';
+            banner.style.display = 'block';
+        });
+
+        // 点击安装 PWA
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('用户选择:', outcome);
+                if (outcome === 'accepted') {
+                    Native.toast('安装成功！');
+                }
+                deferredPrompt = null;
+            }
+            banner.style.display = 'none';
+        });
+
+        // 点击下载 APK
+        downloadBtn.addEventListener('click', () => {
+            window.location.href = '/downloads/stock-manager.apk';
+        });
+
+        // 关闭横幅
+        closeBtn.addEventListener('click', () => {
+            banner.style.display = 'none';
+            localStorage.setItem('installBannerClosed', 'true');
+        });
+    })();
+    </script>
+
+    <!-- 安装提示横幅（仅浏览器显示） -->
+    <div id="installBanner" class="install-banner" style="display: none;">
+        <div class="banner-content">
+            <div class="banner-icon">📱</div>
+            <div class="banner-text">
+                <strong>安装股票系统</strong>
+                <span>快速访问，离线使用</span>
+            </div>
+            <button id="installPWABtn" class="banner-btn">安装 PWA</button>
+            <button id="downloadAPKBtn" class="banner-btn">下载 APK</button>
+            <button id="closeBannerBtn" class="banner-close">✕</button>
+        </div>
+    </div>
+
+    <script>
+    // 安装提示逻辑
+    (function() {
+        const banner = document.getElementById('installBanner');
+        const installBtn = document.getElementById('installPWABtn');
+        const downloadBtn = document.getElementById('downloadAPKBtn');
+        const closeBtn = document.getElementById('closeBannerBtn');
+
+        let deferredPrompt;
+
+        // 仅在浏览器中显示
+        if (Platform.info.isBrowser) {
+            // 检查是否已经关闭过
+            if (!localStorage.getItem('installBannerClosed')) {
+                banner.style.display = 'block';
+            }
+
+            // 根据平台显示对应按钮
+            if (Platform.info.canInstallPWA) {
+                installBtn.style.display = 'inline-block';
+            }
+            if (Platform.info.canShowAppDownload) {
+                downloadBtn.style.display = 'inline-block';
+            }
+        }
+
+        // PWA 安装提示
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'inline-block';
+            banner.style.display = 'block';
+        });
+
+        // 点击安装 PWA
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log('用户选择:', outcome);
+                if (outcome === 'accepted') {
+                    Native.toast('安装成功！');
+                }
+                deferredPrompt = null;
+            }
+            banner.style.display = 'none';
+        });
+
+        // 点击下载 APK
+        downloadBtn.addEventListener('click', () => {
+            window.location.href = '/downloads/stock-manager.apk';
+        });
+
+        // 关闭横幅
+        closeBtn.addEventListener('click', () => {
+            banner.style.display = 'none';
+            localStorage.setItem('installBannerClosed', 'true');
+        });
+    })();
+    </script>
+
 </body>
 </html>

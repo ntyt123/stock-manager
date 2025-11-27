@@ -154,6 +154,23 @@
             font-family: monospace;
         }
     </style>
+
+    <!-- PWA 配置 -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="股票系统">
+    <link rel="apple-touch-icon" href="/images/icon-192.png">
+    <meta name="theme-color" content="#a8edea">
+
+    <!-- 平台适配样式 -->
+    <link rel="stylesheet" href="/css/platform.css">
+
+    <!-- 平台检测和更新管理 -->
+    <script src="/js/platform-detector.js"></script>
+    <script src="/js/update-manager.js"></script>
+    <script src="/js/capacitor-bridge.js"></script>
 </head>
 <body>
     <div class="login-container">
