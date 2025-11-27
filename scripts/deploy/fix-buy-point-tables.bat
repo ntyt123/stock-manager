@@ -81,7 +81,8 @@ echo.
 REM ========== 步骤5: 运行修复脚本 ==========
 echo 🔧 步骤 5/6: 运行数据库修复脚本...
 echo.
-ssh %REMOTE_USER%@%REMOTE_HOST% "cd %REMOTE_PATH% && node scripts/fix-remote-database.js"
+echo   → 确保所有必需表存在...
+ssh %REMOTE_USER%@%REMOTE_HOST% "cd %REMOTE_PATH% && node scripts/ensure-required-tables.js"
 if errorlevel 1 (
     echo.
     echo ❌ 修复失败！
