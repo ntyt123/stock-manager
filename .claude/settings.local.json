@@ -53,7 +53,8 @@
       "Bash(git push:*)",
       "Bash(check-pos-table.js)",
       "Bash(verify.js)",
-      "Bash(temp-check.js)"
+      "Bash(temp-check.js)",
+      "Bash(ipconfig:*)"
     ],
     "deny": [],
     "ask": []
