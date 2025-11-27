@@ -105,10 +105,18 @@ module.exports = (authenticateToken) => {
                 // 价格刷新失败不影响分析流程，继续使用数据库中的价格
             }
 
-            // 3. 构建详细的持仓数据摘要（使用刷新后的最新价格）
+            // 3. 获取用户总资金数据
+            const user = await userModel.findById(userId);
+            const totalCapital = user?.total_capital || 0;
+
+            // 3.5 构建详细的持仓数据摘要（使用刷新后的最新价格）
             const portfolioSummary = buildPortfolioSummary(positions);
 
-            // 3.5 构建今日交易记录
+            // 计算资金相关数据
+            const availableCapital = totalCapital - portfolioSummary.totalMarketValue;
+            const positionRatio = totalCapital > 0 ? (portfolioSummary.totalMarketValue / totalCapital * 100).toFixed(2) : '0.00';
+
+            // 4. 构建今日交易记录
             let todayTradesSection = '';
             if (todayTrades && todayTrades.length > 0) {
                 todayTradesSection = `
@@ -121,12 +129,17 @@ ${todayTrades.map((trade, index) => {
 `;
             }
 
-            // 4. 调用DeepSeek AI进行分析
+            // 5. 调用DeepSeek AI进行分析
             const analysisPrompt = `请作为专业的股票投资顾问，对以下持仓进行全面深入的分析：
+
+【账户资金状况】
+- 总资金：¥${totalCapital.toLocaleString('zh-CN')}
+- 持仓市值：¥${portfolioSummary.totalMarketValue.toFixed(2)}
+- 可用资金：¥${availableCapital.toFixed(2)}
+- 仓位占比：${positionRatio}%
 
 【持仓概况】
 - 总持仓股票：${portfolioSummary.totalStocks} 只
-- 总市值：¥${portfolioSummary.totalMarketValue.toFixed(2)}
 - 总盈亏：¥${portfolioSummary.totalProfitLoss.toFixed(2)} (${portfolioSummary.totalProfitLossRate}%)
 - 盈利股票：${portfolioSummary.profitableStocks} 只
 - 亏损股票：${portfolioSummary.lossStocks} 只
@@ -146,6 +159,8 @@ ${todayTradesSection}
    - 分析当前持仓结构的合理性
    - 评估整体风险水平（高/中/低）
    - 判断持仓集中度是否合理
+   - **仓位管理分析**：基于${positionRatio}%的仓位占比，评价是否合理
+   - **资金利用率**：评估可用资金¥${availableCapital.toFixed(2)}的配置建议
 
 3. **个股分析**
    - 分析表现最好和最差的股票

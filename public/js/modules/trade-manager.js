@@ -112,13 +112,17 @@ function bindTradeAmountCalculation() {
             }
             totalFee += commission;
 
-            // 2. 印花税（仅卖出收取，千分之一）
+            // 2. 过户费（双向收取，万分之0.2）
+            const transferFee = tradeAmount * 0.00002;
+            totalFee += transferFee;
+
+            // 3. 印花税（仅卖出收取，千分之一）
             if (type === 'sell' || type === 'reduce') {
                 const stampDuty = tradeAmount * 0.001; // 印花税千分之一
                 totalFee += stampDuty;
-                console.log(`💰 手续费明细: 佣金${commission.toFixed(2)}元 + 印花税${stampDuty.toFixed(2)}元 = ${totalFee.toFixed(2)}元`);
+                console.log(`💰 手续费明细: 佣金${commission.toFixed(2)}元 + 过户费${transferFee.toFixed(2)}元 + 印花税${stampDuty.toFixed(2)}元 = ${totalFee.toFixed(2)}元`);
             } else {
-                console.log(`💰 手续费明细: 佣金${commission.toFixed(2)}元`);
+                console.log(`💰 手续费明细: 佣金${commission.toFixed(2)}元 + 过户费${transferFee.toFixed(2)}元 = ${totalFee.toFixed(2)}元`);
             }
 
             fee.value = totalFee.toFixed(2);

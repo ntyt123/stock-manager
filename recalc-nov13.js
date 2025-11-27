@@ -34,8 +34,8 @@ trades.forEach(trade => {
 
     const amount = trade.quantity * trade.price;
 
-    // 过户费：上海股票（6开头）万分之0.2
-    const transferFee = trade.stock_code.startsWith('6') ? amount * 0.00002 : 0;
+    // 过户费：全国统一收取，万分之0.2（0.002%），双向收取
+    const transferFee = amount * 0.00002;
 
     if (trade.trade_type === 'buy' || trade.trade_type === 'add') {
         tradeMap[trade.stock_code].buyQty += trade.quantity;

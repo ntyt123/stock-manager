@@ -222,8 +222,24 @@ async function analyzeWithAI(req, res) {
             plans: planData,
             tradingLogs: tradingLogsData,
             todayProfit: recap.today_profit,
-            totalProfit: recap.total_profit
+            totalProfit: recap.total_profit,
+            // 用户手动填写的内容
+            userInputs: {
+                marketNotes: recap.market_notes,           // 市场观察
+                tradeReflections: recap.trade_reflections, // 交易反思
+                positionNotes: recap.position_notes,       // 持仓备注
+                reflectionNotes: recap.reflection_notes,   // 复盘反思
+                whatWentRight: recap.what_went_right,      // 做对了什么
+                whatWentWrong: recap.what_went_wrong,      // 做错了什么
+                selfRating: recap.self_rating,             // 自我评分
+                tomorrowPlans: recap.tomorrow_plans,       // 明日计划
+                tomorrowNotes: recap.tomorrow_notes        // 明日备注
+            }
         });
+
+        console.log('\n🤖 ========== AI 提示词 ==========');
+        console.log(prompt);
+        console.log('========================================\n');
 
         // 调用AI API（这里使用现有的AI配置）
         const aiConfig = db.prepare(`
@@ -755,8 +771,8 @@ async function getPositionData(date, userId) {
 
             const amount = trade.quantity * trade.price; // 成交金额
 
-            // 过户费：上海股票（6开头）万分之0.2（0.002%）
-            const transferFee = trade.stock_code.startsWith('6') ? amount * 0.00002 : 0;
+            // 过户费：全国统一收取，万分之0.2（0.002%），双向收取
+            const transferFee = amount * 0.00002;
 
             if (trade.trade_type === 'buy' || trade.trade_type === 'add') {
                 tradeMap[trade.stock_code].buyQty += trade.quantity;
@@ -1020,6 +1036,61 @@ function buildAIPrompt(data) {
         });
     }
 
+    // 构建用户填写内容部分
+    let userInputsSection = '';
+    if (data.userInputs) {
+        const inputs = data.userInputs;
+        let hasUserInputs = false;
+
+        userInputsSection = '\n【用户的复盘思考】\n';
+
+        if (inputs.marketNotes) {
+            userInputsSection += `\n📊 对市场的观察：\n${inputs.marketNotes}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.tradeReflections) {
+            userInputsSection += `\n💭 交易反思：\n${inputs.tradeReflections}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.positionNotes) {
+            userInputsSection += `\n📝 持仓备注：\n${inputs.positionNotes}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.whatWentRight) {
+            userInputsSection += `\n✅ 今日做对的事：\n${inputs.whatWentRight}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.whatWentWrong) {
+            userInputsSection += `\n❌ 今日做错的事：\n${inputs.whatWentWrong}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.reflectionNotes) {
+            userInputsSection += `\n🤔 复盘反思：\n${inputs.reflectionNotes}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.selfRating) {
+            userInputsSection += `\n⭐ 自我评分：${inputs.selfRating}\n`;
+            hasUserInputs = true;
+        }
+
+        if (inputs.tomorrowPlans || inputs.tomorrowNotes) {
+            userInputsSection += `\n📅 明日计划：\n`;
+            if (inputs.tomorrowPlans) userInputsSection += `${inputs.tomorrowPlans}\n`;
+            if (inputs.tomorrowNotes) userInputsSection += `备注：${inputs.tomorrowNotes}\n`;
+            hasUserInputs = true;
+        }
+
+        if (!hasUserInputs) {
+            userInputsSection = '';
+        }
+    }
+
     return `您是专业的股票投资顾问，请根据以下数据进行每日复盘分析。
 
 【复盘数据】
@@ -1037,21 +1108,30 @@ function buildAIPrompt(data) {
 
 💰 交易数据：
 • 今日交易：${data.trades.length}笔（买入${data.trades.filter(t => t.type === 'buy').length}笔，卖出${data.trades.filter(t => t.type === 'sell').length}笔）
-${tradingLogsSection}
+${tradingLogsSection}${userInputsSection}
 
 【分析要求】
 请严格按照以下格式输出分析内容，每个部分必须包含：
 
 ## 📊 市场行情总结
 今日市场${data.market.sh_index?.change_percent >= 0 ? '上涨' : '下跌'}，[分析市场整体走势、板块轮动、成交量变化等，50-80字]
+${userInputsSection ? '\n**对用户市场观察的点评**：[如果用户填写了市场观察，评价其观察是否准确、全面，30-50字]' : ''}
 
 ## 💼 持仓表现点评
 【整体表现】[总结持仓整体盈亏情况，30-50字]
 【表现突出】[如有表现优秀的持仓，简要说明，30字]
 【需要关注】[如有表现不佳或风险较高的持仓，提示注意，30字]
+${userInputsSection ? '【对用户持仓备注的评价】[如果用户填写了持仓备注，评价其理解是否正确，30字]' : ''}
 
 ## 📝 交易质量评价
 ${data.trades.length > 0 ? `今日进行了${data.trades.length}笔交易，[评价交易时机、价格、仓位管理等是否合理，50-80字]` : '今日无交易操作。[根据市场情况评价是否应该有操作，30-50字]'}
+${userInputsSection ? '\n**对用户交易反思的点评**：[如果用户填写了交易反思，评价其反思是否深刻、到位，指出遗漏的要点，40-60字]' : ''}
+
+## 🎯 用户自我认知评价
+${userInputsSection ? `**做对的事**：[评价用户认为做对的事是否真的做对了，给予肯定或纠正，30-50字]
+**做错的事**：[评价用户认为做错的事分析是否准确，补充其未意识到的错误，30-50字]
+**自我评分**：[评价用户的自我评分是否客观，给出专业的评分建议，20-30字]
+**复盘质量**：[评价用户的整体复盘思考深度和准确性，30-40字]` : '[用户未填写自我反思内容]'}
 
 ## ⚠️ 风险提示
 • [风险点1：如市场风险、个股风险、仓位风险等]
@@ -1062,13 +1142,15 @@ ${data.trades.length > 0 ? `今日进行了${data.trades.length}笔交易，[评
 【市场研判】[预测明日市场可能走势，30-50字]
 【操作策略】[建议具体操作方向，如加仓、减仓、换股等，50-80字]
 【关注重点】[明日需要重点关注的板块、个股或数据，30-50字]
+${userInputsSection ? '\n**对用户明日计划的评价**：[如果用户填写了明日计划，评价计划是否合理、可行，给出改进建议，40-60字]' : ''}
 
 【输出规范】
 1. 严格使用markdown格式，保留所有emoji图标
 2. 每个##标题必须单独成行
 3. 内容简洁专业，突出关键信息
 4. 数字和关键词使用粗体强调
-5. 总字数控制在400-600字之间`;
+5. **重点评价用户的思考是否正确**，指出认知偏差和遗漏点
+6. 总字数控制在600-900字之间`;
 }
 
 /**
@@ -1130,16 +1212,18 @@ async function callAIAPI(config, prompt) {
         });
 
         // 根据不同的API提供商解析响应
-        if (config.provider === 'openai' || config.provider === 'deepseek') {
+        if (config.provider === 'openai' || config.provider === 'deepseek' || config.provider === 'qwen') {
+            // OpenAI格式 或 通义千问 compatible-mode
             if (response.data && response.data.choices && response.data.choices.length > 0) {
                 return response.data.choices[0].message.content;
             }
-        } else if (config.provider === 'qwen') {
-            if (response.data && response.data.output) {
+            // 通义千问旧版格式（兼容）
+            if (config.provider === 'qwen' && response.data && response.data.output) {
                 return response.data.output.text;
             }
         }
 
+        console.error('无法解析AI响应，响应数据:', JSON.stringify(response.data));
         throw new Error('无法解析AI响应');
     } catch (error) {
         console.error('调用AI API失败:', error.message);

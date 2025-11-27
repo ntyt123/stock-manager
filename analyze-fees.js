@@ -33,13 +33,11 @@ trades.forEach((t, i) => {
         stampTax = amount * 0.001;
     }
 
-    // 过户费：上海股票（60开头）收取，万分之0.2（0.002%）
-    if (t.stock_code.startsWith('6')) {
-        transferFee = amount * 0.00002;
-    }
+    // 过户费：全国统一收取，万分之0.2（0.002%），双向收取
+    transferFee = amount * 0.00002;
 
     console.log(`    印花税（仅卖出）: ¥${stampTax.toFixed(2)}`);
-    console.log(`    过户费（仅沪市）: ¥${transferFee.toFixed(2)}`);
+    console.log(`    过户费（双向收取）: ¥${transferFee.toFixed(2)}`);
     console.log(`    佣金（从fee中推算）: ¥${((t.fee || 0) - stampTax - transferFee).toFixed(2)}`);
     console.log(`    费用合计估算: ¥${(stampTax + transferFee + (t.fee || 0)).toFixed(2)}`);
     console.log();

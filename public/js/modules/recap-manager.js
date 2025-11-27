@@ -497,6 +497,22 @@ const RecapManager = {
         const container = document.getElementById('dailySummaryContainer');
         if (!container) return;
 
+        // 在控制台打印当前复盘数据（用于调试）
+        console.log('\n🤖 ========== 将要发送给AI的复盘数据 ==========');
+        console.log('复盘ID:', this.currentRecap.id);
+        console.log('复盘日期:', this.currentRecap.recap_date);
+        console.log('\n📊 用户填写的内容:');
+        console.log('  市场观察 (market_notes):', this.currentRecap.market_notes);
+        console.log('  交易反思 (trade_reflections):', this.currentRecap.trade_reflections);
+        console.log('  持仓备注 (position_notes):', this.currentRecap.position_notes);
+        console.log('  复盘反思 (reflection_notes):', this.currentRecap.reflection_notes);
+        console.log('  做对的事 (what_went_right):', this.currentRecap.what_went_right);
+        console.log('  做错的事 (what_went_wrong):', this.currentRecap.what_went_wrong);
+        console.log('  自我评分 (self_rating):', this.currentRecap.self_rating);
+        console.log('  明日计划 (tomorrow_plans):', this.currentRecap.tomorrow_plans);
+        console.log('  明日备注 (tomorrow_notes):', this.currentRecap.tomorrow_notes);
+        console.log('============================================\n');
+
         // 显示加载状态
         container.innerHTML = '<div class="ai-loading"><div class="spinner"></div><p>AI正在生成每日总结，请稍候...</p></div>';
 
@@ -1026,6 +1042,11 @@ const RecapManager = {
             const recap = this.currentRecap;
             const tradingLogs = recap ? JSON.parse(recap.trading_logs_data || '[]') : [];
 
+            // 提取原始交易数据（从 _original 字段中）
+            const todayTrades = tradingLogs
+                .filter(log => log._original) // 只保留有原始数据的记录
+                .map(log => log._original);   // 提取原始交易数据
+
             const response = await fetch('/api/analysis/portfolio', {
                 method: 'POST',
                 headers: {
@@ -1033,7 +1054,7 @@ const RecapManager = {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
                 },
                 body: JSON.stringify({
-                    todayTrades: tradingLogs
+                    todayTrades: todayTrades
                 })
             });
 
