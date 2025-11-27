@@ -524,10 +524,60 @@ function initStockCodeHover() {
     }
 }
 
+// validateBuyPointFromTooltip
+function validateBuyPointFromTooltip() {
+    if (!currentTooltipStockCode) {
+        console.error('❌ 没有当前股票代码');
+        return;
+    }
+
+    const stockCode = currentTooltipStockCode;
+    const stockName = document.getElementById('tooltipStockName').textContent || '';
+
+    console.log(`🔍 从悬浮框验证买入点: ${stockCode} ${stockName}`);
+
+    // 调用买入点验证管理器
+    if (typeof BuyPointValidationManager !== 'undefined') {
+        BuyPointValidationManager.validateBuyPoint(stockCode, stockName);
+    } else {
+        console.error('❌ BuyPointValidationManager 未定义');
+        alert('买入点验证功能暂未加载，请刷新页面重试');
+    }
+}
+
+// createTradingPlanFromTooltip
+function createTradingPlanFromTooltip() {
+    if (!currentTooltipStockCode) {
+        console.error('❌ 没有当前股票代码');
+        return;
+    }
+
+    const stockCode = currentTooltipStockCode;
+    const stockName = document.getElementById('tooltipStockName').textContent || '';
+    const currentPriceEl = document.getElementById('tooltipCurrentPrice');
+    const currentPriceText = currentPriceEl ? currentPriceEl.textContent : '¥0.00';
+    const currentPrice = parseFloat(currentPriceText.replace('¥', '').replace(',', '')) || 0;
+
+    console.log(`📋 从悬浮框制定交易计划: ${stockCode} ${stockName} @ ¥${currentPrice}`);
+
+    // 调用交易计划管理器
+    if (typeof createTradingPlanFromStock === 'function') {
+        createTradingPlanFromStock(stockCode, stockName, currentPrice, 'buy');
+    } else {
+        console.error('❌ createTradingPlanFromStock 函数未定义');
+        alert('交易计划功能暂未加载，请刷新页面重试');
+    }
+
+    // 关闭悬浮框（可选）
+    // closeStockTooltip();
+}
+
 // ==================== 导出全局函数 ====================
 // 将函数导出到全局作用域，供HTML onclick使用
 window.showStockTooltip = showStockTooltip;
 window.closeStockTooltip = closeStockTooltip;
 window.initStockCodeHover = initStockCodeHover;
 window.switchTooltipChartPeriod = switchTooltipChartPeriod;
+window.validateBuyPointFromTooltip = validateBuyPointFromTooltip;
+window.createTradingPlanFromTooltip = createTradingPlanFromTooltip;
 

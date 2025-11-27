@@ -7,6 +7,7 @@ const fs = require('fs');
 const { positionModel, positionUpdateModel, manualPositionModel } = require('../database');
 const { parseExcelFile, fixChineseCharacters, autoAddPositionsToWatchlist } = require('../controllers/positionController');
 const stockCache = require('../stockCache');
+const { calculatePositionProfit } = require('../utils/tradingFeeCalculator');
 
 module.exports = (authenticateToken) => {
     const router = express.Router();
@@ -224,14 +225,22 @@ module.exports = (authenticateToken) => {
                     stockCache.setQuotes(quotes.filter(q => missingCodes.includes(q.stockCode)));
                 }
 
-                // 将最新价格更新到持仓数据中
+                // 将最新价格更新到持仓数据中（计算盈亏时考虑交易手续费）
                 positions.forEach(pos => {
                     const quote = quotes.find(q => q.stockCode === pos.stockCode);
                     if (quote && quote.currentPrice > 0) {
                         pos.currentPrice = quote.currentPrice;
-                        pos.marketValue = pos.currentPrice * pos.quantity;
-                        pos.profitLoss = (pos.currentPrice - pos.costPrice) * pos.quantity;
-                        pos.profitLossRate = ((pos.currentPrice - pos.costPrice) / pos.costPrice * 100);
+
+                        // 使用费用计算器计算实际盈亏（包含买入时的手续费）
+                        const profitCalc = calculatePositionProfit(
+                            pos.costPrice,
+                            pos.currentPrice,
+                            pos.quantity
+                        );
+
+                        pos.marketValue = profitCalc.currentValue;
+                        pos.profitLoss = profitCalc.profitLoss;
+                        pos.profitLossRate = profitCalc.profitLossRate;
                     }
                 });
 
@@ -312,11 +321,15 @@ module.exports = (authenticateToken) => {
                 });
             }
 
-            // 计算衍生字段（如果未提供）
+            // 计算衍生字段（如果未提供），使用费用计算器计算实际盈亏
             const finalCurrentPrice = currentPrice || costPrice;
-            const finalMarketValue = marketValue || (finalCurrentPrice * quantity);
-            const finalProfitLoss = profitLoss || ((finalCurrentPrice - costPrice) * quantity);
-            const finalProfitLossRate = profitLossRate || ((finalCurrentPrice - costPrice) / costPrice * 100);
+
+            // 使用费用计算器计算实际盈亏（包含买入时的手续费）
+            const profitCalc = calculatePositionProfit(costPrice, finalCurrentPrice, quantity);
+
+            const finalMarketValue = marketValue || profitCalc.currentValue;
+            const finalProfitLoss = profitLoss !== undefined ? profitLoss : profitCalc.profitLoss;
+            const finalProfitLossRate = profitLossRate !== undefined ? profitLossRate : profitCalc.profitLossRate;
 
             const positionData = {
                 stockCode,
@@ -379,11 +392,15 @@ module.exports = (authenticateToken) => {
                 });
             }
 
-            // 计算衍生字段（如果未提供）
+            // 计算衍生字段（如果未提供），使用费用计算器计算实际盈亏
             const finalCurrentPrice = currentPrice || costPrice;
-            const finalMarketValue = marketValue || (finalCurrentPrice * quantity);
-            const finalProfitLoss = profitLoss || ((finalCurrentPrice - costPrice) * quantity);
-            const finalProfitLossRate = profitLossRate || ((finalCurrentPrice - costPrice) / costPrice * 100);
+
+            // 使用费用计算器计算实际盈亏（包含买入时的手续费）
+            const profitCalc = calculatePositionProfit(costPrice, finalCurrentPrice, quantity);
+
+            const finalMarketValue = marketValue || profitCalc.currentValue;
+            const finalProfitLoss = profitLoss !== undefined ? profitLoss : profitCalc.profitLoss;
+            const finalProfitLossRate = profitLossRate !== undefined ? profitLossRate : profitCalc.profitLossRate;
 
             const positionData = {
                 stockName,
@@ -550,9 +567,17 @@ module.exports = (authenticateToken) => {
 
             // 同步到普通持仓表（我的持仓）
             const finalCurrentPrice = positionData.currentPrice || positionData.costPrice;
-            const finalMarketValue = finalCurrentPrice * positionData.quantity;
-            const finalProfitLoss = (finalCurrentPrice - positionData.costPrice) * positionData.quantity;
-            const finalProfitLossRate = ((finalCurrentPrice - positionData.costPrice) / positionData.costPrice * 100);
+
+            // 使用费用计算器计算实际盈亏（包含买入时的手续费）
+            const profitCalc = calculatePositionProfit(
+                positionData.costPrice,
+                finalCurrentPrice,
+                positionData.quantity
+            );
+
+            const finalMarketValue = profitCalc.currentValue;
+            const finalProfitLoss = profitCalc.profitLoss;
+            const finalProfitLossRate = profitCalc.profitLossRate;
 
             const syncPositionData = {
                 stockCode: positionData.stockCode,
@@ -669,9 +694,17 @@ module.exports = (authenticateToken) => {
 
             // 同步到普通持仓表（我的持仓）
             const finalCurrentPrice = positionData.currentPrice || positionData.costPrice;
-            const finalMarketValue = finalCurrentPrice * positionData.quantity;
-            const finalProfitLoss = (finalCurrentPrice - positionData.costPrice) * positionData.quantity;
-            const finalProfitLossRate = ((finalCurrentPrice - positionData.costPrice) / positionData.costPrice * 100);
+
+            // 使用费用计算器计算实际盈亏（包含买入时的手续费）
+            const profitCalc2 = calculatePositionProfit(
+                positionData.costPrice,
+                finalCurrentPrice,
+                positionData.quantity
+            );
+
+            const finalMarketValue = profitCalc2.currentValue;
+            const finalProfitLoss = profitCalc2.profitLoss;
+            const finalProfitLossRate = profitCalc2.profitLossRate;
 
             const syncPositionData = {
                 stockName: positionData.stockName,

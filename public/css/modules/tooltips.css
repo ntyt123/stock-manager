@@ -49,6 +49,36 @@
             opacity: 0.9;
         }
 
+        .tooltip-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tooltip-header-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 18px;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tooltip-header-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: scale(1.1);
+        }
+
+        .tooltip-header-btn:active {
+            transform: scale(0.95);
+        }
+
         .tooltip-close-btn {
             background: rgba(255, 255, 255, 0.2);
             border: none;
@@ -283,6 +313,47 @@
             text-decoration-style: solid;
         }
 
+        /* 操作按钮区域 */
+        .tooltip-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 5px;
+        }
+
+        .tooltip-action-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .tooltip-action-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .tooltip-action-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+        }
+
+        .tooltip-action-btn span {
+            font-size: 1rem;
+        }
+
         /* 响应式设计 - 股票悬浮框 */
         @media (max-width: 768px) {
             .stock-tooltip {
@@ -292,12 +363,40 @@
                 right: 5% !important;
             }
 
+            .stock-tooltip-header {
+                padding: 12px 15px;
+            }
+
+            .tooltip-stock-name {
+                font-size: 1rem;
+            }
+
+            .tooltip-stock-code {
+                font-size: 0.8rem;
+            }
+
+            .tooltip-header-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 16px;
+            }
+
+            .tooltip-close-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 20px;
+            }
+
             .tooltip-quote-grid {
                 grid-template-columns: 1fr;
             }
 
             .tooltip-chart-container {
                 height: 150px;
+            }
+
+            .tooltip-actions {
+                flex-direction: column;
             }
         }
 

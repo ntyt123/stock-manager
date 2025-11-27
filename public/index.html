@@ -2935,7 +2935,15 @@
                     <span class="tooltip-stock-name" id="tooltipStockName">--</span>
                     <span class="tooltip-stock-code" id="tooltipStockCode">--</span>
                 </div>
-                <button class="tooltip-close-btn" onclick="closeStockTooltip()">×</button>
+                <div class="tooltip-header-actions">
+                    <button class="tooltip-header-btn" onclick="validateBuyPointFromTooltip()" title="验证买入点">
+                        ✅
+                    </button>
+                    <button class="tooltip-header-btn" onclick="createTradingPlanFromTooltip()" title="制定交易计划">
+                        📋
+                    </button>
+                    <button class="tooltip-close-btn" onclick="closeStockTooltip()">×</button>
+                </div>
             </div>
             <div class="stock-tooltip-content">
                 <div class="tooltip-loading" id="tooltipLoading">

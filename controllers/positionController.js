@@ -1,6 +1,7 @@
 const XLSX = require('xlsx');
 const iconv = require('iconv-lite');
 const { watchlistModel } = require('../database');
+const { calculatePositionProfit } = require('../utils/tradingFeeCalculator');
 
 // 辅助函数：修复中文字符乱码
 function fixChineseCharacters(text) {
@@ -181,15 +182,22 @@ async function parseExcelFile(fileBuffer) {
 
             // 验证数据有效性
             if (stockCode && stockName && quantity > 0) {
+                // 使用费用计算器重新计算实际盈亏（包含买入时的手续费）
+                const profitCalc = calculatePositionProfit(
+                    costPrice,
+                    finalCurrentPrice > 0 ? finalCurrentPrice : costPrice,
+                    quantity
+                );
+
                 positions.push({
                     stockCode: stockCode,
                     stockName: stockName,
                     quantity: quantity,
                     costPrice: costPrice,
                     currentPrice: finalCurrentPrice > 0 ? finalCurrentPrice : costPrice,
-                    marketValue: finalMarketValue > 0 ? finalMarketValue : (finalCurrentPrice * quantity),
-                    profitLoss: profitLoss,
-                    profitLossRate: profitLossRate
+                    marketValue: profitCalc.currentValue,
+                    profitLoss: profitCalc.profitLoss,
+                    profitLossRate: profitCalc.profitLossRate
                 });
                 validCount++;
                 console.log('成功解析第', validCount, '条数据');
