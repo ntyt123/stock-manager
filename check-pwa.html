@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA 配置检查工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .check-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border-left: 4px solid #ccc;
+        }
+
+        .check-item.checking {
+            border-left-color: #ffc107;
+        }
+
+        .check-item.success {
+            border-left-color: #4caf50;
+            background: #f1f8f4;
+        }
+
+        .check-item.error {
+            border-left-color: #f44336;
+            background: #fef5f5;
+        }
+
+        .check-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .check-message {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .check-message pre {
+            background: #fff;
+            padding: 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+
+        .icon {
+            font-size: 20px;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .install-tips {
+            background: #e3f2fd;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid #2196f3;
+        }
+
+        .install-tips h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .install-tips ul {
+            margin-left: 20px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .install-tips li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 PWA 配置检查工具</h1>
+        <p class="subtitle">检查当前网站的 PWA 配置是否正确</p>
+
+        <button class="button" id="checkBtn" onclick="runChecks()">开始检查</button>
+
+        <div id="results"></div>
+
+        <div class="install-tips" id="tips" style="display: none;">
+            <h3>💡 如何让安装图标显示？</h3>
+            <ul id="tipsList"></ul>
+        </div>
+    </div>
+
+    <script>
+        const checks = [
+            {
+                name: 'HTTPS 检查',
+                test: () => {
+                    const isSecure = window.location.protocol === 'https:' ||
+                                   window.location.hostname === 'localhost' ||
+                                   window.location.hostname === '127.0.0.1';
+                    return {
+                        pass: isSecure,
+                        message: isSecure
+                            ? `✅ 使用安全连接: ${window.location.protocol}//`
+                            : `❌ 未使用 HTTPS，PWA 需要 HTTPS 才能安装\n当前: ${window.location.protocol}//`
+                    };
+                }
+            },
+            {
+                name: 'Manifest 文件',
+                test: async () => {
+                    try {
+                        const response = await fetch('/manifest.json');
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        const manifest = await response.json();
+
+                        const required = ['name', 'short_name', 'start_url', 'display', 'icons'];
+                        const missing = required.filter(key => !manifest[key]);
+
+                        if (missing.length > 0) {
+                            return {
+                                pass: false,
+                                message: `❌ Manifest 缺少必需字段: ${missing.join(', ')}`
+                            };
+                        }
+
+                        return {
+                            pass: true,
+                            message: `✅ Manifest 配置正确\n应用名称: ${manifest.name}\n图标数量: ${manifest.icons?.length || 0}`
+                        };
+                    } catch (error) {
+                        return {
+                            pass: false,
+                            message: `❌ 无法加载 manifest.json: ${error.message}`
+                        };
+                    }
+                }
+            },
+            {
+                name: 'Service Worker',
+                test: async () => {
+                    if (!('serviceWorker' in navigator)) {
+                        return {
+                            pass: false,
+                            message: '❌ 浏览器不支持 Service Worker'
+                        };
+                    }
+
+                    try {
+                        const registration = await navigator.serviceWorker.getRegistration();
+                        if (registration) {
+                            const state = registration.active ? 'activated' :
+                                        registration.installing ? 'installing' :
+                                        registration.waiting ? 'waiting' : 'unknown';
+                            return {
+                                pass: !!registration.active,
+                                message: registration.active
+                                    ? `✅ Service Worker 已激活\n状态: ${state}`
+                                    : `⚠️ Service Worker 状态: ${state}`
+                            };
+                        } else {
+                            return {
+                                pass: false,
+                                message: '❌ Service Worker 未注册'
+                            };
+                        }
+                    } catch (error) {
+                        return {
+                            pass: false,
+                            message: `❌ Service Worker 检查失败: ${error.message}`
+                        };
+                    }
+                }
+            },
+            {
+                name: '应用图标',
+                test: async () => {
+                    const icons = [
+                        '/images/icon-192.png',
+                        '/images/icon-512.png'
+                    ];
+
+                    const results = await Promise.all(
+                        icons.map(async (url) => {
+                            try {
+                                const response = await fetch(url, { method: 'HEAD' });
+                                return { url, ok: response.ok };
+                            } catch {
+                                return { url, ok: false };
+                            }
+                        })
+                    );
+
+                    const missing = results.filter(r => !r.ok);
+
+                    if (missing.length > 0) {
+                        return {
+                            pass: false,
+                            message: `❌ 图标文件缺失:\n${missing.map(r => r.url).join('\n')}`
+                        };
+                    }
+
+                    return {
+                        pass: true,
+                        message: `✅ 所有图标文件存在 (${results.length}个)`
+                    };
+                }
+            },
+            {
+                name: '平台检测脚本',
+                test: () => {
+                    const hasPlatform = typeof window.Platform !== 'undefined';
+                    const hasUpdateManager = typeof window.UpdateManager !== 'undefined';
+                    const hasNative = typeof window.Native !== 'undefined';
+
+                    if (!hasPlatform || !hasUpdateManager || !hasNative) {
+                        return {
+                            pass: false,
+                            message: `❌ 平台脚本加载不完整:\n` +
+                                   `Platform: ${hasPlatform ? '✅' : '❌'}\n` +
+                                   `UpdateManager: ${hasUpdateManager ? '✅' : '❌'}\n` +
+                                   `Native: ${hasNative ? '✅' : '❌'}`
+                        };
+                    }
+
+                    return {
+                        pass: true,
+                        message: `✅ 平台脚本已加载\n运行平台: ${Platform.info.platformName}`
+                    };
+                }
+            },
+            {
+                name: '安装条件',
+                test: () => {
+                    const results = [];
+                    let canInstall = true;
+
+                    // 检查是否在独立模式（已安装）
+                    if (window.matchMedia('(display-mode: standalone)').matches) {
+                        return {
+                            pass: true,
+                            message: '✅ 应用已安装为 PWA'
+                        };
+                    }
+
+                    // 检查 beforeinstallprompt 事件
+                    results.push('等待 beforeinstallprompt 事件触发...');
+
+                    // 提示可能的原因
+                    results.push('\n可能需要满足以下条件:');
+                    results.push('• 至少访问网站 2 次');
+                    results.push('• 两次访问间隔至少 5 分钟');
+                    results.push('• 与页面有交互（点击、滚动等）');
+
+                    return {
+                        pass: false,
+                        message: results.join('\n')
+                    };
+                }
+            }
+        ];
+
+        async function runChecks() {
+            const btn = document.getElementById('checkBtn');
+            const results = document.getElementById('results');
+            const tips = document.getElementById('tips');
+            const tipsList = document.getElementById('tipsList');
+
+            btn.disabled = true;
+            btn.textContent = '正在检查...';
+            results.innerHTML = '';
+            tips.style.display = 'none';
+            tipsList.innerHTML = '';
+
+            let allPassed = true;
+            const failedChecks = [];
+
+            for (const check of checks) {
+                const item = document.createElement('div');
+                item.className = 'check-item checking';
+                item.innerHTML = `
+                    <div class="check-title">
+                        <span class="icon">⏳</span>
+                        ${check.name}
+                    </div>
+                    <div class="check-message">检查中...</div>
+                `;
+                results.appendChild(item);
+
+                try {
+                    const result = await check.test();
+
+                    item.className = `check-item ${result.pass ? 'success' : 'error'}`;
+                    item.innerHTML = `
+                        <div class="check-title">
+                            <span class="icon">${result.pass ? '✅' : '❌'}</span>
+                            ${check.name}
+                        </div>
+                        <div class="check-message"><pre>${result.message}</pre></div>
+                    `;
+
+                    if (!result.pass) {
+                        allPassed = false;
+                        failedChecks.push({ name: check.name, message: result.message });
+                    }
+                } catch (error) {
+                    item.className = 'check-item error';
+                    item.innerHTML = `
+                        <div class="check-title">
+                            <span class="icon">❌</span>
+                            ${check.name}
+                        </div>
+                        <div class="check-message"><pre>检查失败: ${error.message}</pre></div>
+                    `;
+                    allPassed = false;
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            btn.disabled = false;
+            btn.textContent = '重新检查';
+
+            // 显示修复建议
+            if (!allPassed) {
+                tips.style.display = 'block';
+
+                failedChecks.forEach(check => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<strong>${check.name}:</strong> 需要修复`;
+                    tipsList.appendChild(li);
+                });
+
+                // 添加通用建议
+                const generalTips = [
+                    '清除浏览器缓存后重试',
+                    '确保所有文件已正确部署到服务器',
+                    '刷新页面并等待几分钟',
+                    '多次访问网站以满足安装条件'
+                ];
+
+                generalTips.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.textContent = tip;
+                    tipsList.appendChild(li);
+                });
+            } else {
+                tips.style.display = 'block';
+                tipsList.innerHTML = '<li style="color: #4caf50;">✅ 所有检查通过！如果仍未显示安装图标，请尝试：</li>';
+
+                const finalTips = [
+                    '多次访问网站（至少2次，间隔5分钟）',
+                    '与页面进行交互（点击、滚动等）',
+                    '清除浏览器缓存并重启浏览器',
+                    '在 Chrome 菜单中查找"安装应用"选项'
+                ];
+
+                finalTips.forEach(tip => {
+                    const li = document.createElement('li');
+                    li.textContent = tip;
+                    tipsList.appendChild(li);
+                });
+            }
+        }
+
+        // 监听 beforeinstallprompt 事件
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('✅ beforeinstallprompt 事件已触发！可以安装PWA了');
+            alert('✅ 检测到安装提示！\n您可以在地址栏或菜单中找到"安装"选项。');
+        });
+
+        // 页面加载时自动检查
+        window.addEventListener('load', () => {
+            setTimeout(runChecks, 500);
+        });
+    </script>
+</body>
+</html>
